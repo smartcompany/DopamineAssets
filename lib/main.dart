@@ -20,6 +20,9 @@ Future<void> main() async {
   final authService = DopamineAuthService();
   final authProvider = AuthProvider<DopamineUser>(
     authService: authService,
+    // Firebase Auth + Google: idToken 발급용 웹 클라이언트 ID (google-services.json client_type 3)
+    googleServerClientId:
+        '312575797891-32oqllsgnd6dcp9uhr85h9s7idsmlg6t.apps.googleusercontent.com',
   );
   await authProvider.initialize();
   runApp(

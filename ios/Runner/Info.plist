@@ -49,5 +49,17 @@
 	<!-- 스토어 빌드 전 AdMob 콘솔의 실제 iOS 앱 ID로 교체 -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<!-- Google Sign-In: GoogleService-Info.plist 의 REVERSED_CLIENT_ID 와 동일해야 함 -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.312575797891-h2ruihb0cbk4t08q5puj261kgso2rp3e</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

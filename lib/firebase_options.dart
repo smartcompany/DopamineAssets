@@ -25,19 +25,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME',
+    apiKey: 'AIzaSyA6DHvnQ0kSt1bPbrctB-KEBvOtm-_b_qA',
+    appId: '1:312575797891:android:1093227bef277a711f49b6',
+    messagingSenderId: '312575797891',
+    projectId: 'dopamineassets',
+    storageBucket: 'dopamineassets.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME',
+    apiKey: 'AIzaSyB8ggQswOQaVh08wX0-Nlw5CqRzNJpDbWg',
+    appId: '1:312575797891:ios:c192c228de6c5ec61f49b6',
+    messagingSenderId: '312575797891',
+    projectId: 'dopamineassets',
+    storageBucket: 'dopamineassets.firebasestorage.app',
     iosBundleId: 'com.smartcompany.dopamineAssets',
   );
+
 }
