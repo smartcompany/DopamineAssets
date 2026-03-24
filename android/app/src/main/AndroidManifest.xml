@@ -3,6 +3,11 @@
         android:label="dopamine_assets"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- google_mobile_ads (share_lib): 없으면 런타임 검증 실패 가능 -->
+        <!-- 스토어 빌드 전 AdMob 콘솔의 실제 Android 앱 ID로 교체 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyB8ggQswOQaVh08wX0-Nlw5CqRzNJpDbWg</string>
+	<key>GCM_SENDER_ID</key>
+	<string>312575797891</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.smartcompany.dopamineAssets</string>
+	<key>PROJECT_ID</key>
+	<string>dopamineassets</string>
+	<key>STORAGE_BUCKET</key>
+	<string>dopamineassets.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:312575797891:ios:c192c228de6c5ec61f49b6</string>
+</dict>
+</plist>

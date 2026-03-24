@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- google_mobile_ads (share_lib): 없으면 GADApplicationVerifyPublisherInitializedCorrectly 로 크래시 -->
+	<!-- 스토어 빌드 전 AdMob 콘솔의 실제 iOS 앱 ID로 교체 -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 </dict>
 </plist>

@@ -151,4 +151,107 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get rankingFilterNeedOne => '한 개 이상 선택해 주세요.';
+
+  @override
+  String get assetDetailMissingClass => '자산 분류 정보가 없어 상세를 열 수 없습니다.';
+
+  @override
+  String get assetDetailSectionProfile => '개요';
+
+  @override
+  String get assetDetailMarketCap => '시가총액';
+
+  @override
+  String get assetDetailSector => '섹터';
+
+  @override
+  String get assetDetailIndustry => '산업';
+
+  @override
+  String get assetDetailExchange => '거래소';
+
+  @override
+  String get assetDetailCurrency => '통화';
+
+  @override
+  String get assetDetailPair => '거래쌍';
+
+  @override
+  String get assetDetailAbout => '소개';
+
+  @override
+  String get assetDetailWebsite => '웹사이트';
+
+  @override
+  String get assetDetailNotAvailable => '—';
+
+  @override
+  String get assetDetailOpenLinkFailed => '링크를 열 수 없습니다.';
+
+  @override
+  String get assetDetailPriceChange => '가격 변동 (피드)';
+
+  @override
+  String get assetCommentsTitle => '댓글';
+
+  @override
+  String get assetCommentsEmpty => '첫 댓글을 남겨보세요.';
+
+  @override
+  String get assetCommentsPlaceholder => '지금 이 자산에 대한 생각을 남겨보세요…';
+
+  @override
+  String get assetCommentsPost => '등록';
+
+  @override
+  String get assetCommentsReply => '답글';
+
+  @override
+  String get assetCommentsReplying => '답글 작성 중';
+
+  @override
+  String get assetCommentsCancelReply => '취소';
+
+  @override
+  String get assetCommentsSendError => '댓글을 보내지 못했습니다.';
+
+  @override
+  String get assetDetailMoveSummary => '오늘 움직임 요약';
+
+  @override
+  String get assetDetailMoveSummaryDisclaimer =>
+      'AI가 공개 수치만으로 생성한 참고용 문장이며, 투자 권유가 아닙니다.';
+
+  @override
+  String get assetDetailNewsTitle => '뉴스';
+
+  @override
+  String get assetDetailNewsEmpty => '이 검색으로 최근 헤드라인이 없습니다.';
+
+  @override
+  String get assetDetailNewsError => '뉴스를 불러오지 못했습니다. 연결을 확인하거나 다시 시도해 주세요.';
+
+  @override
+  String get assetDetailNewsDisclaimer => '외부 뉴스 소스의 제목·링크만 표시합니다.';
+
+  @override
+  String get assetDetailNewsShowMore => '더 보기';
+
+  @override
+  String get assetDetailNewsShowLess => '접기';
+
+  @override
+  String get assetDetailOpenChart => '차트 보기';
+
+  @override
+  String get assetChartRange1mo => '1M';
+
+  @override
+  String get assetChartRange3mo => '3M';
+
+  @override
+  String get assetChartRange1y => '1Y';
+
+  @override
+  String get assetChartFootnote => '일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다.';
 }

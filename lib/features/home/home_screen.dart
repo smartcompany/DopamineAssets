@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 
+import '../../core/config/api_config.dart';
 import '../../core/formatting/percent_format.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../data/ranking_filter_prefs.dart';
@@ -10,6 +12,7 @@ import '../../data/models/market_summary.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../theme/dopamine_theme.dart';
+import '../asset/asset_detail_screen.dart';
 
 /// 캡처 기준: 퍼플 그라데이션 + 네온 그린 + 글래스 카드
 class HomeScreen extends StatefulWidget {
@@ -20,8 +23,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<RankedAsset>> _upFuture;
-  late Future<List<RankedAsset>> _downFuture;
+  static const int _rankingTopN = 10;
+  static const Duration _rankingPollInterval = Duration(seconds: 5);
+
+  Set<String>? _rankingClasses;
+  List<RankedAsset>? _upItems;
+  List<RankedAsset>? _downItems;
+  bool _rankingsLoading = true;
+  Object? _rankingsError;
+  Timer? _rankingPollTimer;
+  int _rankingRequestId = 0;
+
   late final Future<List<ThemeItem>> _hotThemesFuture =
       DopamineApi.fetchThemes('hot');
   late final Future<List<ThemeItem>> _crashedThemesFuture =
@@ -32,21 +44,184 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    final classesFuture = RankingFilterPrefs.load();
-    _upFuture = classesFuture.then(
-      (c) => DopamineApi.fetchRankingsUp(includeAssetClasses: c),
+    _bootstrapRankings();
+  }
+
+  @override
+  void dispose() {
+    if (_rankingPollTimer != null) {
+      debugPrint(
+        '[Dopamine][rankings] ${DateTime.now().toIso8601String()} dispose → poll timer cancelled',
+      );
+    }
+    _rankingPollTimer?.cancel();
+    super.dispose();
+  }
+
+  void _logRankings(String message) {
+    debugPrint(
+      '[Dopamine][rankings] ${DateTime.now().toIso8601String()} $message',
     );
-    _downFuture = classesFuture.then(
-      (c) => DopamineApi.fetchRankingsDown(includeAssetClasses: c),
+  }
+
+  Future<void> _bootstrapRankings() async {
+    final c = await RankingFilterPrefs.load();
+    if (!mounted) return;
+    setState(() {
+      _rankingClasses = c;
+    });
+    _logRankings('initial fetch (bootstrap)');
+    await _refreshRankings();
+    if (!mounted) return;
+    _scheduleRankingPoll();
+  }
+
+  void _scheduleRankingPoll() {
+    _rankingPollTimer?.cancel();
+    _rankingPollTimer = null;
+    if (!ApiConfig.enableHomeRankingPoll) {
+      _logRankings('periodic poll off (ApiConfig.enableHomeRankingPoll)');
+      return;
+    }
+    _rankingPollTimer = Timer.periodic(_rankingPollInterval, (_) {
+      _logRankings('timer tick → fetch rankings');
+      _refreshRankings();
+    });
+    _logRankings(
+      'started periodic poll every ${_rankingPollInterval.inSeconds}s',
     );
+  }
+
+  Future<void> _refreshRankings() async {
+    final id = ++_rankingRequestId;
+    final c = _rankingClasses ?? await RankingFilterPrefs.load();
+    _logRankings('request #$id start (include=${c.join(",")})');
+    try {
+      final results = await Future.wait([
+        DopamineApi.fetchRankingsUp(includeAssetClasses: c),
+        DopamineApi.fetchRankingsDown(includeAssetClasses: c),
+      ]);
+      if (!mounted || id != _rankingRequestId) {
+        _logRankings('request #$id dropped (stale or unmounted)');
+        return;
+      }
+      _logRankings(
+        'request #$id ok → up=${results[0].length} down=${results[1].length}',
+      );
+      setState(() {
+        _upItems = results[0];
+        _downItems = results[1];
+        _rankingsLoading = false;
+        _rankingsError = null;
+      });
+    } catch (e) {
+      if (!mounted || id != _rankingRequestId) {
+        _logRankings('request #$id error ignored (stale or unmounted): $e');
+        return;
+      }
+      _logRankings('request #$id error: $e');
+      setState(() {
+        _rankingsError = e;
+        _rankingsLoading = false;
+      });
+    }
   }
 
   Future<void> _applyRankingFilter(Set<String> classes) async {
     if (!mounted) return;
     setState(() {
-      _upFuture = DopamineApi.fetchRankingsUp(includeAssetClasses: classes);
-      _downFuture = DopamineApi.fetchRankingsDown(includeAssetClasses: classes);
+      _rankingClasses = classes;
     });
+    _logRankings('filter applied → reschedule poll if enabled');
+    _scheduleRankingPoll();
+    await _refreshRankings();
+  }
+
+  List<RankedAsset> _topRankings(List<RankedAsset>? items) {
+    if (items == null || items.isEmpty) return const [];
+    return items.length > _rankingTopN
+        ? items.sublist(0, _rankingTopN)
+        : items;
+  }
+
+  List<Widget> _animatedRankingSlivers({
+    required bool up,
+    required AppLocalizations l10n,
+    required ThemeData theme,
+  }) {
+    final items = up ? _upItems : _downItems;
+    final slice = _topRankings(items);
+
+    if (_rankingsLoading && items == null) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: up ? DopamineTheme.neonGreen : DopamineTheme.accentRed,
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    if (_rankingsError != null && items == null) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: _InlineError(_rankingsError.toString()),
+          ),
+        ),
+      ];
+    }
+
+    if (slice.isEmpty) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Text(
+              l10n.emptyState,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: DopamineTheme.textSecondary,
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final orderKey = slice.map((e) => e.symbol).join('\u241e');
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 380),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: Column(
+              key: ValueKey<String>(orderKey),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < slice.length; i++)
+                  _GlassAssetRow(
+                    rank: i + 1,
+                    asset: slice[i],
+                    locale: locale,
+                    upList: up,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   Future<void> _openRankingFilter() async {
@@ -148,16 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: FutureBuilder<List<RankedAsset>>(
-                  future: _upFuture,
-                  builder: (context, snapshot) =>
-                      _buildRankedList(snapshot, l10n, theme, up: true),
-                ),
-              ),
-            ),
+            ..._animatedRankingSlivers(up: true, l10n: l10n, theme: theme),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -168,16 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: FutureBuilder<List<RankedAsset>>(
-                  future: _downFuture,
-                  builder: (context, snapshot) =>
-                      _buildRankedList(snapshot, l10n, theme, up: false),
-                ),
-              ),
-            ),
+            ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -279,52 +436,6 @@ class _HomeScreenState extends State<HomeScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildRankedList(
-    AsyncSnapshot<List<RankedAsset>> snapshot,
-    AppLocalizations l10n,
-    ThemeData theme, {
-    required bool up,
-  }) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: DopamineTheme.neonGreen,
-          ),
-        ),
-      );
-    }
-    if (snapshot.hasError) {
-      return _InlineError(snapshot.error.toString());
-    }
-    final items = snapshot.data;
-    if (items == null || items.isEmpty) {
-      return Text(
-        l10n.emptyState,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: DopamineTheme.textSecondary,
-        ),
-      );
-    }
-    const topN = 10;
-    final slice =
-        items.length > topN ? items.sublist(0, topN) : items;
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    return Column(
-      children: [
-        for (var i = 0; i < slice.length; i++)
-          _GlassAssetRow(
-            rank: i + 1,
-            asset: slice[i],
-            locale: locale,
-            upList: up,
-          ),
       ],
     );
   }
@@ -615,120 +726,131 @@ class _GlassAssetRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: rankBadgeColor,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: rankBadgeColor.withValues(alpha: 0.45),
-                        blurRadius: 10,
-                      ),
-                    ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => AssetDetailScreen.open(context, asset),
+          borderRadius: BorderRadius.circular(16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
                   ),
-                  child: Text(
-                    '$rank',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF0A0A0A),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: rankBadgeColor,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: rankBadgeColor.withValues(alpha: 0.45),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '$rank',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFF0A0A0A),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (badgeLabel != null) ...[
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: assetClassColor.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: assetClassColor.withValues(alpha: 0.5),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (badgeLabel != null) ...[
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: assetClassColor.withValues(
+                                          alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: assetClassColor
+                                            .withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      badgeLabel,
+                                      style:
+                                          theme.textTheme.labelSmall?.copyWith(
+                                        color: assetClassColor,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  asset.name,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: DopamineTheme.textPrimary,
+                                  ),
                                 ),
                               ),
-                              child: Text(
-                                badgeLabel,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: assetClassColor,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.1,
-                                ),
-                              ),
-                            ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          Expanded(
-                            child: Text(
-                              asset.name,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: DopamineTheme.textPrimary,
-                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            asset.symbol,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: DopamineTheme.textSecondary,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        asset.symbol,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: DopamineTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      PercentFormat.signedPercent(pct, locale),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: pctColor,
-                        letterSpacing: -0.3,
-                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Icon(
-                      Icons.show_chart_rounded,
-                      size: 16,
-                      color: pctColor.withValues(alpha: 0.9),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          PercentFormat.signedPercent(pct, locale),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: pctColor,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Icon(
+                          Icons.show_chart_rounded,
+                          size: 16,
+                          color: pctColor.withValues(alpha: 0.9),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

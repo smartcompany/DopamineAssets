@@ -6,6 +6,7 @@ import '../../data/ranking_filter_prefs.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../widgets/async_body.dart';
 import '../../widgets/ranked_asset_tile.dart';
+import '../asset/asset_detail_screen.dart';
 
 class RankingsScreen extends StatefulWidget {
   const RankingsScreen({super.key});
@@ -90,6 +91,7 @@ class _RankingsList extends StatelessWidget {
                 return RankedAssetTile(
                   rank: index + 1,
                   asset: items[index],
+                  onTap: () => AssetDetailScreen.open(context, items[index]),
                 );
               },
             );

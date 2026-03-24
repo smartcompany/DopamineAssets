@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "312575797891",
+    "project_id": "dopamineassets",
+    "storage_bucket": "dopamineassets.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:312575797891:android:1093227bef277a711f49b6",
+        "android_client_info": {
+          "package_name": "com.smartcompany.dopamineAssets"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6DHvnQ0kSt1bPbrctB-KEBvOtm-_b_qA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

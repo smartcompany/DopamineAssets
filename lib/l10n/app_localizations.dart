@@ -379,6 +379,210 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'한 개 이상 선택해 주세요.'**
   String get rankingFilterNeedOne;
+
+  /// No description provided for @assetDetailMissingClass.
+  ///
+  /// In ko, this message translates to:
+  /// **'자산 분류 정보가 없어 상세를 열 수 없습니다.'**
+  String get assetDetailMissingClass;
+
+  /// No description provided for @assetDetailSectionProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'개요'**
+  String get assetDetailSectionProfile;
+
+  /// No description provided for @assetDetailMarketCap.
+  ///
+  /// In ko, this message translates to:
+  /// **'시가총액'**
+  String get assetDetailMarketCap;
+
+  /// No description provided for @assetDetailSector.
+  ///
+  /// In ko, this message translates to:
+  /// **'섹터'**
+  String get assetDetailSector;
+
+  /// No description provided for @assetDetailIndustry.
+  ///
+  /// In ko, this message translates to:
+  /// **'산업'**
+  String get assetDetailIndustry;
+
+  /// No description provided for @assetDetailExchange.
+  ///
+  /// In ko, this message translates to:
+  /// **'거래소'**
+  String get assetDetailExchange;
+
+  /// No description provided for @assetDetailCurrency.
+  ///
+  /// In ko, this message translates to:
+  /// **'통화'**
+  String get assetDetailCurrency;
+
+  /// No description provided for @assetDetailPair.
+  ///
+  /// In ko, this message translates to:
+  /// **'거래쌍'**
+  String get assetDetailPair;
+
+  /// No description provided for @assetDetailAbout.
+  ///
+  /// In ko, this message translates to:
+  /// **'소개'**
+  String get assetDetailAbout;
+
+  /// No description provided for @assetDetailWebsite.
+  ///
+  /// In ko, this message translates to:
+  /// **'웹사이트'**
+  String get assetDetailWebsite;
+
+  /// No description provided for @assetDetailNotAvailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'—'**
+  String get assetDetailNotAvailable;
+
+  /// No description provided for @assetDetailOpenLinkFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'링크를 열 수 없습니다.'**
+  String get assetDetailOpenLinkFailed;
+
+  /// No description provided for @assetDetailPriceChange.
+  ///
+  /// In ko, this message translates to:
+  /// **'가격 변동 (피드)'**
+  String get assetDetailPriceChange;
+
+  /// No description provided for @assetCommentsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글'**
+  String get assetCommentsTitle;
+
+  /// No description provided for @assetCommentsEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'첫 댓글을 남겨보세요.'**
+  String get assetCommentsEmpty;
+
+  /// No description provided for @assetCommentsPlaceholder.
+  ///
+  /// In ko, this message translates to:
+  /// **'지금 이 자산에 대한 생각을 남겨보세요…'**
+  String get assetCommentsPlaceholder;
+
+  /// No description provided for @assetCommentsPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'등록'**
+  String get assetCommentsPost;
+
+  /// No description provided for @assetCommentsReply.
+  ///
+  /// In ko, this message translates to:
+  /// **'답글'**
+  String get assetCommentsReply;
+
+  /// No description provided for @assetCommentsReplying.
+  ///
+  /// In ko, this message translates to:
+  /// **'답글 작성 중'**
+  String get assetCommentsReplying;
+
+  /// No description provided for @assetCommentsCancelReply.
+  ///
+  /// In ko, this message translates to:
+  /// **'취소'**
+  String get assetCommentsCancelReply;
+
+  /// No description provided for @assetCommentsSendError.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글을 보내지 못했습니다.'**
+  String get assetCommentsSendError;
+
+  /// No description provided for @assetDetailMoveSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 움직임 요약'**
+  String get assetDetailMoveSummary;
+
+  /// No description provided for @assetDetailMoveSummaryDisclaimer.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI가 공개 수치만으로 생성한 참고용 문장이며, 투자 권유가 아닙니다.'**
+  String get assetDetailMoveSummaryDisclaimer;
+
+  /// No description provided for @assetDetailNewsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'뉴스'**
+  String get assetDetailNewsTitle;
+
+  /// No description provided for @assetDetailNewsEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 검색으로 최근 헤드라인이 없습니다.'**
+  String get assetDetailNewsEmpty;
+
+  /// No description provided for @assetDetailNewsError.
+  ///
+  /// In ko, this message translates to:
+  /// **'뉴스를 불러오지 못했습니다. 연결을 확인하거나 다시 시도해 주세요.'**
+  String get assetDetailNewsError;
+
+  /// No description provided for @assetDetailNewsDisclaimer.
+  ///
+  /// In ko, this message translates to:
+  /// **'외부 뉴스 소스의 제목·링크만 표시합니다.'**
+  String get assetDetailNewsDisclaimer;
+
+  /// No description provided for @assetDetailNewsShowMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'더 보기'**
+  String get assetDetailNewsShowMore;
+
+  /// No description provided for @assetDetailNewsShowLess.
+  ///
+  /// In ko, this message translates to:
+  /// **'접기'**
+  String get assetDetailNewsShowLess;
+
+  /// No description provided for @assetDetailOpenChart.
+  ///
+  /// In ko, this message translates to:
+  /// **'차트 보기'**
+  String get assetDetailOpenChart;
+
+  /// No description provided for @assetChartRange1mo.
+  ///
+  /// In ko, this message translates to:
+  /// **'1M'**
+  String get assetChartRange1mo;
+
+  /// No description provided for @assetChartRange3mo.
+  ///
+  /// In ko, this message translates to:
+  /// **'3M'**
+  String get assetChartRange3mo;
+
+  /// No description provided for @assetChartRange1y.
+  ///
+  /// In ko, this message translates to:
+  /// **'1Y'**
+  String get assetChartRange1y;
+
+  /// No description provided for @assetChartFootnote.
+  ///
+  /// In ko, this message translates to:
+  /// **'일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다.'**
+  String get assetChartFootnote;
 }
 
 class _AppLocalizationsDelegate

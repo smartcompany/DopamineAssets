@@ -152,4 +152,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rankingFilterNeedOne => 'Select at least one.';
+
+  @override
+  String get assetDetailMissingClass => 'Missing asset class for this item.';
+
+  @override
+  String get assetDetailSectionProfile => 'Profile';
+
+  @override
+  String get assetDetailMarketCap => 'Market cap';
+
+  @override
+  String get assetDetailSector => 'Sector';
+
+  @override
+  String get assetDetailIndustry => 'Industry';
+
+  @override
+  String get assetDetailExchange => 'Exchange';
+
+  @override
+  String get assetDetailCurrency => 'Currency';
+
+  @override
+  String get assetDetailPair => 'Pair';
+
+  @override
+  String get assetDetailAbout => 'About';
+
+  @override
+  String get assetDetailWebsite => 'Website';
+
+  @override
+  String get assetDetailNotAvailable => '—';
+
+  @override
+  String get assetDetailOpenLinkFailed => 'Could not open link.';
+
+  @override
+  String get assetDetailPriceChange => 'Price change (feed)';
+
+  @override
+  String get assetCommentsTitle => 'Comments';
+
+  @override
+  String get assetCommentsEmpty => 'Be the first to comment.';
+
+  @override
+  String get assetCommentsPlaceholder => 'Share your take on this asset…';
+
+  @override
+  String get assetCommentsPost => 'Post';
+
+  @override
+  String get assetCommentsReply => 'Reply';
+
+  @override
+  String get assetCommentsReplying => 'Replying';
+
+  @override
+  String get assetCommentsCancelReply => 'Cancel';
+
+  @override
+  String get assetCommentsSendError => 'Could not post your comment.';
+
+  @override
+  String get assetDetailMoveSummary => 'Today’s move (AI)';
+
+  @override
+  String get assetDetailMoveSummaryDisclaimer =>
+      'AI-generated from public figures only—not investment advice.';
+
+  @override
+  String get assetDetailNewsTitle => 'Headlines';
+
+  @override
+  String get assetDetailNewsEmpty => 'No recent headlines for this search.';
+
+  @override
+  String get assetDetailNewsError =>
+      'Could not load headlines. Check your connection or try again.';
+
+  @override
+  String get assetDetailNewsDisclaimer =>
+      'Headlines from third-party sources—titles and links only.';
+
+  @override
+  String get assetDetailNewsShowMore => 'Show more';
+
+  @override
+  String get assetDetailNewsShowLess => 'Show less';
+
+  @override
+  String get assetDetailOpenChart => 'View chart';
+
+  @override
+  String get assetChartRange1mo => '1M';
+
+  @override
+  String get assetChartRange3mo => '3M';
+
+  @override
+  String get assetChartRange1y => '1Y';
+
+  @override
+  String get assetChartFootnote =>
+      'Daily candles via Yahoo (server). Not investment advice.';
 }

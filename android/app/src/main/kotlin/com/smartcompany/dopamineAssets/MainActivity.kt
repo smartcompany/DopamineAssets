@@ -1,4 +1,4 @@
-package com.dopamineassets.dopamine_assets
+package com.smartcompany.dopamineAssets
 
 import io.flutter.embedding.android.FlutterActivity
 
