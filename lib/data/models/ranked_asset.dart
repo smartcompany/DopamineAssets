@@ -31,4 +31,21 @@ final class RankedAsset {
       summaryLine: json['summaryLine'] as String?,
     );
   }
+
+  /// 커뮤니티 등에서 상세만 열 때 — 피드 수치는 0으로 둔다.
+  factory RankedAsset.communityShell({
+    required String symbol,
+    required String assetClass,
+    String? displayName,
+  }) {
+    final n = displayName?.trim();
+    return RankedAsset(
+      symbol: symbol,
+      name: n != null && n.isNotEmpty ? n : symbol,
+      priceChangePct: 0,
+      volumeChangePct: 0,
+      dopamineScore: 0,
+      assetClass: assetClass,
+    );
+  }
 }

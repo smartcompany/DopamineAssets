@@ -3,7 +3,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:share_lib/share_lib.dart';
 
+import '../../auth/dopamine_user.dart';
+import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/config/api_config.dart';
 import '../../core/formatting/percent_format.dart';
 import '../../core/network/dopamine_api.dart';
@@ -249,6 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final auth = context.watch<AuthProvider<DopamineUser>>();
 
     return Stack(
       fit: StackFit.expand,
@@ -280,7 +285,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(width: 48),
+                          if (auth.isLoggedIn())
+                            const SizedBox(width: 48)
+                          else
+                            IconButton(
+                              tooltip: l10n.actionLogin,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              icon: Icon(
+                                Icons.login_rounded,
+                                color: DopamineTheme.textSecondary
+                                    .withValues(alpha: 0.95),
+                              ),
+                              onPressed: () => presentDopamineAuthScreen(context),
+                            ),
                           Expanded(
                             child: Text(
                               l10n.homeHeadline,

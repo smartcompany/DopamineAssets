@@ -18,6 +18,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navHome => '홈';
 
   @override
+  String get actionLogin => '로그인';
+
+  @override
+  String get navCommunity => '커뮤니티';
+
+  @override
   String get navRankings => '랭킹';
 
   @override
@@ -192,28 +198,39 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetDetailPriceChange => '가격 변동 (피드)';
 
   @override
-  String get assetCommentsTitle => '댓글';
+  String get communitySortLatest => '최신순';
 
   @override
-  String get assetCommentsEmpty => '첫 댓글을 남겨보세요.';
+  String get communitySortPopular => '인기순';
 
   @override
-  String get assetCommentsPlaceholder => '지금 이 자산에 대한 생각을 남겨보세요…';
+  String communityReplyCount(int count) {
+    return '답글 $count개';
+  }
 
   @override
-  String get assetCommentsPost => '등록';
+  String get assetPostsTitle => '게시글';
 
   @override
-  String get assetCommentsReply => '답글';
+  String get assetPostsEmpty => '첫 게시글을 남겨보세요.';
 
   @override
-  String get assetCommentsReplying => '답글 작성 중';
+  String get assetPostsPlaceholder => '이 자산에 대한 생각을 남겨보세요…';
 
   @override
-  String get assetCommentsCancelReply => '취소';
+  String get assetPostsPublish => '등록';
 
   @override
-  String get assetCommentsSendError => '댓글을 보내지 못했습니다.';
+  String get assetPostsReply => '답글';
+
+  @override
+  String get assetPostsReplying => '답글 작성 중';
+
+  @override
+  String get assetPostsCancelReply => '취소';
+
+  @override
+  String get assetPostsSendError => '게시글을 등록하지 못했습니다.';
 
   @override
   String get assetDetailMoveSummary => '오늘 움직임 요약';

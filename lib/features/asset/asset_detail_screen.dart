@@ -12,7 +12,7 @@ import '../../data/models/asset_detail.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
 import 'asset_candle_chart_screen.dart';
-import 'asset_comments_section.dart';
+import 'asset_posts_section.dart';
 import 'asset_news_section.dart';
 
 class AssetDetailScreen extends StatefulWidget {
@@ -25,9 +25,9 @@ class AssetDetailScreen extends StatefulWidget {
     if (asset.assetClass == null || asset.assetClass!.isEmpty) {
       final l10n = AppLocalizations.of(context);
       if (l10n != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.assetDetailMissingClass)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.assetDetailMissingClass)));
       }
       return;
     }
@@ -65,11 +65,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-          a.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: Text(a.name, maxLines: 1, overflow: TextOverflow.ellipsis),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -83,10 +79,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  DopamineTheme.purpleTop,
-                  DopamineTheme.purpleBottom,
-                ],
+                colors: [DopamineTheme.purpleTop, DopamineTheme.purpleBottom],
               ),
             ),
           ),
@@ -103,9 +96,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               }
               if (snapshot.hasError) {
                 final err = snapshot.error;
-                final msg = err is ApiException
-                    ? err.message
-                    : err.toString();
+                final msg = err is ApiException ? err.message : err.toString();
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -152,16 +143,27 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                               Expanded(
                                 child: Text(
                                   d.name,
-                                  style:
-                                      theme.textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                    color: DopamineTheme.textPrimary,
-                                  ),
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                        color: DopamineTheme.textPrimary,
+                                      ),
                                 ),
                               ),
                               if (chartUri != null)
                                 IconButton(
                                   tooltip: l10n.assetDetailOpenChart,
+                                  style: IconButton.styleFrom(
+                                    foregroundColor: DopamineTheme.neonGreen
+                                        .withValues(alpha: 0.95),
+                                    side: BorderSide(
+                                      color: DopamineTheme.neonGreen
+                                          .withValues(alpha: 0.5),
+                                      width: 1.25,
+                                    ),
+                                    shape: const CircleBorder(),
+                                    padding: const EdgeInsets.all(10),
+                                  ),
                                   onPressed: () {
                                     AssetCandleChartScreen.open(
                                       context,
@@ -170,11 +172,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                       title: l10n.assetDetailOpenChart,
                                     );
                                   },
-                                  icon: Icon(
-                                    Icons.show_chart_rounded,
-                                    color: DopamineTheme.neonGreen
-                                        .withValues(alpha: 0.95),
-                                  ),
+                                  icon: const Icon(Icons.bar_chart_rounded),
                                 ),
                             ],
                           ),
@@ -293,11 +291,12 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                       name: d.name,
                       uiLocaleName: l10n.localeName,
                     ),
-                    AssetCommentsSection(
+                    AssetPostsSection(
                       symbol: d.symbol,
                       assetClass: d.assetClass,
                     ),
-                    if (d.description != null && d.description!.trim().isNotEmpty)
+                    if (d.description != null &&
+                        d.description!.trim().isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 14),
                         child: _GlassCard(
@@ -346,16 +345,17 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                         l10n.assetDetailWebsite,
                                         style: theme.textTheme.labelMedium
                                             ?.copyWith(
-                                          color: DopamineTheme.textSecondary,
-                                        ),
+                                              color:
+                                                  DopamineTheme.textSecondary,
+                                            ),
                                       ),
                                       Text(
                                         d.website!,
                                         style: theme.textTheme.bodyMedium
                                             ?.copyWith(
-                                          color: DopamineTheme.neonGreen,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                              color: DopamineTheme.neonGreen,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -424,9 +424,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     final ok = await launchUrl(u, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.assetDetailOpenLinkFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.assetDetailOpenLinkFailed)));
     }
   }
 }
@@ -460,9 +460,7 @@ class _GlassCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.32),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.14),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: child,

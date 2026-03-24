@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
-import '../../auth/dopamine_auth_config.dart';
+import '../../auth/present_dopamine_auth_screen.dart';
 import '../../auth/dopamine_user.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
@@ -14,19 +14,18 @@ import '../../data/models/asset_comment.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/dopamine_theme.dart';
 
-class AssetCommentsSection extends StatefulWidget {
-  const AssetCommentsSection({
+class AssetPostsSection extends StatefulWidget {
+  const AssetPostsSection({
     super.key,
     required this.symbol,
     required this.assetClass,
   });
 
-  /// 상세 API([AssetDetail]) 기준 — 리스트의 [RankedAsset.assetClass]가 비어 있어도 댓글 스레드가 동작하도록 함.
   final String symbol;
   final String assetClass;
 
   @override
-  State<AssetCommentsSection> createState() => _AssetCommentsSectionState();
+  State<AssetPostsSection> createState() => _AssetPostsSectionState();
 }
 
 class _FlatRow {
@@ -35,7 +34,7 @@ class _FlatRow {
   final int depth;
 }
 
-class _AssetCommentsSectionState extends State<AssetCommentsSection> {
+class _AssetPostsSectionState extends State<AssetPostsSection> {
   late Future<List<AssetComment>> _future;
   final _controller = TextEditingController();
   String? _replyParentId;
@@ -48,7 +47,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
   }
 
   @override
-  void didUpdateWidget(AssetCommentsSection oldWidget) {
+  void didUpdateWidget(AssetPostsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.symbol != widget.symbol ||
         oldWidget.assetClass != widget.assetClass) {
@@ -100,13 +99,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
   }
 
   Future<void> _openAuth(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (ctx) => AuthScreen<DopamineUser>(
-          config: dopamineAuthConfig(),
-        ),
-      ),
-    );
+    await presentDopamineAuthScreen(context);
     if (mounted) setState(() {});
   }
 
@@ -126,7 +119,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
       if (token == null || token.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.assetCommentsSendError)),
+            SnackBar(content: Text(l10n.assetPostsSendError)),
           );
         }
         return;
@@ -143,7 +136,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
       await _reload();
     } catch (e) {
       if (!context.mounted) return;
-      final msg = e is ApiException ? e.message : l10n.assetCommentsSendError;
+      final msg = e is ApiException ? e.message : l10n.assetPostsSendError;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
@@ -156,8 +149,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-
-    context.watch<AuthProvider<DopamineUser>>();
+    final auth = context.watch<AuthProvider<DopamineUser>>();
 
     return Padding(
       padding: const EdgeInsets.only(top: 14),
@@ -166,7 +158,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              l10n.assetCommentsTitle,
+              l10n.assetPostsTitle,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
                 color: DopamineTheme.neonGreen,
@@ -212,7 +204,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      l10n.assetCommentsEmpty,
+                      l10n.assetPostsEmpty,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: DopamineTheme.textSecondary,
                       ),
@@ -229,8 +221,11 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
                   itemBuilder: (context, i) {
                     final row = rows[i];
                     final c = row.comment;
-                    final locale = Localizations.localeOf(context).toLanguageTag();
-                    final timeStr = DateFormat.yMMMd(locale).add_jm().format(c.createdAt.toLocal());
+                    final locale =
+                        Localizations.localeOf(context).toLanguageTag();
+                    final timeStr = DateFormat.yMMMd(locale)
+                        .add_jm()
+                        .format(c.createdAt.toLocal());
                     return Padding(
                       padding: EdgeInsets.only(left: row.depth * 14.0),
                       child: Column(
@@ -276,7 +271,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
                                 _replyParentId = c.id;
                               });
                             },
-                            child: Text(l10n.assetCommentsReply),
+                            child: Text(l10n.assetPostsReply),
                           ),
                         ],
                       ),
@@ -291,7 +286,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
                 children: [
                   Expanded(
                     child: Text(
-                      l10n.assetCommentsReplying,
+                      l10n.assetPostsReplying,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: DopamineTheme.textSecondary,
                       ),
@@ -300,11 +295,25 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
                   TextButton(
                     onPressed: () => setState(() => _replyParentId = null),
                     child: Text(
-                      l10n.assetCommentsCancelReply,
+                      l10n.assetPostsCancelReply,
                       style: const TextStyle(color: DopamineTheme.textSecondary),
                     ),
                   ),
                 ],
+              ),
+            ],
+            if (!auth.isLoggedIn()) ...[
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => _openAuth(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: DopamineTheme.neonGreen,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(l10n.actionLogin),
+                ),
               ),
             ],
             const SizedBox(height: 10),
@@ -316,7 +325,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
                 color: DopamineTheme.textPrimary,
               ),
               decoration: InputDecoration(
-                hintText: l10n.assetCommentsPlaceholder,
+                hintText: l10n.assetPostsPlaceholder,
                 hintStyle: TextStyle(
                   color: DopamineTheme.textSecondary.withValues(alpha: 0.85),
                 ),
@@ -364,7 +373,7 @@ class _AssetCommentsSectionState extends State<AssetCommentsSection> {
                         color: Color(0xFF0A0A0A),
                       ),
                     )
-                  : Text(l10n.assetCommentsPost),
+                  : Text(l10n.assetPostsPublish),
             ),
           ],
         ),

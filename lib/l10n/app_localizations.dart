@@ -116,6 +116,18 @@ abstract class AppLocalizations {
   /// **'홈'**
   String get navHome;
 
+  /// No description provided for @actionLogin.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그인'**
+  String get actionLogin;
+
+  /// No description provided for @navCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티'**
+  String get navCommunity;
+
   /// No description provided for @navRankings.
   ///
   /// In ko, this message translates to:
@@ -458,53 +470,71 @@ abstract class AppLocalizations {
   /// **'가격 변동 (피드)'**
   String get assetDetailPriceChange;
 
-  /// No description provided for @assetCommentsTitle.
+  /// No description provided for @communitySortLatest.
   ///
   /// In ko, this message translates to:
-  /// **'댓글'**
-  String get assetCommentsTitle;
+  /// **'최신순'**
+  String get communitySortLatest;
 
-  /// No description provided for @assetCommentsEmpty.
+  /// No description provided for @communitySortPopular.
   ///
   /// In ko, this message translates to:
-  /// **'첫 댓글을 남겨보세요.'**
-  String get assetCommentsEmpty;
+  /// **'인기순'**
+  String get communitySortPopular;
 
-  /// No description provided for @assetCommentsPlaceholder.
+  /// No description provided for @communityReplyCount.
   ///
   /// In ko, this message translates to:
-  /// **'지금 이 자산에 대한 생각을 남겨보세요…'**
-  String get assetCommentsPlaceholder;
+  /// **'답글 {count}개'**
+  String communityReplyCount(int count);
 
-  /// No description provided for @assetCommentsPost.
+  /// No description provided for @assetPostsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시글'**
+  String get assetPostsTitle;
+
+  /// No description provided for @assetPostsEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'첫 게시글을 남겨보세요.'**
+  String get assetPostsEmpty;
+
+  /// No description provided for @assetPostsPlaceholder.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 자산에 대한 생각을 남겨보세요…'**
+  String get assetPostsPlaceholder;
+
+  /// No description provided for @assetPostsPublish.
   ///
   /// In ko, this message translates to:
   /// **'등록'**
-  String get assetCommentsPost;
+  String get assetPostsPublish;
 
-  /// No description provided for @assetCommentsReply.
+  /// No description provided for @assetPostsReply.
   ///
   /// In ko, this message translates to:
   /// **'답글'**
-  String get assetCommentsReply;
+  String get assetPostsReply;
 
-  /// No description provided for @assetCommentsReplying.
+  /// No description provided for @assetPostsReplying.
   ///
   /// In ko, this message translates to:
   /// **'답글 작성 중'**
-  String get assetCommentsReplying;
+  String get assetPostsReplying;
 
-  /// No description provided for @assetCommentsCancelReply.
+  /// No description provided for @assetPostsCancelReply.
   ///
   /// In ko, this message translates to:
   /// **'취소'**
-  String get assetCommentsCancelReply;
+  String get assetPostsCancelReply;
 
-  /// No description provided for @assetCommentsSendError.
+  /// No description provided for @assetPostsSendError.
   ///
   /// In ko, this message translates to:
-  /// **'댓글을 보내지 못했습니다.'**
-  String get assetCommentsSendError;
+  /// **'게시글을 등록하지 못했습니다.'**
+  String get assetPostsSendError;
 
   /// No description provided for @assetDetailMoveSummary.
   ///

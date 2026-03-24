@@ -7,6 +7,7 @@ import '../config/api_config.dart' show ApiConfig;
 import 'api_exception.dart';
 import '../../data/models/asset_chart_bar.dart';
 import '../../data/models/asset_comment.dart';
+import '../../data/models/community_post.dart';
 import '../../data/models/asset_detail.dart';
 import '../../data/models/asset_news.dart';
 import '../../data/models/market_summary.dart';
@@ -204,6 +205,31 @@ abstract final class DopamineApi {
       throw ApiException('Invalid market summary payload');
     }
     return MarketSummary.fromJson(decoded);
+  }
+
+  /// [sort]: `latest` | `popular` — 루트 게시글만(답글 제외).
+  static Future<List<CommunityPost>> fetchCommunityPosts({
+    required String sort,
+  }) async {
+    final uri = _uri('/api/feed/community-posts').replace(
+      queryParameters: {'sort': sort},
+    );
+    final response = await _client.get(uri, headers: _jsonHeaders);
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][community-posts] GET $uri');
+    }
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid community posts payload');
+    }
+    final items = decoded['items'];
+    if (items is! List<dynamic>) {
+      throw ApiException('Invalid community posts items');
+    }
+    return items
+        .map((e) => CommunityPost.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   static Future<List<AssetComment>> fetchAssetComments({

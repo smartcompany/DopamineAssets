@@ -3,6 +3,8 @@
   "appTitle": "도파민 자산",
   "homeHeaderTitleDecorated": "🔥 도파민 자산 🔥",
   "navHome": "홈",
+  "actionLogin": "로그인",
+  "navCommunity": "커뮤니티",
   "navRankings": "랭킹",
   "navThemes": "테마",
   "navMarket": "시장",
@@ -67,14 +69,24 @@
   "assetDetailNotAvailable": "—",
   "assetDetailOpenLinkFailed": "링크를 열 수 없습니다.",
   "assetDetailPriceChange": "가격 변동 (피드)",
-  "assetCommentsTitle": "댓글",
-  "assetCommentsEmpty": "첫 댓글을 남겨보세요.",
-  "assetCommentsPlaceholder": "지금 이 자산에 대한 생각을 남겨보세요…",
-  "assetCommentsPost": "등록",
-  "assetCommentsReply": "답글",
-  "assetCommentsReplying": "답글 작성 중",
-  "assetCommentsCancelReply": "취소",
-  "assetCommentsSendError": "댓글을 보내지 못했습니다.",
+  "communitySortLatest": "최신순",
+  "communitySortPopular": "인기순",
+  "communityReplyCount": "답글 {count}개",
+  "@communityReplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assetPostsTitle": "게시글",
+  "assetPostsEmpty": "첫 게시글을 남겨보세요.",
+  "assetPostsPlaceholder": "이 자산에 대한 생각을 남겨보세요…",
+  "assetPostsPublish": "등록",
+  "assetPostsReply": "답글",
+  "assetPostsReplying": "답글 작성 중",
+  "assetPostsCancelReply": "취소",
+  "assetPostsSendError": "게시글을 등록하지 못했습니다.",
   "assetDetailMoveSummary": "오늘 움직임 요약",
   "assetDetailMoveSummaryDisclaimer": "AI가 공개 수치만으로 생성한 참고용 문장이며, 투자 권유가 아닙니다.",
   "assetDetailNewsTitle": "뉴스",

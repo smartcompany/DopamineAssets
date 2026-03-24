@@ -3,6 +3,8 @@
   "appTitle": "Dopamine Assets",
   "homeHeaderTitleDecorated": "🔥 Dopamine Assets 🔥",
   "navHome": "Home",
+  "actionLogin": "Log in",
+  "navCommunity": "Community",
   "navRankings": "Rankings",
   "navThemes": "Themes",
   "navMarket": "Market",
@@ -67,14 +69,24 @@
   "assetDetailNotAvailable": "—",
   "assetDetailOpenLinkFailed": "Could not open link.",
   "assetDetailPriceChange": "Price change (feed)",
-  "assetCommentsTitle": "Comments",
-  "assetCommentsEmpty": "Be the first to comment.",
-  "assetCommentsPlaceholder": "Share your take on this asset…",
-  "assetCommentsPost": "Post",
-  "assetCommentsReply": "Reply",
-  "assetCommentsReplying": "Replying",
-  "assetCommentsCancelReply": "Cancel",
-  "assetCommentsSendError": "Could not post your comment.",
+  "communitySortLatest": "Latest",
+  "communitySortPopular": "Popular",
+  "communityReplyCount": "Replies: {count}",
+  "@communityReplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assetPostsTitle": "Posts",
+  "assetPostsEmpty": "Be the first to post.",
+  "assetPostsPlaceholder": "Share your take on this asset…",
+  "assetPostsPublish": "Post",
+  "assetPostsReply": "Reply",
+  "assetPostsReplying": "Replying",
+  "assetPostsCancelReply": "Cancel",
+  "assetPostsSendError": "Could not publish your post.",
   "assetDetailMoveSummary": "Today’s move (AI)",
   "assetDetailMoveSummaryDisclaimer": "AI-generated from public figures only—not investment advice.",
   "assetDetailNewsTitle": "Headlines",

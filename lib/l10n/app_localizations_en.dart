@@ -18,6 +18,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHome => 'Home';
 
   @override
+  String get actionLogin => 'Log in';
+
+  @override
+  String get navCommunity => 'Community';
+
+  @override
   String get navRankings => 'Rankings';
 
   @override
@@ -193,28 +199,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetDetailPriceChange => 'Price change (feed)';
 
   @override
-  String get assetCommentsTitle => 'Comments';
+  String get communitySortLatest => 'Latest';
 
   @override
-  String get assetCommentsEmpty => 'Be the first to comment.';
+  String get communitySortPopular => 'Popular';
 
   @override
-  String get assetCommentsPlaceholder => 'Share your take on this asset…';
+  String communityReplyCount(int count) {
+    return 'Replies: $count';
+  }
 
   @override
-  String get assetCommentsPost => 'Post';
+  String get assetPostsTitle => 'Posts';
 
   @override
-  String get assetCommentsReply => 'Reply';
+  String get assetPostsEmpty => 'Be the first to post.';
 
   @override
-  String get assetCommentsReplying => 'Replying';
+  String get assetPostsPlaceholder => 'Share your take on this asset…';
 
   @override
-  String get assetCommentsCancelReply => 'Cancel';
+  String get assetPostsPublish => 'Post';
 
   @override
-  String get assetCommentsSendError => 'Could not post your comment.';
+  String get assetPostsReply => 'Reply';
+
+  @override
+  String get assetPostsReplying => 'Replying';
+
+  @override
+  String get assetPostsCancelReply => 'Cancel';
+
+  @override
+  String get assetPostsSendError => 'Could not publish your post.';
 
   @override
   String get assetDetailMoveSummary => 'Today’s move (AI)';

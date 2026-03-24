@@ -51,6 +51,115 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
     });
   }
 
+  List<Widget> _newsBodyWidgets(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    AssetNewsFeed feed,
+  ) {
+    final items = feed.items;
+    final hasMore = items.length > _kNewsPreviewCount;
+    final visibleItems = _newsExpanded || !hasMore
+        ? items
+        : items.take(_kNewsPreviewCount).toList();
+
+    if (feed.loadFailed) {
+      return [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.assetDetailNewsError,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: DopamineTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _retry,
+                child: Text(l10n.retry),
+              ),
+            ),
+          ],
+        ),
+      ];
+    }
+    if (items.isEmpty) {
+      return [
+        Text(
+          l10n.assetDetailNewsEmpty,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: DopamineTheme.textSecondary,
+          ),
+        ),
+      ];
+    }
+
+    return [
+      ...visibleItems.map(
+        (item) => _NewsTile(
+          item: item,
+          onOpenFailed: () {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.assetDetailOpenLinkFailed),
+              ),
+            );
+          },
+        ),
+      ),
+      if (hasMore)
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: InkWell(
+            onTap: () {
+              setState(() => _newsExpanded = !_newsExpanded);
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 4,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _newsExpanded
+                        ? l10n.assetDetailNewsShowLess
+                        : l10n.assetDetailNewsShowMore,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: DopamineTheme.neonGreen,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    _newsExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: DopamineTheme.neonGreen,
+                    size: 26,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      const SizedBox(height: 10),
+      Text(
+        l10n.assetDetailNewsDisclaimer,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: DopamineTheme.textSecondary,
+          height: 1.35,
+        ),
+      ),
+    ];
+  }
+
   @override
   void didUpdateWidget(AssetNewsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -75,34 +184,8 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
       child: FutureBuilder<AssetNewsFeed>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return _GlassCard(
-              child: SizedBox(
-                height: 56,
-                child: Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: DopamineTheme.neonGreen.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }
-
+          final waiting = snapshot.connectionState == ConnectionState.waiting;
           final feed = snapshot.data;
-          if (feed == null) {
-            return const SizedBox.shrink();
-          }
-
-          final items = feed.items;
-          final hasMore = items.length > _kNewsPreviewCount;
-          final visibleItems = _newsExpanded || !hasMore
-              ? items
-              : items.take(_kNewsPreviewCount).toList();
 
           return _GlassCard(
             child: Column(
@@ -116,96 +199,25 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (feed.loadFailed)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        l10n.assetDetailNewsError,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: DopamineTheme.textSecondary,
+                if (waiting)
+                  SizedBox(
+                    height: 56,
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color:
+                              DopamineTheme.neonGreen.withValues(alpha: 0.9),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: _retry,
-                          child: Text(l10n.retry),
-                        ),
-                      ),
-                    ],
-                  )
-                else if (items.isEmpty)
-                  Text(
-                    l10n.assetDetailNewsEmpty,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: DopamineTheme.textSecondary,
                     ),
                   )
-                else ...[
-                  ...visibleItems.map(
-                    (item) => _NewsTile(
-                      item: item,
-                      onOpenFailed: () {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.assetDetailOpenLinkFailed),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (hasMore)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: InkWell(
-                        onTap: () {
-                          setState(() => _newsExpanded = !_newsExpanded);
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 4,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _newsExpanded
-                                    ? l10n.assetDetailNewsShowLess
-                                    : l10n.assetDetailNewsShowMore,
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  color: DopamineTheme.neonGreen,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                _newsExpanded
-                                    ? Icons.keyboard_arrow_up_rounded
-                                    : Icons.keyboard_arrow_down_rounded,
-                                color: DopamineTheme.neonGreen,
-                                size: 26,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-                if (!feed.loadFailed && items.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    l10n.assetDetailNewsDisclaimer,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: DopamineTheme.textSecondary,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
+                else if (feed == null)
+                  const SizedBox.shrink()
+                else
+                  ..._newsBodyWidgets(context, theme, l10n, feed),
               ],
             ),
           );

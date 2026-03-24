@@ -3,9 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 
-import '../market/market_summary_screen.dart';
-import '../rankings/rankings_screen.dart';
-import '../themes/themes_screen.dart';
+import '../community/community_screen.dart';
 import 'home_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -23,9 +21,7 @@ class _HomeShellState extends State<HomeShell> {
     final l10n = AppLocalizations.of(context)!;
     final pages = <Widget>[
       const HomeScreen(),
-      const RankingsScreen(),
-      const ThemesScreen(),
-      const MarketSummaryScreen(),
+      const CommunityScreen(),
     ];
 
     return Scaffold(
@@ -54,19 +50,9 @@ class _HomeShellState extends State<HomeShell> {
                   label: l10n.navHome,
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.trending_up_outlined),
-                  selectedIcon: const Icon(Icons.trending_up),
-                  label: l10n.navRankings,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.category_outlined),
-                  selectedIcon: const Icon(Icons.category),
-                  label: l10n.navThemes,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.public_outlined),
-                  selectedIcon: const Icon(Icons.public),
-                  label: l10n.navMarket,
+                  icon: const Icon(Icons.forum_outlined),
+                  selectedIcon: const Icon(Icons.forum_rounded),
+                  label: l10n.navCommunity,
                 ),
               ],
             ),
