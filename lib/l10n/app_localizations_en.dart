@@ -24,6 +24,173 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navCommunity => 'Community';
 
   @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get profileSignedInSection => 'Account';
+
+  @override
+  String get profileDisplayName => 'Display name';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileUid => 'User ID';
+
+  @override
+  String get profileNoEmail => 'Not set (social login)';
+
+  @override
+  String get profileLogout => 'Log out';
+
+  @override
+  String get profileLogoutDone => 'Signed out.';
+
+  @override
+  String get profileDeleteAccount => 'Delete account';
+
+  @override
+  String get profileDeleteTitle => 'Delete account?';
+
+  @override
+  String get profileDeleteMessage =>
+      'This cannot be undone. Your Firebase account and sign-in will be removed.';
+
+  @override
+  String get profileDeleteCancel => 'Cancel';
+
+  @override
+  String get profileDeleteConfirm => 'Delete';
+
+  @override
+  String get profileDeleteDone => 'Account deleted.';
+
+  @override
+  String get profileRequiresRecentLogin =>
+      'Please sign in again and retry (security).';
+
+  @override
+  String get profileNotSignedIn => 'Sign in to see your account.';
+
+  @override
+  String get profileSaveDisplayName => 'Save';
+
+  @override
+  String get profileDisplayNameHint => 'How your name appears on posts';
+
+  @override
+  String get profileStatPosts => 'Posts';
+
+  @override
+  String get profileStatFollowing => 'Following';
+
+  @override
+  String get profileStatFollowers => 'Followers';
+
+  @override
+  String get profileActivityTitle => 'Activity';
+
+  @override
+  String get profileActivityMyPost => 'Your post';
+
+  @override
+  String profileActivityPostOnAsset(String assetName) {
+    return 'Post on $assetName';
+  }
+
+  @override
+  String get profileActivityMyReply => 'Your reply';
+
+  @override
+  String get profileActivityReplyOnPost => 'Reply on your post';
+
+  @override
+  String get profileActivityLikeReceived => 'Like on your comment';
+
+  @override
+  String get profileActivityLikeGiven => 'You liked a comment';
+
+  @override
+  String get profileFollowListEmpty => 'No users yet.';
+
+  @override
+  String get profileDisplayNameSaved => 'Display name updated.';
+
+  @override
+  String get profileFollowTitleFollowing => 'Following';
+
+  @override
+  String get profileFollowTitleFollowers => 'Followers';
+
+  @override
+  String get communityFollow => 'Follow';
+
+  @override
+  String get communityUnfollow => 'Following';
+
+  @override
+  String get communityOpenAssetDetail => 'Asset details';
+
+  @override
+  String get communityLikeLogin => 'Sign in to like.';
+
+  @override
+  String communityLikeCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String get communityWrite => 'Write';
+
+  @override
+  String get communityComposeTitle => 'New post';
+
+  @override
+  String get communityComposeSubmit => 'Post';
+
+  @override
+  String get communityComposeOptionalTitle => 'Title (optional)';
+
+  @override
+  String get communityComposeTitleHint => 'Add a title or leave blank';
+
+  @override
+  String get communityComposeSymbolLabel => 'Symbol';
+
+  @override
+  String get communityComposeSymbolHint => 'e.g. TSLA, IBRX';
+
+  @override
+  String get communityComposeAssetClassLabel => 'Asset type';
+
+  @override
+  String get communityComposeBodyLabel => 'Body';
+
+  @override
+  String get communityComposeBodyHint =>
+      'Spam, ads, harassment, or abuse may be removed; repeated violations may restrict your account. Please keep discussion respectful.';
+
+  @override
+  String get communityComposePhotosLabel => 'Photos';
+
+  @override
+  String get communityComposeNeedSymbol => 'Choose a symbol.';
+
+  @override
+  String get communityComposeNeedBody => 'Enter the body text.';
+
+  @override
+  String get communityComposePickSymbol => 'Choose symbol';
+
+  @override
+  String get communityComposeNoRankedSymbols =>
+      'No ranked symbols for this asset type. Open Home to load rankings and try again.';
+
+  @override
+  String get communityComposeAddPhotoShort => 'Photo';
+
+  @override
   String get navRankings => 'Rankings';
 
   @override
@@ -210,7 +377,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get assetPostsTitle => 'Posts';
+  String get assetPostsTitle => 'Recent reactions';
 
   @override
   String get assetPostsEmpty => 'Be the first to post.';
@@ -259,6 +426,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assetDetailNewsShowLess => 'Show less';
+
+  @override
+  String get assetDetailOpenCommunity => 'Community';
+
+  @override
+  String get communitySearchHint => 'Search words in posts (OR)…';
 
   @override
   String get assetDetailOpenChart => 'View chart';

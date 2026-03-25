@@ -3,28 +3,62 @@ final class AssetComment {
     required this.id,
     this.parentId,
     required this.body,
+    this.title,
+    this.imageUrls = const [],
     required this.authorUid,
     required this.authorDisplayName,
     required this.createdAt,
+    this.likeCount = 0,
+    this.likedByMe = false,
   });
 
   final String id;
   final String? parentId;
   final String body;
+  final String? title;
+  final List<String> imageUrls;
   final String authorUid;
   final String authorDisplayName;
   final DateTime createdAt;
+  final int likeCount;
+  final bool likedByMe;
+
+  AssetComment copyWith({
+    int? likeCount,
+    bool? likedByMe,
+  }) {
+    return AssetComment(
+      id: id,
+      parentId: parentId,
+      body: body,
+      title: title,
+      imageUrls: imageUrls,
+      authorUid: authorUid,
+      authorDisplayName: authorDisplayName,
+      createdAt: createdAt,
+      likeCount: likeCount ?? this.likeCount,
+      likedByMe: likedByMe ?? this.likedByMe,
+    );
+  }
 
   factory AssetComment.fromJson(Map<String, dynamic> json) {
     final rawName = json['author_display_name'] as String?;
     final name = rawName == null || rawName.trim().isEmpty ? 'User' : rawName.trim();
+    final rawUrls = json['image_urls'];
+    final urls = rawUrls is List<dynamic>
+        ? rawUrls.map((e) => e as String).toList()
+        : const <String>[];
     return AssetComment(
       id: json['id'] as String,
       parentId: json['parent_id'] as String?,
       body: json['body'] as String,
+      title: json['title'] as String?,
+      imageUrls: urls,
       authorUid: json['author_uid'] as String,
       authorDisplayName: name,
       createdAt: DateTime.parse(json['created_at'] as String),
+      likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
+      likedByMe: json['liked_by_me'] as bool? ?? false,
     );
   }
 }

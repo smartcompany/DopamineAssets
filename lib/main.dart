@@ -6,6 +6,8 @@ import 'package:share_lib/share_lib.dart';
 import 'app.dart';
 import 'auth/dopamine_auth_service.dart';
 import 'auth/dopamine_user.dart';
+import 'core/feed/home_asset_suggestions.dart';
+import 'core/navigation/home_shell_navigation.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -26,8 +28,18 @@ Future<void> main() async {
   );
   await authProvider.initialize();
   runApp(
-    ChangeNotifierProvider<AuthProvider<DopamineUser>>.value(
-      value: authProvider,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthProvider<DopamineUser>>.value(
+          value: authProvider,
+        ),
+        ChangeNotifierProvider<HomeShellNavigation>(
+          create: (_) => HomeShellNavigation(),
+        ),
+        ChangeNotifierProvider<HomeAssetSuggestions>(
+          create: (_) => HomeAssetSuggestions(),
+        ),
+      ],
       child: const DopamineApp(),
     ),
   );

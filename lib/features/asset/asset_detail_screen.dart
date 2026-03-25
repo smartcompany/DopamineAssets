@@ -2,8 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/formatting/percent_format.dart';
 import '../../core/navigation/asset_chart_url.dart';
 import '../../core/network/api_exception.dart';
@@ -150,6 +152,31 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                       ),
                                 ),
                               ),
+                              IconButton(
+                                tooltip: l10n.assetDetailOpenCommunity,
+                                style: IconButton.styleFrom(
+                                  foregroundColor: DopamineTheme.neonGreen
+                                      .withValues(alpha: 0.95),
+                                  side: BorderSide(
+                                    color: DopamineTheme.neonGreen
+                                        .withValues(alpha: 0.5),
+                                    width: 1.25,
+                                  ),
+                                  shape: const CircleBorder(),
+                                  padding: const EdgeInsets.all(10),
+                                ),
+                                onPressed: () {
+                                  context
+                                      .read<HomeShellNavigation>()
+                                      .openCommunityForAsset(
+                                        symbol: d.symbol,
+                                        assetClass: d.assetClass,
+                                        displayName: d.name,
+                                      );
+                                  Navigator.of(context).pop();
+                                },
+                                icon: const Icon(Icons.forum_rounded),
+                              ),
                               if (chartUri != null)
                                 IconButton(
                                   tooltip: l10n.assetDetailOpenChart,
@@ -294,6 +321,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                     AssetPostsSection(
                       symbol: d.symbol,
                       assetClass: d.assetClass,
+                      displayName: d.name,
                     ),
                     if (d.description != null &&
                         d.description!.trim().isNotEmpty)

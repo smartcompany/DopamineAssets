@@ -2,8 +2,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/navigation/home_shell_navigation.dart';
 import '../community/community_screen.dart';
+import '../profile/profile_screen.dart';
 import 'home_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -14,18 +17,21 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final pages = <Widget>[
-      const HomeScreen(),
-      const CommunityScreen(),
-    ];
+    final nav = context.watch<HomeShellNavigation>();
 
     return Scaffold(
-      body: pages[_index],
+      body: IndexedStack(
+        index: nav.tabIndex,
+        sizing: StackFit.expand,
+        children: const [
+          HomeScreen(),
+          CommunityScreen(),
+          ProfileScreen(),
+        ],
+      ),
       extendBody: true,
       bottomNavigationBar: ClipRect(
         child: BackdropFilter(
@@ -41,8 +47,8 @@ class _HomeShellState extends State<HomeShell> {
             ),
             child: NavigationBar(
               backgroundColor: Colors.transparent,
-              selectedIndex: _index,
-              onDestinationSelected: (value) => setState(() => _index = value),
+              selectedIndex: nav.tabIndex,
+              onDestinationSelected: nav.setTabIndex,
               destinations: [
                 NavigationDestination(
                   icon: const Icon(Icons.home_outlined),
@@ -53,6 +59,11 @@ class _HomeShellState extends State<HomeShell> {
                   icon: const Icon(Icons.forum_outlined),
                   selectedIcon: const Icon(Icons.forum_rounded),
                   label: l10n.navCommunity,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.person_outline_rounded),
+                  selectedIcon: const Icon(Icons.person_rounded),
+                  label: l10n.navProfile,
                 ),
               ],
             ),

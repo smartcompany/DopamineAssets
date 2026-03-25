@@ -128,6 +128,324 @@ abstract class AppLocalizations {
   /// **'커뮤니티'**
   String get navCommunity;
 
+  /// No description provided for @navProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필'**
+  String get navProfile;
+
+  /// No description provided for @profileSignedInSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정'**
+  String get profileSignedInSection;
+
+  /// No description provided for @profileDisplayName.
+  ///
+  /// In ko, this message translates to:
+  /// **'표시 이름'**
+  String get profileDisplayName;
+
+  /// No description provided for @profileEmail.
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일'**
+  String get profileEmail;
+
+  /// No description provided for @profileUid.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용자 ID'**
+  String get profileUid;
+
+  /// No description provided for @profileNoEmail.
+  ///
+  /// In ko, this message translates to:
+  /// **'없음 (소셜 로그인)'**
+  String get profileNoEmail;
+
+  /// No description provided for @profileLogout.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그아웃'**
+  String get profileLogout;
+
+  /// No description provided for @profileLogoutDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그아웃했습니다.'**
+  String get profileLogoutDone;
+
+  /// No description provided for @profileDeleteAccount.
+  ///
+  /// In ko, this message translates to:
+  /// **'탈퇴하기'**
+  String get profileDeleteAccount;
+
+  /// No description provided for @profileDeleteTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'탈퇴할까요?'**
+  String get profileDeleteTitle;
+
+  /// No description provided for @profileDeleteMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'되돌릴 수 없습니다. Firebase 계정과 로그인 정보가 삭제됩니다.'**
+  String get profileDeleteMessage;
+
+  /// No description provided for @profileDeleteCancel.
+  ///
+  /// In ko, this message translates to:
+  /// **'취소'**
+  String get profileDeleteCancel;
+
+  /// No description provided for @profileDeleteConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'탈퇴'**
+  String get profileDeleteConfirm;
+
+  /// No description provided for @profileDeleteDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'탈퇴 처리되었습니다.'**
+  String get profileDeleteDone;
+
+  /// No description provided for @profileRequiresRecentLogin.
+  ///
+  /// In ko, this message translates to:
+  /// **'보안을 위해 다시 로그인한 뒤 시도해 주세요.'**
+  String get profileRequiresRecentLogin;
+
+  /// No description provided for @profileNotSignedIn.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그인하면 계정 정보를 볼 수 있습니다.'**
+  String get profileNotSignedIn;
+
+  /// No description provided for @profileSaveDisplayName.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장'**
+  String get profileSaveDisplayName;
+
+  /// No description provided for @profileDisplayNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시글에 표시되는 이름'**
+  String get profileDisplayNameHint;
+
+  /// No description provided for @profileStatPosts.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시글'**
+  String get profileStatPosts;
+
+  /// No description provided for @profileStatFollowing.
+  ///
+  /// In ko, this message translates to:
+  /// **'팔로잉'**
+  String get profileStatFollowing;
+
+  /// No description provided for @profileStatFollowers.
+  ///
+  /// In ko, this message translates to:
+  /// **'팔로워'**
+  String get profileStatFollowers;
+
+  /// No description provided for @profileActivityTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'활동 내역'**
+  String get profileActivityTitle;
+
+  /// No description provided for @profileActivityMyPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'내가 쓴 글'**
+  String get profileActivityMyPost;
+
+  /// No description provided for @profileActivityPostOnAsset.
+  ///
+  /// In ko, this message translates to:
+  /// **'{assetName} 에 쓴 글'**
+  String profileActivityPostOnAsset(String assetName);
+
+  /// No description provided for @profileActivityMyReply.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 답글'**
+  String get profileActivityMyReply;
+
+  /// No description provided for @profileActivityReplyOnPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 글에 달린 댓글'**
+  String get profileActivityReplyOnPost;
+
+  /// No description provided for @profileActivityLikeReceived.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 댓글에 좋아요'**
+  String get profileActivityLikeReceived;
+
+  /// No description provided for @profileActivityLikeGiven.
+  ///
+  /// In ko, this message translates to:
+  /// **'좋아요를 누른 댓글'**
+  String get profileActivityLikeGiven;
+
+  /// No description provided for @profileFollowListEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 없습니다.'**
+  String get profileFollowListEmpty;
+
+  /// No description provided for @profileDisplayNameSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'표시 이름을 저장했습니다.'**
+  String get profileDisplayNameSaved;
+
+  /// No description provided for @profileFollowTitleFollowing.
+  ///
+  /// In ko, this message translates to:
+  /// **'팔로잉'**
+  String get profileFollowTitleFollowing;
+
+  /// No description provided for @profileFollowTitleFollowers.
+  ///
+  /// In ko, this message translates to:
+  /// **'팔로워'**
+  String get profileFollowTitleFollowers;
+
+  /// No description provided for @communityFollow.
+  ///
+  /// In ko, this message translates to:
+  /// **'팔로우'**
+  String get communityFollow;
+
+  /// No description provided for @communityUnfollow.
+  ///
+  /// In ko, this message translates to:
+  /// **'팔로잉 중'**
+  String get communityUnfollow;
+
+  /// No description provided for @communityOpenAssetDetail.
+  ///
+  /// In ko, this message translates to:
+  /// **'종목 상세'**
+  String get communityOpenAssetDetail;
+
+  /// No description provided for @communityLikeLogin.
+  ///
+  /// In ko, this message translates to:
+  /// **'좋아요하려면 로그인하세요.'**
+  String get communityLikeLogin;
+
+  /// No description provided for @communityLikeCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}'**
+  String communityLikeCount(int count);
+
+  /// No description provided for @communityWrite.
+  ///
+  /// In ko, this message translates to:
+  /// **'글쓰기'**
+  String get communityWrite;
+
+  /// No description provided for @communityComposeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'글쓰기'**
+  String get communityComposeTitle;
+
+  /// No description provided for @communityComposeSubmit.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시'**
+  String get communityComposeSubmit;
+
+  /// No description provided for @communityComposeOptionalTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'제목 (선택)'**
+  String get communityComposeOptionalTitle;
+
+  /// No description provided for @communityComposeTitleHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'제목을 입력하거나 비워 두세요'**
+  String get communityComposeTitleHint;
+
+  /// No description provided for @communityComposeSymbolLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'종목 심볼'**
+  String get communityComposeSymbolLabel;
+
+  /// No description provided for @communityComposeSymbolHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: TSLA, IBRX'**
+  String get communityComposeSymbolHint;
+
+  /// No description provided for @communityComposeAssetClassLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'자산 유형'**
+  String get communityComposeAssetClassLabel;
+
+  /// No description provided for @communityComposeBodyLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'본문'**
+  String get communityComposeBodyLabel;
+
+  /// No description provided for @communityComposeBodyHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'광고·비난·도배 등 부적절한 글은 삭제될 수 있으며, 반복 시 활동이 제한될 수 있습니다. 건전한 토론을 부탁드립니다.'**
+  String get communityComposeBodyHint;
+
+  /// No description provided for @communityComposePhotosLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진'**
+  String get communityComposePhotosLabel;
+
+  /// No description provided for @communityComposeNeedSymbol.
+  ///
+  /// In ko, this message translates to:
+  /// **'종목을 선택해 주세요.'**
+  String get communityComposeNeedSymbol;
+
+  /// No description provided for @communityComposeNeedBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'본문을 입력해 주세요.'**
+  String get communityComposeNeedBody;
+
+  /// No description provided for @communityComposePickSymbol.
+  ///
+  /// In ko, this message translates to:
+  /// **'종목 선택'**
+  String get communityComposePickSymbol;
+
+  /// No description provided for @communityComposeNoRankedSymbols.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 자산 유형의 랭킹 종목이 없습니다. 홈에서 랭킹을 불러온 뒤 다시 시도해 주세요.'**
+  String get communityComposeNoRankedSymbols;
+
+  /// No description provided for @communityComposeAddPhotoShort.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진'**
+  String get communityComposeAddPhotoShort;
+
   /// No description provided for @navRankings.
   ///
   /// In ko, this message translates to:
@@ -491,7 +809,7 @@ abstract class AppLocalizations {
   /// No description provided for @assetPostsTitle.
   ///
   /// In ko, this message translates to:
-  /// **'게시글'**
+  /// **'최근 반응'**
   String get assetPostsTitle;
 
   /// No description provided for @assetPostsEmpty.
@@ -583,6 +901,18 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'접기'**
   String get assetDetailNewsShowLess;
+
+  /// No description provided for @assetDetailOpenCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티'**
+  String get assetDetailOpenCommunity;
+
+  /// No description provided for @communitySearchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시글 본문 검색 (OR)…'**
+  String get communitySearchHint;
 
   /// No description provided for @assetDetailOpenChart.
   ///

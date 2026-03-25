@@ -8,6 +8,7 @@ import 'package:share_lib/share_lib.dart';
 
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
+import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/config/api_config.dart';
 import '../../core/formatting/percent_format.dart';
 import '../../core/network/dopamine_api.dart';
@@ -118,6 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
         _rankingsLoading = false;
         _rankingsError = null;
       });
+      if (mounted) {
+        context.read<HomeAssetSuggestions>().setFromRankings(
+          results[0],
+          results[1],
+        );
+      }
     } catch (e) {
       if (!mounted || id != _rankingRequestId) {
         _logRankings('request #$id error ignored (stale or unmounted): $e');

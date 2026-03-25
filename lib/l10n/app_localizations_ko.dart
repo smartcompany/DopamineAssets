@@ -24,6 +24,171 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navCommunity => '커뮤니티';
 
   @override
+  String get navProfile => '프로필';
+
+  @override
+  String get profileSignedInSection => '계정';
+
+  @override
+  String get profileDisplayName => '표시 이름';
+
+  @override
+  String get profileEmail => '이메일';
+
+  @override
+  String get profileUid => '사용자 ID';
+
+  @override
+  String get profileNoEmail => '없음 (소셜 로그인)';
+
+  @override
+  String get profileLogout => '로그아웃';
+
+  @override
+  String get profileLogoutDone => '로그아웃했습니다.';
+
+  @override
+  String get profileDeleteAccount => '탈퇴하기';
+
+  @override
+  String get profileDeleteTitle => '탈퇴할까요?';
+
+  @override
+  String get profileDeleteMessage => '되돌릴 수 없습니다. Firebase 계정과 로그인 정보가 삭제됩니다.';
+
+  @override
+  String get profileDeleteCancel => '취소';
+
+  @override
+  String get profileDeleteConfirm => '탈퇴';
+
+  @override
+  String get profileDeleteDone => '탈퇴 처리되었습니다.';
+
+  @override
+  String get profileRequiresRecentLogin => '보안을 위해 다시 로그인한 뒤 시도해 주세요.';
+
+  @override
+  String get profileNotSignedIn => '로그인하면 계정 정보를 볼 수 있습니다.';
+
+  @override
+  String get profileSaveDisplayName => '저장';
+
+  @override
+  String get profileDisplayNameHint => '게시글에 표시되는 이름';
+
+  @override
+  String get profileStatPosts => '게시글';
+
+  @override
+  String get profileStatFollowing => '팔로잉';
+
+  @override
+  String get profileStatFollowers => '팔로워';
+
+  @override
+  String get profileActivityTitle => '활동 내역';
+
+  @override
+  String get profileActivityMyPost => '내가 쓴 글';
+
+  @override
+  String profileActivityPostOnAsset(String assetName) {
+    return '$assetName 에 쓴 글';
+  }
+
+  @override
+  String get profileActivityMyReply => '내 답글';
+
+  @override
+  String get profileActivityReplyOnPost => '내 글에 달린 댓글';
+
+  @override
+  String get profileActivityLikeReceived => '내 댓글에 좋아요';
+
+  @override
+  String get profileActivityLikeGiven => '좋아요를 누른 댓글';
+
+  @override
+  String get profileFollowListEmpty => '아직 없습니다.';
+
+  @override
+  String get profileDisplayNameSaved => '표시 이름을 저장했습니다.';
+
+  @override
+  String get profileFollowTitleFollowing => '팔로잉';
+
+  @override
+  String get profileFollowTitleFollowers => '팔로워';
+
+  @override
+  String get communityFollow => '팔로우';
+
+  @override
+  String get communityUnfollow => '팔로잉 중';
+
+  @override
+  String get communityOpenAssetDetail => '종목 상세';
+
+  @override
+  String get communityLikeLogin => '좋아요하려면 로그인하세요.';
+
+  @override
+  String communityLikeCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String get communityWrite => '글쓰기';
+
+  @override
+  String get communityComposeTitle => '글쓰기';
+
+  @override
+  String get communityComposeSubmit => '게시';
+
+  @override
+  String get communityComposeOptionalTitle => '제목 (선택)';
+
+  @override
+  String get communityComposeTitleHint => '제목을 입력하거나 비워 두세요';
+
+  @override
+  String get communityComposeSymbolLabel => '종목 심볼';
+
+  @override
+  String get communityComposeSymbolHint => '예: TSLA, IBRX';
+
+  @override
+  String get communityComposeAssetClassLabel => '자산 유형';
+
+  @override
+  String get communityComposeBodyLabel => '본문';
+
+  @override
+  String get communityComposeBodyHint =>
+      '광고·비난·도배 등 부적절한 글은 삭제될 수 있으며, 반복 시 활동이 제한될 수 있습니다. 건전한 토론을 부탁드립니다.';
+
+  @override
+  String get communityComposePhotosLabel => '사진';
+
+  @override
+  String get communityComposeNeedSymbol => '종목을 선택해 주세요.';
+
+  @override
+  String get communityComposeNeedBody => '본문을 입력해 주세요.';
+
+  @override
+  String get communityComposePickSymbol => '종목 선택';
+
+  @override
+  String get communityComposeNoRankedSymbols =>
+      '이 자산 유형의 랭킹 종목이 없습니다. 홈에서 랭킹을 불러온 뒤 다시 시도해 주세요.';
+
+  @override
+  String get communityComposeAddPhotoShort => '사진';
+
+  @override
   String get navRankings => '랭킹';
 
   @override
@@ -209,7 +374,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get assetPostsTitle => '게시글';
+  String get assetPostsTitle => '최근 반응';
 
   @override
   String get assetPostsEmpty => '첫 게시글을 남겨보세요.';
@@ -256,6 +421,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get assetDetailNewsShowLess => '접기';
+
+  @override
+  String get assetDetailOpenCommunity => '커뮤니티';
+
+  @override
+  String get communitySearchHint => '게시글 본문 검색 (OR)…';
 
   @override
   String get assetDetailOpenChart => '차트 보기';

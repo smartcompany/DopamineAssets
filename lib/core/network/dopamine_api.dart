@@ -13,6 +13,7 @@ import '../../data/models/asset_news.dart';
 import '../../data/models/market_summary.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
+import '../../data/models/profile_activity_item.dart';
 
 abstract final class DopamineApi {
   DopamineApi._();
@@ -210,11 +211,29 @@ abstract final class DopamineApi {
   /// [sort]: `latest` | `popular` — 루트 게시글만(답글 제외).
   static Future<List<CommunityPost>> fetchCommunityPosts({
     required String sort,
+    String? symbol,
+    String? assetClass,
+    List<String>? bodyTerms,
+    String? idToken,
   }) async {
+    final q = <String, String>{
+      'sort': sort,
+      if (symbol != null &&
+          symbol.isNotEmpty &&
+          assetClass != null &&
+          assetClass.isNotEmpty) ...{
+        'symbol': symbol,
+        'assetClass': assetClass,
+      },
+      if (bodyTerms != null && bodyTerms.isNotEmpty)
+        'q': bodyTerms.join(','),
+    };
     final uri = _uri('/api/feed/community-posts').replace(
-      queryParameters: {'sort': sort},
+      queryParameters: q,
     );
-    final response = await _client.get(uri, headers: _jsonHeaders);
+    final headers =
+        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final response = await _client.get(uri, headers: headers);
     if (kDebugMode) {
       debugPrint('[DopamineApi][community-posts] GET $uri');
     }
@@ -235,6 +254,7 @@ abstract final class DopamineApi {
   static Future<List<AssetComment>> fetchAssetComments({
     required String symbol,
     required String assetClass,
+    String? idToken,
   }) async {
     final uri = _uri('/api/feed/asset-comments').replace(
       queryParameters: {
@@ -242,7 +262,9 @@ abstract final class DopamineApi {
         'assetClass': assetClass,
       },
     );
-    final response = await _client.get(uri, headers: _jsonHeaders);
+    final headers =
+        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final response = await _client.get(uri, headers: headers);
     if (kDebugMode) {
       debugPrint('[DopamineApi][asset-comments] GET $uri');
     }
@@ -265,6 +287,9 @@ abstract final class DopamineApi {
     required String assetClass,
     required String body,
     String? parentId,
+    String? title,
+    List<String>? imageUrls,
+    String? assetDisplayName,
     required String idToken,
   }) async {
     final uri = _uri('/api/feed/asset-comments');
@@ -273,6 +298,10 @@ abstract final class DopamineApi {
       'assetClass': assetClass,
       'body': body,
       'parentId': parentId,
+      if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+      if (imageUrls != null && imageUrls.isNotEmpty) 'imageUrls': imageUrls,
+      if (assetDisplayName != null && assetDisplayName.trim().isNotEmpty)
+        'assetDisplayName': assetDisplayName.trim(),
     };
     final response = await _client.post(
       uri,
@@ -297,6 +326,173 @@ abstract final class DopamineApi {
     }
     return AssetComment.fromJson(item);
   }
+
+  static Future<ProfileStats> fetchProfileStats({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/stats'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid profile stats');
+    }
+    return ProfileStats.fromJson(decoded);
+  }
+
+  static Future<List<ProfileActivityItem>> fetchProfileActivity({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/activity'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid profile activity');
+    }
+    final items = decoded['items'];
+    if (items is! List<dynamic>) {
+      throw ApiException('Invalid profile activity items');
+    }
+    return items
+        .map((e) => ProfileActivityItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<List<ProfileUserRow>> fetchProfileFollowing({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/following'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid following list');
+    }
+    final items = decoded['items'];
+    if (items is! List<dynamic>) {
+      throw ApiException('Invalid following items');
+    }
+    return items
+        .map((e) => ProfileUserRow.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<List<ProfileUserRow>> fetchProfileFollowers({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/followers'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid followers list');
+    }
+    final items = decoded['items'];
+    if (items is! List<dynamic>) {
+      throw ApiException('Invalid followers items');
+    }
+    return items
+        .map((e) => ProfileUserRow.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<void> patchProfileDisplayName({
+    required String idToken,
+    required String displayName,
+  }) async {
+    final response = await _client.patch(
+      _uri('/api/profile/me'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({'displayName': displayName}),
+    );
+    _ensureOk(response);
+  }
+
+  static Future<void> followUser({
+    required String idToken,
+    required String targetUid,
+  }) async {
+    final response = await _client.post(
+      _uri('/api/profile/follow'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({'targetUid': targetUid}),
+    );
+    _ensureOk(response);
+  }
+
+  static Future<void> unfollowUser({
+    required String idToken,
+    required String targetUid,
+  }) async {
+    final uri = _uri('/api/profile/follow').replace(
+      queryParameters: {'targetUid': targetUid},
+    );
+    final response = await _client.delete(uri, headers: _bearerHeaders(idToken));
+    _ensureOk(response);
+  }
+
+  static Future<Map<String, bool>> fetchFollowStatus({
+    required String idToken,
+    required List<String> targetUids,
+  }) async {
+    if (targetUids.isEmpty) return {};
+    final response = await _client.post(
+      _uri('/api/profile/follow-status'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({'targetUids': targetUids}),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid follow status');
+    }
+    final raw = decoded['following'];
+    if (raw is! Map<String, dynamic>) {
+      throw ApiException('Invalid follow status map');
+    }
+    return raw.map((k, v) => MapEntry(k, v == true));
+  }
+
+  /// 서버 토글 후 현재 좋아요 여부와 개수.
+  static Future<({bool liked, int likeCount})> toggleCommentLike({
+    required String idToken,
+    required String commentId,
+  }) async {
+    final response = await _client.post(
+      _uri('/api/feed/comment-like'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({'commentId': commentId}),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid comment like response');
+    }
+    return (
+      liked: decoded['liked'] as bool? ?? false,
+      likeCount: (decoded['likeCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  static Map<String, String> _bearerHeaders(String idToken) => {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      };
+
+  static Map<String, String> _jsonBearerHeaders(String idToken) => {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      };
 
   static Map<String, String> get _jsonHeaders => const {
         'Accept': 'application/json',
