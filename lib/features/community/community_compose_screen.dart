@@ -12,6 +12,7 @@ import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/storage/community_post_image_upload.dart';
+import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
 
@@ -20,10 +21,18 @@ class CommunityComposeScreen extends StatefulWidget {
     super.key,
     this.initialSymbol,
     this.initialAssetClass,
+    this.editCommentId,
+    this.editPrefill,
   });
 
   final String? initialSymbol;
   final String? initialAssetClass;
+
+  /// 프로필 등에서 수정 시 — 전체 댓글을 GET으로 불러옴
+  final String? editCommentId;
+
+  /// 커뮤니티 목록에서 수정 시 — 동일 데이터로 GET 생략
+  final CommunityPost? editPrefill;
 
   @override
   State<CommunityComposeScreen> createState() => _CommunityComposeScreenState();
@@ -39,7 +48,11 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   String _assetClass = 'us_stock';
   RankedAsset? _selectedAsset;
   final List<XFile> _images = [];
+  final List<String> _existingImageUrls = [];
   bool _submitting = false;
+
+  bool _editLoading = false;
+  bool _isReplyEdit = false;
 
   static const _classes = <String>[
     'us_stock',
@@ -47,6 +60,15 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     'crypto',
     'commodity',
   ];
+
+  bool get _isEditMode =>
+      widget.editPrefill != null || widget.editCommentId != null;
+
+  String? get _effectiveEditId =>
+      widget.editPrefill?.id ?? widget.editCommentId;
+
+  bool get _lockAssetPick =>
+      _isEditMode && !_isReplyEdit;
 
   @override
   void initState() {
@@ -57,12 +79,110 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final sug = context.read<HomeAssetSuggestions>();
-      setState(() => _syncSelectionFromSuggestions(sug));
+      if (widget.editPrefill != null) {
+        _applyCommunityPostPrefill(widget.editPrefill!);
+      } else if (widget.editCommentId != null) {
+        _loadEditComment();
+      } else {
+        final sug = context.read<HomeAssetSuggestions>();
+        setState(() => _syncSelectionFromSuggestions(sug));
+      }
     });
     _bodyFocusNode.addListener(() {
       if (mounted) setState(() {});
     });
+  }
+
+  RankedAsset _resolveAsset(
+    HomeAssetSuggestions sug,
+    String symbol,
+    String assetClass,
+    String? displayName,
+  ) {
+    final list = sug.assetsForClass(assetClass);
+    for (final a in list) {
+      if (a.symbol == symbol) return a;
+    }
+    return RankedAsset.communityShell(
+      symbol: symbol,
+      assetClass: assetClass,
+      displayName: displayName,
+    );
+  }
+
+  void _applyCommunityPostPrefill(CommunityPost p) {
+    final sug = context.read<HomeAssetSuggestions>();
+    setState(() {
+      _isReplyEdit = false;
+      _assetClass = p.assetClass;
+      _titleController.text = p.title ?? '';
+      _bodyController.text = p.body;
+      _existingImageUrls
+        ..clear()
+        ..addAll(p.imageUrls);
+      _images.clear();
+      _selectedAsset = _resolveAsset(
+        sug,
+        p.assetSymbol,
+        p.assetClass,
+        p.assetDisplayName,
+      );
+    });
+  }
+
+  Future<void> _loadEditComment() async {
+    setState(() => _editLoading = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final fb = FirebaseAuth.instance.currentUser;
+      if (fb == null) {
+        if (mounted) Navigator.of(context).pop(false);
+        return;
+      }
+      final token = await fb.getIdToken();
+      if (token == null || token.isEmpty) {
+        if (mounted) Navigator.of(context).pop(false);
+        return;
+      }
+      final c = await DopamineApi.fetchAssetCommentById(
+        id: widget.editCommentId!,
+        idToken: token,
+      );
+      if (!mounted) return;
+      final sug = context.read<HomeAssetSuggestions>();
+      final sym = c.assetSymbol;
+      final cls = c.assetClass;
+      setState(() {
+        _isReplyEdit = c.parentId != null;
+        _titleController.text = c.title ?? '';
+        _bodyController.text = c.body;
+        _existingImageUrls
+          ..clear()
+          ..addAll(c.imageUrls);
+        _images.clear();
+        if (sym != null &&
+            sym.isNotEmpty &&
+            cls != null &&
+            cls.isNotEmpty &&
+            _classes.contains(cls)) {
+          _assetClass = cls;
+          _selectedAsset = _resolveAsset(
+            sug,
+            sym,
+            cls,
+            c.assetDisplayName,
+          );
+        } else {
+          _selectedAsset = null;
+        }
+        _editLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      Navigator.of(context).pop(false);
+    }
   }
 
   void _syncSelectionFromSuggestions(HomeAssetSuggestions sug) {
@@ -134,15 +254,17 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     }
   }
 
+  int get _totalImageCount => _existingImageUrls.length + _images.length;
+
   Future<void> _pickImages() async {
-    if (_images.length >= _maxImages) return;
+    if (_totalImageCount >= _maxImages) return;
     final picked = await ImagePicker().pickMultiImage(
       imageQuality: 82,
     );
     if (picked.isEmpty || !mounted) return;
     setState(() {
       for (final p in picked) {
-        if (_images.length >= _maxImages) break;
+        if (_totalImageCount >= _maxImages) break;
         _images.add(p);
       }
     });
@@ -158,19 +280,23 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       return;
     }
 
-    final sel = _selectedAsset;
     final body = _bodyController.text.trim();
-    if (sel == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.communityComposeNeedSymbol)),
-      );
-      return;
-    }
     if (body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.communityComposeNeedBody)),
       );
       return;
+    }
+
+    final editId = _effectiveEditId;
+    if (editId == null) {
+      final sel = _selectedAsset;
+      if (sel == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.communityComposeNeedSymbol)),
+        );
+        return;
+      }
     }
 
     setState(() => _submitting = true);
@@ -185,19 +311,42 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         return;
       }
 
-      final urls = <String>[];
-      for (final x in _images) {
-        final bytes = await x.readAsBytes();
-        final ext = _extFromPath(x.path);
-        final url = await uploadCommunityPostImage(
-          idToken: token,
-          bytes: bytes,
-          filename: 'upload.$ext',
-          contentType: _mimeForExt(ext),
-        );
-        urls.add(url);
+      Future<List<String>> uploadNewPicks() async {
+        final urls = <String>[];
+        for (final x in _images) {
+          final bytes = await x.readAsBytes();
+          final ext = _extFromPath(x.path);
+          final url = await uploadCommunityPostImage(
+            idToken: token,
+            bytes: bytes,
+            filename: 'upload.$ext',
+            contentType: _mimeForExt(ext),
+          );
+          urls.add(url);
+        }
+        return urls;
       }
 
+      if (editId != null) {
+        final newUrls = await uploadNewPicks();
+        final allUrls = [..._existingImageUrls, ...newUrls];
+        final titleText = _titleController.text.trim();
+        await DopamineApi.patchAssetComment(
+          id: editId,
+          body: body,
+          title: _isReplyEdit
+              ? null
+              : (titleText.isEmpty ? null : titleText),
+          imageUrls: allUrls,
+          idToken: token,
+        );
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
+      }
+
+      final sel = _selectedAsset!;
+      final urls = await uploadNewPicks();
       final titleText = _titleController.text.trim();
       final ac = sel.assetClass;
       if (ac == null || ac.isEmpty) {
@@ -235,22 +384,69 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
   Widget _thumbnailStrip({EdgeInsetsGeometry padding =
       const EdgeInsets.fromLTRB(12, 4, 12, 8)}) {
-    if (_images.isEmpty) return const SizedBox.shrink();
+    final n = _existingImageUrls.length + _images.length;
+    if (n == 0) return const SizedBox.shrink();
     return SizedBox(
       height: 76,
       child: ListView.separated(
         padding: padding,
         scrollDirection: Axis.horizontal,
-        itemCount: _images.length,
+        itemCount: n,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
+          final existingCount = _existingImageUrls.length;
+          if (i < existingCount) {
+            final url = _existingImageUrls[i];
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    url,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 72,
+                      height: 72,
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: -6,
+                  right: -6,
+                  child: Material(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      iconSize: 18,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      icon: const Icon(Icons.close_rounded, size: 16),
+                      color: Colors.white,
+                      onPressed: () {
+                        setState(() => _existingImageUrls.removeAt(i));
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          final j = i - existingCount;
           return Stack(
             clipBehavior: Clip.none,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: FutureBuilder<Uint8List>(
-                  future: _images[i].readAsBytes(),
+                  future: _images[j].readAsBytes(),
                   builder: (context, snap) {
                     if (snap.hasData) {
                       return Image.memory(
@@ -295,7 +491,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                     icon: const Icon(Icons.close_rounded, size: 16),
                     color: Colors.white,
                     onPressed: () {
-                      setState(() => _images.removeAt(i));
+                      setState(() => _images.removeAt(j));
                     },
                   ),
                 ),
@@ -313,7 +509,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       child: Align(
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
-          onPressed: _images.length >= _maxImages ? null : _pickImages,
+          onPressed: _totalImageCount >= _maxImages ? null : _pickImages,
           icon: const Icon(
             Icons.add_photo_alternate_outlined,
             color: DopamineTheme.neonGreen,
@@ -347,7 +543,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
               children: [
                 IconButton(
                   onPressed:
-                      _images.length >= _maxImages ? null : _pickImages,
+                      _totalImageCount >= _maxImages ? null : _pickImages,
                   icon: const Icon(Icons.add_photo_alternate_outlined),
                   color: DopamineTheme.neonGreen,
                   tooltip: l10n.communityComposeAddPhotoShort,
@@ -376,10 +572,30 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     final sug = context.watch<HomeAssetSuggestions>();
     final symbols = sug.assetsForClass(_assetClass);
 
+    if (_editLoading &&
+        widget.editCommentId != null &&
+        widget.editPrefill == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.communityComposeEditTitle),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: DopamineTheme.neonGreen,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(l10n.communityComposeTitle),
+        title: Text(
+          _isEditMode
+              ? l10n.communityComposeEditTitle
+              : l10n.communityComposeTitle,
+        ),
         actions: [
           TextButton(
             onPressed: _submitting ? null : () => _submit(l10n),
@@ -393,7 +609,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                     ),
                   )
                 : Text(
-                    l10n.communityComposeSubmit,
+                    _isEditMode
+                        ? l10n.communityComposeSave
+                        : l10n.communityComposeSubmit,
                     style: const TextStyle(
                       color: DopamineTheme.neonGreen,
                       fontWeight: FontWeight.w700,
@@ -409,6 +627,24 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               children: [
+                if (_isReplyEdit) ...[
+                  Text(
+                    l10n.communityComposeEditReplyTitle,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: DopamineTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${_selectedAsset?.symbol ?? ''} · ${_classLabel(_assetClass, l10n)}',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: DopamineTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ] else ...[
                 Text(
                   l10n.communityComposeAssetClassLabel,
                   style: theme.textTheme.labelMedium?.copyWith(
@@ -443,15 +679,17 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                             child: Text(_classLabel(c, l10n)),
                           ),
                       ],
-                      onChanged: (v) {
-                        if (v == null) return;
-                        setState(() {
-                          _assetClass = v;
-                          final next = sug.assetsForClass(v);
-                          _selectedAsset =
-                              next.isNotEmpty ? next.first : null;
-                        });
-                      },
+                      onChanged: _lockAssetPick
+                          ? null
+                          : (v) {
+                              if (v == null) return;
+                              setState(() {
+                                _assetClass = v;
+                                final next = sug.assetsForClass(v);
+                                _selectedAsset =
+                                    next.isNotEmpty ? next.first : null;
+                              });
+                            },
                     ),
                   ),
                 ),
@@ -514,11 +752,13 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                               ),
                             ),
                         ],
-                        onChanged: (v) {
-                          if (v != null) {
-                            setState(() => _selectedAsset = v);
-                          }
-                        },
+                        onChanged: _lockAssetPick
+                            ? null
+                            : (v) {
+                                if (v != null) {
+                                  setState(() => _selectedAsset = v);
+                                }
+                              },
                       ),
                     ),
                   ),
@@ -556,6 +796,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                ],
                 Text(
                   l10n.communityComposeBodyLabel,
                   style: theme.textTheme.labelMedium?.copyWith(

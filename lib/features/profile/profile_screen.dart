@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -9,12 +10,17 @@ import 'package:share_lib/share_lib.dart';
 
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
+import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/storage/community_post_image_upload.dart';
+import '../../data/models/community_post.dart';
 import '../../data/models/profile_activity_item.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
 import '../asset/asset_detail_screen.dart';
+import '../community/community_compose_screen.dart';
+import '../community/community_post_card.dart';
 import 'follow_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -34,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<ProfileActivityItem> _activity = const [];
 
   bool _savingName = false;
+  bool _uploadingPhoto = false;
 
   @override
   void initState() {
@@ -66,6 +73,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final n = fb.displayName?.trim();
     if (n != null && n.isNotEmpty) {
       _nameController.text = n;
+    }
+  }
+
+  String _extFromPath(String path) {
+    final i = path.lastIndexOf('.');
+    if (i < 0 || i >= path.length - 1) return 'jpg';
+    return path.substring(i + 1).toLowerCase();
+  }
+
+  String _mimeForExt(String ext) {
+    switch (ext) {
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'heic':
+        return 'image/heic';
+      default:
+        return 'image/jpeg';
+    }
+  }
+
+  Future<void> _pickProfilePhoto(AppLocalizations l10n) async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final picker = ImagePicker();
+    final x = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 88,
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
+    if (x == null || !mounted) return;
+    setState(() => _uploadingPhoto = true);
+    try {
+      final bytes = await x.readAsBytes();
+      final token = await fb.getIdToken();
+      if (token == null || token.isEmpty) return;
+      final ext = _extFromPath(x.path);
+      final url = await uploadCommunityPostImage(
+        idToken: token,
+        bytes: bytes,
+        filename: 'avatar.$ext',
+        contentType: _mimeForExt(ext),
+      );
+      await fb.updatePhotoURL(url);
+      await fb.reload();
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profilePhotoSaved)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
+
+  Future<void> _removeProfilePhoto(AppLocalizations l10n) async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    setState(() => _uploadingPhoto = true);
+    try {
+      await fb.updatePhotoURL(null);
+      await fb.reload();
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profilePhotoRemoved)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is FirebaseAuthException
+          ? (e.message ?? e.code)
+          : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
     }
   }
 
@@ -236,6 +330,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _editOwnActivity(
+    BuildContext context,
+    ProfileActivityItem item,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final done = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => CommunityComposeScreen(
+          editCommentId: item.commentId,
+        ),
+      ),
+    );
+    if (done == true && mounted) {
+      await _loadData();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profileActivityPostUpdated)),
+      );
+    }
+  }
+
+  ProfileActivityItem? _activityItemForCommentId(String commentId) {
+    for (final a in _activity) {
+      if (a.commentId == commentId) return a;
+    }
+    return null;
+  }
+
+  Future<void> _toggleActivityLike(CommunityPost p) async {
+    final l10n = AppLocalizations.of(context)!;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final token = await user.getIdToken();
+    if (token == null || !mounted) return;
+    try {
+      await DopamineApi.toggleCommentLike(
+        idToken: token,
+        commentId: p.id,
+      );
+      if (!mounted) return;
+      await _loadData();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.errorLoadFailed)),
+      );
+    }
+  }
+
+  Future<void> _deleteOwnActivity(
+    BuildContext context,
+    ProfileActivityItem item,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(l10n.profileActivityDeleteDialogTitle),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.profileDeleteCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(
+                l10n.profileActivityDeletePost,
+                style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (ok != true || !context.mounted) return;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final token = await fb.getIdToken();
+    if (token == null || token.isEmpty) return;
+    try {
+      await DopamineApi.deleteAssetComment(
+        id: item.commentId,
+        idToken: token,
+      );
+      if (!context.mounted) return;
+      await _loadData();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profileActivityPostDeleted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    }
+  }
+
+  Widget _activityActionButtons(
+    BuildContext context,
+    ProfileActivityItem item,
+    AppLocalizations l10n,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, size: 22),
+          color: DopamineTheme.textSecondary,
+          tooltip: l10n.profileActivityEditPost,
+          onPressed: () => _editOwnActivity(context, item),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline, size: 22),
+          color: DopamineTheme.textSecondary,
+          tooltip: l10n.profileActivityDeletePost,
+          onPressed: () => _deleteOwnActivity(context, item),
+        ),
+      ],
+    );
+  }
+
   Widget _buildActivityCard(
     BuildContext context,
     ThemeData theme,
@@ -254,83 +477,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (item.kind == 'my_post') {
-      final rawName = item.assetDisplayName?.trim();
-      final displayName =
-          rawName != null && rawName.isNotEmpty ? rawName : item.assetSymbol;
+    if ((item.kind == 'my_post' || item.kind == 'my_reply') &&
+        !item.hasCommunityCardPayload) {
       return Card(
         clipBehavior: Clip.antiAlias,
         color: Colors.black.withValues(alpha: 0.38),
         elevation: 0,
         shape: cardShape,
         margin: EdgeInsets.zero,
-        child: InkWell(
-          onTap: () => _openActivityItem(context, item),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.profileActivityPostOnAsset(displayName),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: DopamineTheme.neonGreen,
-                    fontWeight: FontWeight.w800,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => _openActivityItem(context, item),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.kind == 'my_post'
+                              ? l10n.profileActivityPostOnAsset(
+                                  (item.assetDisplayName?.trim().isNotEmpty ==
+                                          true)
+                                      ? item.assetDisplayName!.trim()
+                                      : item.assetSymbol,
+                                )
+                              : _activityKindLabel(l10n, item.kind),
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: DopamineTheme.neonGreen,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          item.bodyPreview,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: DopamineTheme.textPrimary,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          timeStr,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: DopamineTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  item.bodyPreview,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: DopamineTheme.textPrimary,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.favorite_rounded,
-                      size: 17,
-                      color:
-                          DopamineTheme.textSecondary.withValues(alpha: 0.9),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${item.likeCount ?? 0}',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: DopamineTheme.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 18),
-                    Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      size: 17,
-                      color:
-                          DopamineTheme.textSecondary.withValues(alpha: 0.9),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${item.replyCount ?? 0}',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: DopamineTheme.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  timeStr,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: DopamineTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              _activityActionButtons(context, item, l10n),
+            ],
           ),
         ),
       );
@@ -397,7 +602,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: DopamineTheme.neonGreen,
               onRefresh: _loadData,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  16,
+                  20,
+                  32 + homeShellBottomInset(context),
+                ),
                 children: [
                   Text(
                     l10n.profileSignedInSection,
@@ -407,6 +617,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  _AccountProfilePhotoCard(
+                    theme: theme,
+                    l10n: l10n,
+                    user: fb,
+                    uploadingPhoto: _uploadingPhoto,
+                    onPickPhoto: () => _pickProfilePhoto(l10n),
+                    onRemovePhoto: () => _removeProfilePhoto(l10n),
+                  ),
+                  const SizedBox(height: 22),
                   Text(
                     l10n.profileDisplayName,
                     style: theme.textTheme.labelMedium?.copyWith(
@@ -461,11 +680,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _InfoTile(
-                    label: l10n.profileEmail,
-                    value: fb.email ?? l10n.profileNoEmail,
-                  ),
-                  const SizedBox(height: 16),
                   if (_loading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 12),
@@ -517,13 +731,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     for (final item in _activity)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildActivityCard(
-                          context,
-                          theme,
-                          l10n,
-                          locale,
-                          item,
-                        ),
+                        child: item.hasCommunityCardPayload
+                            ? CommunityPostCard(
+                                post: item.toCommunityPost(
+                                  authorUid: fb.uid,
+                                  fallbackAuthorDisplayName:
+                                      (fb.displayName?.trim().isNotEmpty ==
+                                              true)
+                                          ? fb.displayName!.trim()
+                                          : 'User',
+                                ),
+                                locale: locale,
+                                myUid: fb.uid,
+                                showFollowButton: false,
+                                followingByUid: null,
+                                onToggleFollow: null,
+                                onToggleLike: _toggleActivityLike,
+                                onEditOwnPost: (p) {
+                                  final i = _activityItemForCommentId(p.id);
+                                  if (i != null) {
+                                    _editOwnActivity(context, i);
+                                  }
+                                },
+                                onDeleteOwnPost: (p) {
+                                  final i = _activityItemForCommentId(p.id);
+                                  if (i != null) {
+                                    _deleteOwnActivity(context, i);
+                                  }
+                                },
+                              )
+                            : _buildActivityCard(
+                                context,
+                                theme,
+                                l10n,
+                                locale,
+                                item,
+                              ),
                       ),
                   const SizedBox(height: 28),
                   SizedBox(
@@ -585,6 +828,239 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
+    );
+  }
+}
+
+/// 계정 영역 — 프로필 사진 카드 (글래스 톤 + 아이콘 액션)
+class _AccountProfilePhotoCard extends StatelessWidget {
+  const _AccountProfilePhotoCard({
+    required this.theme,
+    required this.l10n,
+    required this.user,
+    required this.uploadingPhoto,
+    required this.onPickPhoto,
+    required this.onRemovePhoto,
+  });
+
+  final ThemeData theme;
+  final AppLocalizations l10n;
+  final User user;
+  final bool uploadingPhoto;
+  final VoidCallback onPickPhoto;
+  final VoidCallback onRemovePhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = user.photoURL?.trim().isNotEmpty == true;
+    final borderGlow = DopamineTheme.neonGreen.withValues(alpha: 0.35);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.14),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.08),
+            Colors.black.withValues(alpha: 0.35),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: DopamineTheme.neonGreen.withValues(alpha: 0.06),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.portrait_rounded,
+                size: 20,
+                color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.profilePhotoTitle,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: DopamineTheme.textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                GestureDetector(
+                  onTap: uploadingPhoto ? null : onPickPhoto,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: DopamineTheme.neonGreen.withValues(alpha: 0.12),
+                          blurRadius: 20,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            borderGlow,
+                            DopamineTheme.neonGreen.withValues(alpha: 0.12),
+                          ],
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor:
+                            Colors.white.withValues(alpha: 0.1),
+                        child: ClipOval(
+                          child: _profileAvatarChild(user),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (uploadingPhoto)
+                  Positioned.fill(
+                    child: Container(
+                      margin: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: DopamineTheme.neonGreen,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ProfilePhotoIconAction(
+                icon: Icons.add_photo_alternate_rounded,
+                tooltip: l10n.profilePhotoTitle,
+                foreground: DopamineTheme.neonGreen,
+                background: DopamineTheme.neonGreen.withValues(alpha: 0.14),
+                borderColor: DopamineTheme.neonGreen.withValues(alpha: 0.35),
+                onPressed: uploadingPhoto ? null : onPickPhoto,
+              ),
+              if (hasPhoto) ...[
+                const SizedBox(width: 14),
+                _ProfilePhotoIconAction(
+                  icon: Icons.delete_outline_rounded,
+                  tooltip: l10n.profilePhotoRemove,
+                  foreground: DopamineTheme.accentRed,
+                  background: DopamineTheme.accentRed.withValues(alpha: 0.12),
+                  borderColor: DopamineTheme.accentRed.withValues(alpha: 0.35),
+                  onPressed: uploadingPhoto ? null : onRemovePhoto,
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _profileAvatarChild(User user) {
+    final url = user.photoURL?.trim();
+    if (url != null && url.isNotEmpty) {
+      return Image.network(
+        url,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Icon(
+          Icons.person_rounded,
+          size: 52,
+          color: DopamineTheme.textSecondary,
+        ),
+      );
+    }
+    return Icon(
+      Icons.person_rounded,
+      size: 52,
+      color: DopamineTheme.textSecondary.withValues(alpha: 0.95),
+    );
+  }
+}
+
+class _ProfilePhotoIconAction extends StatelessWidget {
+  const _ProfilePhotoIconAction({
+    required this.icon,
+    required this.tooltip,
+    required this.foreground,
+    required this.background,
+    required this.borderColor,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final Color foreground;
+  final Color background;
+  final Color borderColor;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(16),
+          child: Ink(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: background,
+              border: Border.all(color: borderColor),
+            ),
+            child: Icon(
+              icon,
+              size: 24,
+              color: onPressed == null
+                  ? foreground.withValues(alpha: 0.35)
+                  : foreground,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -694,40 +1170,6 @@ class _StatCell extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: child,
       ),
-    );
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: DopamineTheme.textSecondary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-        SelectableText(
-          value,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: DopamineTheme.textPrimary,
-          ),
-        ),
-      ],
     );
   }
 }

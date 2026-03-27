@@ -1,3 +1,5 @@
+import 'community_post.dart';
+
 final class ProfileActivityItem {
   const ProfileActivityItem({
     required this.kind,
@@ -9,6 +11,11 @@ final class ProfileActivityItem {
     this.assetDisplayName,
     this.likeCount,
     this.replyCount,
+    this.body,
+    this.title,
+    this.imageUrls,
+    this.postAuthorDisplayName,
+    this.likedByMe,
     this.actorUid,
     this.actorDisplayName,
     this.likerUid,
@@ -27,6 +34,12 @@ final class ProfileActivityItem {
   final String? assetDisplayName;
   final int? likeCount;
   final int? replyCount;
+  /// my_post / my_reply — 커뮤니티 카드용 전체 본문
+  final String? body;
+  final String? title;
+  final List<String>? imageUrls;
+  final String? postAuthorDisplayName;
+  final bool? likedByMe;
   final String? actorUid;
   final String? actorDisplayName;
   final String? likerUid;
@@ -35,6 +48,10 @@ final class ProfileActivityItem {
   final String? targetAuthorDisplayName;
 
   factory ProfileActivityItem.fromJson(Map<String, dynamic> json) {
+    final rawUrls = json['imageUrls'];
+    final urls = rawUrls is List<dynamic>
+        ? rawUrls.map((e) => e as String).toList()
+        : null;
     return ProfileActivityItem(
       kind: json['kind'] as String,
       at: DateTime.parse(json['at'] as String),
@@ -45,6 +62,11 @@ final class ProfileActivityItem {
       assetDisplayName: json['assetDisplayName'] as String?,
       likeCount: (json['likeCount'] as num?)?.toInt(),
       replyCount: (json['replyCount'] as num?)?.toInt(),
+      body: json['body'] as String?,
+      title: json['title'] as String?,
+      imageUrls: urls,
+      postAuthorDisplayName: json['postAuthorDisplayName'] as String?,
+      likedByMe: json['likedByMe'] as bool?,
       actorUid: json['actorUid'] as String?,
       actorDisplayName: json['actorDisplayName'] as String?,
       likerUid: json['likerUid'] as String?,
@@ -88,6 +110,41 @@ final class ProfileStats {
       postsCount: (json['postsCount'] as num?)?.toInt() ?? 0,
       followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
       followersCount: (json['followersCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+extension ProfileActivityItemCommunity on ProfileActivityItem {
+  bool get hasCommunityCardPayload {
+    if (kind != 'my_post' && kind != 'my_reply') return false;
+    final b = body;
+    return b != null && b.trim().isNotEmpty;
+  }
+
+  CommunityPost toCommunityPost({
+    required String authorUid,
+    required String fallbackAuthorDisplayName,
+  }) {
+    final b = body;
+    if (b == null || b.trim().isEmpty) {
+      throw ArgumentError('ProfileActivityItem missing body for card');
+    }
+    final name = postAuthorDisplayName?.trim();
+    return CommunityPost(
+      id: commentId,
+      body: b,
+      title: title,
+      imageUrls: imageUrls ?? const [],
+      authorUid: authorUid,
+      authorDisplayName:
+          name != null && name.isNotEmpty ? name : fallbackAuthorDisplayName,
+      createdAt: at,
+      assetSymbol: assetSymbol,
+      assetClass: assetClass,
+      assetDisplayName: assetDisplayName,
+      replyCount: replyCount ?? 0,
+      likeCount: likeCount ?? 0,
+      likedByMe: likedByMe ?? false,
     );
   }
 }

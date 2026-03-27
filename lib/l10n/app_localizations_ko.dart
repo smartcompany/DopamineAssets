@@ -33,6 +33,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileDisplayName => '표시 이름';
 
   @override
+  String get profilePhotoTitle => '프로필 사진';
+
+  @override
+  String get profilePhotoRemove => '사진 삭제';
+
+  @override
+  String get profilePhotoSaved => '프로필 사진을 저장했습니다.';
+
+  @override
+  String get profilePhotoRemoved => '프로필 사진을 삭제했습니다.';
+
+  @override
   String get profileEmail => '이메일';
 
   @override
@@ -110,6 +122,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileActivityLikeGiven => '좋아요를 누른 댓글';
 
   @override
+  String get profileActivityEditPost => '수정';
+
+  @override
+  String get profileActivityDeletePost => '삭제';
+
+  @override
+  String get profileActivityEditDialogTitle => '글 수정';
+
+  @override
+  String get profileActivityDeleteDialogTitle => '이 글을 삭제할까요?';
+
+  @override
+  String get profileActivityPostDeleted => '삭제되었습니다.';
+
+  @override
+  String get profileActivityPostUpdated => '수정되었습니다.';
+
+  @override
   String get profileFollowListEmpty => '아직 없습니다.';
 
   @override
@@ -129,6 +159,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get communityOpenAssetDetail => '종목 상세';
+
+  @override
+  String get communityMoreMenu => '더보기';
 
   @override
   String get communityLikeLogin => '좋아요하려면 로그인하세요.';
@@ -187,6 +220,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get communityComposeAddPhotoShort => '사진';
+
+  @override
+  String get communityComposeEditTitle => '글 수정';
+
+  @override
+  String get communityComposeSave => '저장';
+
+  @override
+  String get communityComposeEditReplyTitle => '답글 수정';
 
   @override
   String get navRankings => '랭킹';

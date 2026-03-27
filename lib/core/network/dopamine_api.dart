@@ -327,6 +327,90 @@ abstract final class DopamineApi {
     return AssetComment.fromJson(item);
   }
 
+  static Future<AssetComment> fetchAssetCommentById({
+    required String id,
+    String? idToken,
+  }) async {
+    final path =
+        '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
+    final uri = _uri(path);
+    final headers =
+        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final response = await _client.get(uri, headers: headers);
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][asset-comments] GET $uri');
+    }
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid asset comment payload');
+    }
+    final item = decoded['item'];
+    if (item is! Map<String, dynamic>) {
+      throw ApiException('Invalid asset comment item');
+    }
+    return AssetComment.fromJson(item);
+  }
+
+  static Future<AssetComment> patchAssetComment({
+    required String id,
+    required String body,
+    String? title,
+    required List<String> imageUrls,
+    required String idToken,
+  }) async {
+    final path =
+        '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
+    final uri = _uri(path);
+    final payload = <String, dynamic>{
+      'body': body,
+      if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+      'imageUrls': imageUrls,
+    };
+    final response = await _client.patch(
+      uri,
+      headers: <String, String>{
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+      body: jsonEncode(payload),
+    );
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][asset-comments] PATCH $uri');
+    }
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid patch comment response');
+    }
+    final item = decoded['item'];
+    if (item is! Map<String, dynamic>) {
+      throw ApiException('Invalid patch comment item');
+    }
+    return AssetComment.fromJson(item);
+  }
+
+  static Future<void> deleteAssetComment({
+    required String id,
+    required String idToken,
+  }) async {
+    final path =
+        '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
+    final uri = _uri(path);
+    final response = await _client.delete(
+      uri,
+      headers: <String, String>{
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+    );
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][asset-comments] DELETE $uri');
+    }
+    _ensureOk(response);
+  }
+
   static Future<ProfileStats> fetchProfileStats({
     required String idToken,
   }) async {

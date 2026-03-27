@@ -146,6 +146,30 @@ abstract class AppLocalizations {
   /// **'표시 이름'**
   String get profileDisplayName;
 
+  /// No description provided for @profilePhotoTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필 사진'**
+  String get profilePhotoTitle;
+
+  /// No description provided for @profilePhotoRemove.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 삭제'**
+  String get profilePhotoRemove;
+
+  /// No description provided for @profilePhotoSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필 사진을 저장했습니다.'**
+  String get profilePhotoSaved;
+
+  /// No description provided for @profilePhotoRemoved.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필 사진을 삭제했습니다.'**
+  String get profilePhotoRemoved;
+
   /// No description provided for @profileEmail.
   ///
   /// In ko, this message translates to:
@@ -296,6 +320,42 @@ abstract class AppLocalizations {
   /// **'좋아요를 누른 댓글'**
   String get profileActivityLikeGiven;
 
+  /// No description provided for @profileActivityEditPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정'**
+  String get profileActivityEditPost;
+
+  /// No description provided for @profileActivityDeletePost.
+  ///
+  /// In ko, this message translates to:
+  /// **'삭제'**
+  String get profileActivityDeletePost;
+
+  /// No description provided for @profileActivityEditDialogTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'글 수정'**
+  String get profileActivityEditDialogTitle;
+
+  /// No description provided for @profileActivityDeleteDialogTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 글을 삭제할까요?'**
+  String get profileActivityDeleteDialogTitle;
+
+  /// No description provided for @profileActivityPostDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'삭제되었습니다.'**
+  String get profileActivityPostDeleted;
+
+  /// No description provided for @profileActivityPostUpdated.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정되었습니다.'**
+  String get profileActivityPostUpdated;
+
   /// No description provided for @profileFollowListEmpty.
   ///
   /// In ko, this message translates to:
@@ -337,6 +397,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'종목 상세'**
   String get communityOpenAssetDetail;
+
+  /// No description provided for @communityMoreMenu.
+  ///
+  /// In ko, this message translates to:
+  /// **'더보기'**
+  String get communityMoreMenu;
 
   /// No description provided for @communityLikeLogin.
   ///
@@ -445,6 +511,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'사진'**
   String get communityComposeAddPhotoShort;
+
+  /// No description provided for @communityComposeEditTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'글 수정'**
+  String get communityComposeEditTitle;
+
+  /// No description provided for @communityComposeSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장'**
+  String get communityComposeSave;
+
+  /// No description provided for @communityComposeEditReplyTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'답글 수정'**
+  String get communityComposeEditReplyTitle;
 
   /// No description provided for @navRankings.
   ///

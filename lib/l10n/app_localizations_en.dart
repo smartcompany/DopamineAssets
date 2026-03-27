@@ -33,6 +33,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayName => 'Display name';
 
   @override
+  String get profilePhotoTitle => 'Profile photo';
+
+  @override
+  String get profilePhotoRemove => 'Remove photo';
+
+  @override
+  String get profilePhotoSaved => 'Profile photo saved.';
+
+  @override
+  String get profilePhotoRemoved => 'Profile photo removed.';
+
+  @override
   String get profileEmail => 'Email';
 
   @override
@@ -112,6 +124,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileActivityLikeGiven => 'You liked a comment';
 
   @override
+  String get profileActivityEditPost => 'Edit';
+
+  @override
+  String get profileActivityDeletePost => 'Delete';
+
+  @override
+  String get profileActivityEditDialogTitle => 'Edit post';
+
+  @override
+  String get profileActivityDeleteDialogTitle => 'Delete this post?';
+
+  @override
+  String get profileActivityPostDeleted => 'Deleted.';
+
+  @override
+  String get profileActivityPostUpdated => 'Saved.';
+
+  @override
   String get profileFollowListEmpty => 'No users yet.';
 
   @override
@@ -131,6 +161,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get communityOpenAssetDetail => 'Asset details';
+
+  @override
+  String get communityMoreMenu => 'More';
 
   @override
   String get communityLikeLogin => 'Sign in to like.';
@@ -189,6 +222,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get communityComposeAddPhotoShort => 'Photo';
+
+  @override
+  String get communityComposeEditTitle => 'Edit post';
+
+  @override
+  String get communityComposeSave => 'Save';
+
+  @override
+  String get communityComposeEditReplyTitle => 'Edit reply';
 
   @override
   String get navRankings => 'Rankings';

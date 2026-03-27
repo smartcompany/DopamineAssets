@@ -1,21 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/feed/home_asset_suggestions.dart';
+import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
-import '../asset/asset_detail_screen.dart';
 import 'community_compose_screen.dart';
+import 'community_post_card.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -240,6 +240,71 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  Future<void> _openEditCompose(CommunityPost p) async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final done = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => CommunityComposeScreen(
+          editPrefill: p,
+        ),
+      ),
+    );
+    if (done == true && mounted) {
+      _scheduleFetch();
+    }
+  }
+
+  Future<void> _deleteCommunityPost(CommunityPost p) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(l10n.profileActivityDeleteDialogTitle),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.profileDeleteCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(
+                l10n.profileActivityDeletePost,
+                style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (ok != true || !mounted) return;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final token = await fb.getIdToken();
+    if (token == null || token.isEmpty) return;
+    try {
+      await DopamineApi.deleteAssetComment(
+        id: p.id,
+        idToken: token,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profileActivityPostDeleted)),
+      );
+      _scheduleFetch();
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    }
+  }
+
   void _submitSearch(String raw) {
     final parts = raw
         .trim()
@@ -366,32 +431,41 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ),
                   const SizedBox(height: 10),
                 ],
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.14),
+                TapRegion(
+                  groupId: 'community_search',
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.28),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.14),
+                      ),
                     ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
-                    child: RawAutocomplete<String>(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
+                      child: RawAutocomplete<RankedAsset>(
                       textEditingController: _searchController,
                       focusNode: _searchFocusNode,
-                      displayStringForOption: (s) => s,
+                      displayStringForOption: (RankedAsset a) => a.symbol,
                       optionsBuilder: (TextEditingValue value) {
                         final q = value.text;
                         if (q.trim().isEmpty) {
-                          return const Iterable<String>.empty();
+                          return const Iterable<RankedAsset>.empty();
                         }
-                        return context.read<HomeAssetSuggestions>().matching(q);
+                        return context
+                            .read<HomeAssetSuggestions>()
+                            .matchingAssets(q);
                       },
-                      onSelected: (String selection) {
+                      onSelected: (RankedAsset a) {
+                        final ac = a.assetClass?.trim();
+                        if (ac == null || ac.isEmpty) return;
                         setState(() {
-                          _searchController.text = selection;
+                          _symbolFilterActive = true;
+                          _symbolFilterSymbol = a.symbol;
+                          _symbolFilterClass = ac;
+                          _searchController.clear();
                         });
-                        _submitSearch(selection);
+                        _scheduleFetch();
                       },
                       fieldViewBuilder:
                           (
@@ -403,6 +477,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             return TextField(
                               controller: controller,
                               focusNode: focusNode,
+                              groupId: 'community_search',
+                              onTapOutside: (_) => focusNode.unfocus(),
                               textInputAction: TextInputAction.search,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: DopamineTheme.textPrimary,
@@ -438,22 +514,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       optionsViewBuilder:
                           (
                             BuildContext context,
-                            void Function(String) onSelected,
-                            Iterable<String> options,
+                            void Function(RankedAsset) onSelected,
+                            Iterable<RankedAsset> options,
                           ) {
                             final list = options.toList();
                             if (list.isEmpty) {
                               return const SizedBox.shrink();
                             }
-                            return Align(
-                              alignment: Alignment.topLeft,
-                              child: Material(
-                                elevation: 8,
-                                borderRadius: BorderRadius.circular(12),
-                                color: const Color(0xFF1A1525),
-                                child: ConstrainedBox(
+                            return TapRegion(
+                              groupId: 'community_search',
+                              child: Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 8,
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: const Color(0xFF1A1525),
+                                  child: ConstrainedBox(
                                   constraints: const BoxConstraints(
-                                    maxHeight: 220,
+                                    maxHeight: 240,
                                   ),
                                   child: ListView.separated(
                                     shrinkWrap: true,
@@ -466,25 +544,42 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                       ),
                                     ),
                                     itemBuilder: (context, i) {
-                                      final opt = list[i];
+                                      final a = list[i];
+                                      final ac = a.assetClass;
                                       return ListTile(
                                         dense: true,
                                         title: Text(
-                                          opt,
+                                          a.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: theme.textTheme.bodyMedium
                                               ?.copyWith(
-                                                color:
-                                                    DopamineTheme.textPrimary,
-                                              ),
+                                            color: DopamineTheme.textPrimary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
-                                        onTap: () => onSelected(opt),
+                                        subtitle: Text(
+                                          ac != null
+                                              ? '${a.symbol} · ${_classBadge(ac, l10n)}'
+                                              : a.symbol,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                            color:
+                                                DopamineTheme.textSecondary,
+                                          ),
+                                        ),
+                                        onTap: () => onSelected(a),
                                       );
                                     },
                                   ),
                                 ),
                               ),
+                            ),
                             );
                           },
+                      ),
                     ),
                   ),
                 ),
@@ -599,277 +694,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   );
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    24 + homeShellBottomInset(context),
+                  ),
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, i) {
                     final p = items[i];
-                    final assetName = p.assetDisplayName?.trim();
-                    final timeStr = DateFormat.yMMMd(
-                      locale,
-                    ).add_jm().format(p.createdAt.toLocal());
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (assetName != null &&
-                                          assetName.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 6,
-                                          ),
-                                          child: Text(
-                                            assetName,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.titleSmall
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                              color:
-                                                  DopamineTheme.textPrimary,
-                                            ),
-                                          ),
-                                        ),
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: DopamineTheme.neonGreen
-                                                  .withValues(
-                                                alpha: 0.15,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: Border.all(
-                                                color: DopamineTheme.neonGreen
-                                                    .withValues(
-                                                  alpha: 0.35,
-                                                ),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              p.assetSymbol,
-                                              style: theme
-                                                  .textTheme.labelMedium
-                                                  ?.copyWith(
-                                                color: DopamineTheme.neonGreen,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              _classBadge(
-                                                p.assetClass,
-                                                l10n,
-                                              ),
-                                              style: theme.textTheme.labelSmall
-                                                  ?.copyWith(
-                                                color: DopamineTheme
-                                                    .textSecondary,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 36,
-                                    minHeight: 36,
-                                  ),
-                                  tooltip: l10n.communityOpenAssetDetail,
-                                  icon: Icon(
-                                    Icons.info_outline_rounded,
-                                    color: DopamineTheme.neonGreen.withValues(
-                                      alpha: 0.95,
-                                    ),
-                                    size: 30,
-                                  ),
-                                  onPressed: () {
-                                    AssetDetailScreen.open(
-                                      context,
-                                      RankedAsset.communityShell(
-                                        symbol: p.assetSymbol,
-                                        assetClass: p.assetClass,
-                                        displayName: (assetName != null &&
-                                                assetName.isNotEmpty)
-                                            ? assetName
-                                            : null,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                            if (p.title != null &&
-                                p.title!.trim().isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                p.title!.trim(),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: DopamineTheme.textPrimary,
-                                ),
-                              ),
-                            ],
-                            if (p.imageUrls.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                height: 72,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: p.imageUrls.length,
-                                  separatorBuilder: (_, _) =>
-                                      const SizedBox(width: 8),
-                                  itemBuilder: (ctx, imgIdx) {
-                                    return ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        p.imageUrls[imgIdx],
-                                        width: 72,
-                                        height: 72,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Container(
-                                                  width: 72,
-                                                  height: 72,
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.06),
-                                                ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 10),
-                            Text(
-                              p.body,
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: DopamineTheme.textPrimary,
-                                height: 1.35,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    p.authorDisplayName,
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: DopamineTheme.textSecondary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  timeStr,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: DopamineTheme.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                if (auth.isLoggedIn() &&
-                                    myUid != null &&
-                                    p.authorUid != myUid) ...[
-                                  TextButton(
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      foregroundColor:
-                                          (_followingByUid[p.authorUid] ??
-                                              false)
-                                          ? DopamineTheme.textSecondary
-                                          : DopamineTheme.neonGreen,
-                                    ),
-                                    onPressed: () => _toggleFollow(p),
-                                    child: Text(
-                                      (_followingByUid[p.authorUid] ?? false)
-                                          ? l10n.communityUnfollow
-                                          : l10n.communityFollow,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                const Spacer(),
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => _toggleLike(i, p),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        p.likedByMe
-                                            ? Icons.favorite_rounded
-                                            : Icons.favorite_border_rounded,
-                                        size: 20,
-                                        color: p.likedByMe
-                                            ? DopamineTheme.accentRed
-                                            : DopamineTheme.textSecondary,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        l10n.communityLikeCount(p.likeCount),
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color:
-                                                  DopamineTheme.textSecondary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (p.replyCount > 0) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                l10n.communityReplyCount(p.replyCount),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: DopamineTheme.neonGreen.withValues(
-                                    alpha: 0.9,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
+                    return CommunityPostCard(
+                      post: p,
+                      locale: locale,
+                      myUid: myUid,
+                      followingByUid: _followingByUid,
+                      onToggleFollow: _toggleFollow,
+                      onToggleLike: (post) => _toggleLike(i, post),
+                      onEditOwnPost: _openEditCompose,
+                      onDeleteOwnPost: _deleteCommunityPost,
                     );
                   },
                 );

@@ -72,7 +72,7 @@ class HomeAssetSuggestions extends ChangeNotifier {
     return _rankedAssets.where((a) => a.assetClass == assetClass).toList();
   }
 
-  /// 대소문자 무시 부분 일치. 최대 [limit]개.
+  /// 대소문자 무시 부분 일치(라벨 문자열). 최대 [limit]개.
   List<String> matching(String query, {int limit = 12}) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];
@@ -93,5 +93,39 @@ class HomeAssetSuggestions extends ChangeNotifier {
     final merged = [...prefix, ...rest];
     if (merged.length <= limit) return merged;
     return merged.sublist(0, limit);
+  }
+
+  /// 심볼·종목명 기준 검색. 커뮤니티 검색 자동완성용. 최대 [limit]개.
+  List<RankedAsset> matchingAssets(String query, {int limit = 12}) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+
+    int score(RankedAsset a) {
+      final sym = a.symbol.toLowerCase();
+      final name = a.name.toLowerCase();
+      if (sym.startsWith(q)) return 0;
+      if (name.startsWith(q)) return 1;
+      if (sym.contains(q)) return 2;
+      if (name.contains(q)) return 3;
+      return 100;
+    }
+
+    final scored = _rankedAssets.where((a) {
+      final sym = a.symbol.toLowerCase();
+      final name = a.name.toLowerCase();
+      return sym.contains(q) || name.contains(q);
+    }).toList();
+
+    scored.sort((a, b) {
+      final sa = score(a);
+      final sb = score(b);
+      if (sa != sb) return sa.compareTo(sb);
+      final c = a.symbol.compareTo(b.symbol);
+      if (c != 0) return c;
+      return (a.assetClass ?? '').compareTo(b.assetClass ?? '');
+    });
+
+    if (scored.length <= limit) return scored;
+    return scored.sublist(0, limit);
   }
 }
