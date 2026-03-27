@@ -124,6 +124,7 @@ extension ProfileActivityItemCommunity on ProfileActivityItem {
   CommunityPost toCommunityPost({
     required String authorUid,
     required String fallbackAuthorDisplayName,
+    String? authorPhotoUrl,
   }) {
     final b = body;
     if (b == null || b.trim().isEmpty) {
@@ -138,6 +139,7 @@ extension ProfileActivityItemCommunity on ProfileActivityItem {
       authorUid: authorUid,
       authorDisplayName:
           name != null && name.isNotEmpty ? name : fallbackAuthorDisplayName,
+      authorPhotoUrl: authorPhotoUrl,
       createdAt: at,
       assetSymbol: assetSymbol,
       assetClass: assetClass,

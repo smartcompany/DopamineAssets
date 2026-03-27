@@ -14,6 +14,7 @@ import '../../core/network/dopamine_api.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
+import '../profile/public_profile_screen.dart';
 import 'community_compose_screen.dart';
 import 'community_post_card.dart';
 
@@ -179,6 +180,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
     }
+  }
+
+  Future<void> _openAuthorProfile(CommunityPost post) async {
+    await PublicProfileScreen.open(
+      context,
+      authorUid: post.authorUid,
+      authorName: post.authorDisplayName,
+      authorPhotoUrl: post.authorPhotoUrl,
+    );
+    if (!mounted) return;
+    await _scheduleFetch();
   }
 
   void _onSort(String next) {
@@ -709,6 +721,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       locale: locale,
                       myUid: myUid,
                       followingByUid: _followingByUid,
+                      onOpenAuthorProfile: _openAuthorProfile,
                       onToggleFollow: _toggleFollow,
                       onToggleLike: (post) => _toggleLike(i, post),
                       onEditOwnPost: _openEditCompose,

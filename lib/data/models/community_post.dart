@@ -6,6 +6,7 @@ final class CommunityPost {
     this.imageUrls = const [],
     required this.authorUid,
     required this.authorDisplayName,
+    this.authorPhotoUrl,
     required this.createdAt,
     required this.assetSymbol,
     required this.assetClass,
@@ -21,6 +22,8 @@ final class CommunityPost {
   final List<String> imageUrls;
   final String authorUid;
   final String authorDisplayName;
+  /// 프로필 사진 URL (없으면 플레이스홀더)
+  final String? authorPhotoUrl;
   final DateTime createdAt;
   final String assetSymbol;
   final String assetClass;
@@ -41,6 +44,7 @@ final class CommunityPost {
       imageUrls: imageUrls,
       authorUid: authorUid,
       authorDisplayName: authorDisplayName,
+      authorPhotoUrl: authorPhotoUrl,
       createdAt: createdAt,
       assetSymbol: assetSymbol,
       assetClass: assetClass,
@@ -55,6 +59,10 @@ final class CommunityPost {
     final rawName = json['author_display_name'] as String?;
     final name =
         rawName == null || rawName.trim().isEmpty ? 'User' : rawName.trim();
+    final rawPhoto = json['author_photo_url'];
+    final photoUrl = rawPhoto is String && rawPhoto.trim().isNotEmpty
+        ? rawPhoto.trim()
+        : null;
     final rawUrls = json['image_urls'];
     final urls = rawUrls is List<dynamic>
         ? rawUrls.map((e) => e as String).toList()
@@ -66,6 +74,7 @@ final class CommunityPost {
       imageUrls: urls,
       authorUid: json['author_uid'] as String,
       authorDisplayName: name,
+      authorPhotoUrl: photoUrl,
       createdAt: DateTime.parse(json['created_at'] as String),
       assetSymbol: json['asset_symbol'] as String,
       assetClass: json['asset_class'] as String,

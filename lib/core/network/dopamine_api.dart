@@ -213,6 +213,7 @@ abstract final class DopamineApi {
     required String sort,
     String? symbol,
     String? assetClass,
+    String? authorUid,
     List<String>? bodyTerms,
     String? idToken,
   }) async {
@@ -227,6 +228,7 @@ abstract final class DopamineApi {
       },
       if (bodyTerms != null && bodyTerms.isNotEmpty)
         'q': bodyTerms.join(','),
+      if (authorUid != null && authorUid.isNotEmpty) 'authorUid': authorUid,
     };
     final uri = _uri('/api/feed/community-posts').replace(
       queryParameters: q,
@@ -249,6 +251,50 @@ abstract final class DopamineApi {
     return items
         .map((e) => CommunityPost.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  static Future<Map<String, dynamic>> fetchPublicProfile({
+    required String uid,
+    String? idToken,
+  }) async {
+    final uri = _uri('/api/profile/public').replace(
+      queryParameters: {'uid': uid},
+    );
+    final headers =
+        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final response = await _client.get(uri, headers: headers);
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid public profile payload');
+    }
+    return decoded;
+  }
+
+  static Future<void> blockUser({
+    required String idToken,
+    required String targetUid,
+  }) async {
+    final response = await _client.post(
+      _uri('/api/profile/block'),
+      headers: _bearerHeaders(idToken),
+      body: jsonEncode({'targetUid': targetUid}),
+    );
+    _ensureOk(response);
+  }
+
+  static Future<void> unblockUser({
+    required String idToken,
+    required String targetUid,
+  }) async {
+    final uri = _uri('/api/profile/block').replace(
+      queryParameters: {'targetUid': targetUid},
+    );
+    final response = await _client.delete(
+      uri,
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
   }
 
   static Future<List<AssetComment>> fetchAssetComments({
@@ -497,6 +543,28 @@ abstract final class DopamineApi {
       _uri('/api/profile/me'),
       headers: _jsonBearerHeaders(idToken),
       body: jsonEncode({'displayName': displayName}),
+    );
+    _ensureOk(response);
+  }
+
+  static Future<void> patchProfilePhotoUrl({
+    required String idToken,
+    String? photoUrl,
+  }) async {
+    final response = await _client.patch(
+      _uri('/api/profile/me'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({'photoUrl': photoUrl}),
+    );
+    _ensureOk(response);
+  }
+
+  static Future<void> deleteProfileData({
+    required String idToken,
+  }) async {
+    final response = await _client.delete(
+      _uri('/api/profile/me'),
+      headers: _bearerHeaders(idToken),
     );
     _ensureOk(response);
   }

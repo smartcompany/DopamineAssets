@@ -19,6 +19,7 @@ class CommunityPostCard extends StatelessWidget {
     this.onToggleLike,
     this.onEditOwnPost,
     this.onDeleteOwnPost,
+    this.onOpenAuthorProfile,
     this.showFollowButton = true,
     this.showLikeButton = true,
   });
@@ -31,6 +32,7 @@ class CommunityPostCard extends StatelessWidget {
   final Future<void> Function(CommunityPost p)? onToggleLike;
   final void Function(CommunityPost p)? onEditOwnPost;
   final void Function(CommunityPost p)? onDeleteOwnPost;
+  final void Function(CommunityPost p)? onOpenAuthorProfile;
   final bool showFollowButton;
   final bool showLikeButton;
 
@@ -65,7 +67,7 @@ class CommunityPostCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -78,7 +80,7 @@ class CommunityPostCard extends StatelessWidget {
                     children: [
                       if (assetName != null && assetName.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.only(bottom: 4),
                           child: Text(
                             assetName,
                             maxLines: 2,
@@ -129,6 +131,32 @@ class CommunityPostCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  tooltip: l10n.communityOpenAssetDetail,
+                  icon: Icon(
+                    Icons.info_outline_rounded,
+                    color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
+                    size: 30,
+                  ),
+                  onPressed: () {
+                    AssetDetailScreen.open(
+                      context,
+                      RankedAsset.communityShell(
+                        symbol: post.assetSymbol,
+                        assetClass: post.assetClass,
+                        displayName: (assetName != null && assetName.isNotEmpty)
+                            ? assetName
+                            : null,
+                      ),
+                    );
+                  },
+                ),
                 if (showMenu)
                   PopupMenuButton<String>(
                     icon: Icon(
@@ -160,32 +188,6 @@ class CommunityPostCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  tooltip: l10n.communityOpenAssetDetail,
-                  icon: Icon(
-                    Icons.info_outline_rounded,
-                    color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
-                    size: 30,
-                  ),
-                  onPressed: () {
-                    AssetDetailScreen.open(
-                      context,
-                      RankedAsset.communityShell(
-                        symbol: post.assetSymbol,
-                        assetClass: post.assetClass,
-                        displayName: (assetName != null && assetName.isNotEmpty)
-                            ? assetName
-                            : null,
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
             if (post.title != null && post.title!.trim().isNotEmpty) ...[
@@ -201,7 +203,7 @@ class CommunityPostCard extends StatelessWidget {
               ),
             ],
             if (post.imageUrls.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               SizedBox(
                 height: 72,
                 child: ListView.separated(
@@ -228,97 +230,19 @@ class CommunityPostCard extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               post.body,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: DopamineTheme.textPrimary,
-                height: 1.35,
+                height: 1.32,
               ),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    post.authorDisplayName,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: DopamineTheme.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Text(
-                  timeStr,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: DopamineTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                if (showFollowButton &&
-                    onToggleFollow != null &&
-                    myUid != null &&
-                    post.authorUid != myUid) ...[
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      foregroundColor:
-                          (followingByUid?[post.authorUid] ?? false)
-                              ? DopamineTheme.textSecondary
-                              : DopamineTheme.neonGreen,
-                    ),
-                    onPressed: () => onToggleFollow!(post),
-                    child: Text(
-                      (followingByUid?[post.authorUid] ?? false)
-                          ? l10n.communityUnfollow
-                          : l10n.communityFollow,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                const Spacer(),
-                if (showLikeButton && onToggleLike != null)
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onToggleLike!(post),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          post.likedByMe
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          size: 20,
-                          color: post.likedByMe
-                              ? DopamineTheme.accentRed
-                              : DopamineTheme.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          l10n.communityLikeCount(post.likeCount),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: DopamineTheme.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
             if (post.replyCount > 0) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 l10n.communityReplyCount(post.replyCount),
                 style: theme.textTheme.labelSmall?.copyWith(
@@ -326,7 +250,169 @@ class CommunityPostCard extends StatelessWidget {
                 ),
               ),
             ],
+            SizedBox(height: post.replyCount > 0 ? 4 : 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: onOpenAuthorProfile != null
+                        ? () => onOpenAuthorProfile!(post)
+                        : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                post.authorDisplayName,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: DopamineTheme.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            if (showFollowButton &&
+                                onToggleFollow != null &&
+                                myUid != null &&
+                                post.authorUid != myUid)
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                tooltip: (followingByUid?[post.authorUid] ?? false)
+                                    ? l10n.communityUnfollow
+                                    : l10n.communityFollow,
+                                onPressed: () => onToggleFollow!(post),
+                                icon: Icon(
+                                  (followingByUid?[post.authorUid] ?? false)
+                                      ? Icons.how_to_reg_rounded
+                                      : Icons.person_add_alt_1_rounded,
+                                  size: 20,
+                                  color: (followingByUid?[post.authorUid] ?? false)
+                                      ? DopamineTheme.textSecondary
+                                      : DopamineTheme.neonGreen,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        _AuthorAvatar(
+                          photoUrl: post.authorPhotoUrl,
+                          name: post.authorDisplayName,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showLikeButton && onToggleLike != null) ...[
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => onToggleLike!(post),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              post.likedByMe
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              size: 20,
+                              color: post.likedByMe
+                                  ? DopamineTheme.accentRed
+                                  : DopamineTheme.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              l10n.communityLikeCount(post.likeCount),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: DopamineTheme.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                    ],
+                    Text(
+                      timeStr,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: DopamineTheme.textSecondary.withValues(alpha: 0.88),
+                        fontSize: 11.5,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthorAvatar extends StatelessWidget {
+  const _AuthorAvatar({
+    required this.photoUrl,
+    required this.name,
+  });
+
+  final String? photoUrl;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = photoUrl?.trim();
+    if (url != null && url.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          url,
+          width: 36,
+          height: 36,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) =>
+              _AuthorAvatarPlaceholder(name: name),
+        ),
+      );
+    }
+    return _AuthorAvatarPlaceholder(name: name);
+  }
+}
+
+class _AuthorAvatarPlaceholder extends StatelessWidget {
+  const _AuthorAvatarPlaceholder({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final t = name.trim();
+    final letter = t.isEmpty
+        ? '?'
+        : String.fromCharCode(t.runes.first);
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: Colors.white.withValues(alpha: 0.1),
+      child: Text(
+        letter.toUpperCase(),
+        style: theme.textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: DopamineTheme.textSecondary,
         ),
       ),
     );

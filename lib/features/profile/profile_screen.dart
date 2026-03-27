@@ -41,15 +41,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _savingName = false;
   bool _uploadingPhoto = false;
+  bool _hydratingProfile = false;
+
+  bool _isAppSignedIn(AuthProvider<DopamineUser> auth) {
+    return auth.isLoggedIn();
+  }
+
+  Future<void> _hydrateProfileIfMissing({
+    required AuthProvider<DopamineUser> auth,
+    required User firebaseUser,
+  }) async {
+    if (_hydratingProfile) return;
+    if (auth.userProfile != null) return;
+    final firebaseName = firebaseUser.displayName?.trim();
+    if (firebaseName == null || firebaseName.isEmpty) return;
+
+    _hydratingProfile = true;
+    try {
+      final token = await firebaseUser.getIdToken();
+      if (token == null || token.isEmpty) return;
+      await DopamineApi.patchProfileDisplayName(
+        idToken: token,
+        displayName: firebaseName,
+      );
+      if (!mounted) return;
+      auth.setUserProfile(
+        DopamineUser(
+          uid: firebaseUser.uid,
+          displayName: firebaseName,
+          photoUrl: null,
+        ),
+      );
+      _syncNameField(firebaseName);
+    } catch (e) {
+      debugPrint(
+        '[Profile] hydrate profile from firebase displayName failed: $e',
+      );
+    } finally {
+      _hydratingProfile = false;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((u) async {
       if (!mounted) return;
-      if (u != null) {
-        _syncNameField(u);
-        _loadData();
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      if (_isAppSignedIn(auth) && u != null) {
+        await _hydrateProfileIfMissing(auth: auth, firebaseUser: u);
+        _syncNameField(auth.userProfile?.displayName ?? u.displayName);
+        await _loadData();
       } else {
         setState(() {
           _stats = null;
@@ -69,8 +111,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  void _syncNameField(User fb) {
-    final n = fb.displayName?.trim();
+  void _syncNameField(String? displayName) {
+    final n = displayName?.trim();
     if (n != null && n.isNotEmpty) {
       _nameController.text = n;
     }
@@ -114,25 +156,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final token = await fb.getIdToken();
       if (token == null || token.isEmpty) return;
       final ext = _extFromPath(x.path);
-      final url = await uploadCommunityPostImage(
+      final url = await uploadProfileImage(
         idToken: token,
         bytes: bytes,
         filename: 'avatar.$ext',
         contentType: _mimeForExt(ext),
       );
-      await fb.updatePhotoURL(url);
-      await fb.reload();
+      await DopamineApi.patchProfilePhotoUrl(idToken: token, photoUrl: url);
+      if (!mounted) return;
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      final current = auth.userProfile;
+      if (current != null) {
+        auth.setUserProfile(
+          DopamineUser(
+            uid: current.uid,
+            displayName: current.displayName,
+            photoUrl: url,
+          ),
+        );
+      }
       if (!mounted) return;
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profilePhotoSaved)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profilePhotoSaved)));
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
     }
@@ -143,21 +194,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (fb == null) return;
     setState(() => _uploadingPhoto = true);
     try {
-      await fb.updatePhotoURL(null);
-      await fb.reload();
+      final token = await fb.getIdToken();
+      if (token == null || token.isEmpty) return;
+      await DopamineApi.patchProfilePhotoUrl(idToken: token, photoUrl: null);
+      if (!mounted) return;
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      final current = auth.userProfile;
+      if (current != null) {
+        auth.setUserProfile(
+          DopamineUser(
+            uid: current.uid,
+            displayName: current.displayName,
+            photoUrl: null,
+          ),
+        );
+      }
       if (!mounted) return;
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profilePhotoRemoved)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profilePhotoRemoved)));
     } catch (e) {
       if (!mounted) return;
-      final msg = e is FirebaseAuthException
-          ? (e.message ?? e.code)
-          : l10n.errorLoadFailed;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
     }
@@ -167,7 +227,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
 
-    _syncNameField(fb);
+    _syncNameField(
+      context.read<AuthProvider<DopamineUser>>().userProfile?.displayName,
+    );
 
     final token = await fb.getIdToken();
     if (token == null || token.isEmpty) return;
@@ -197,9 +259,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _saveDisplayName(AppLocalizations l10n) async {
     final text = _nameController.text.trim();
     if (text.isEmpty || text.length > 80) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.errorLoadFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
       return;
     }
 
@@ -208,8 +270,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     setState(() => _savingName = true);
     try {
-      await fb.updateDisplayName(text);
-      await fb.reload();
       final token = await fb.getIdToken();
       if (token != null && token.isNotEmpty) {
         await DopamineApi.patchProfileDisplayName(
@@ -217,22 +277,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           displayName: text,
         );
       }
-      final u = FirebaseAuth.instance.currentUser!;
-      final name = u.displayName?.trim();
-      final email = u.email?.trim();
-      final label = (name != null && name.isNotEmpty)
-          ? name
-          : (email != null && email.isNotEmpty)
-              ? email
-              : 'User';
       if (!mounted) return;
-      context.read<AuthProvider<DopamineUser>>().setUserProfile(
-            DopamineUser(uid: u.uid, displayName: label),
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileDisplayNameSaved)),
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      final current = auth.userProfile;
+      auth.setUserProfile(
+        DopamineUser(
+          uid: fb.uid,
+          displayName: text,
+          photoUrl: current?.photoUrl,
+        ),
       );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileDisplayNameSaved)));
       await _loadData();
     } catch (e) {
       if (!mounted) return;
@@ -268,27 +326,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (ok != true || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
-    final u = FirebaseAuth.instance.currentUser;
-    if (u == null) return;
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    final uid = auth.currentUid();
+    if (uid == null || uid.isEmpty) return;
 
     try {
-      await u.delete();
-      if (!context.mounted) return;
-      await context.read<AuthProvider<DopamineUser>>().logout();
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.profileDeleteDone)),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (!context.mounted) return;
-      if (e.code == 'requires-recent-login') {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.profileRequiresRecentLogin)),
-        );
-      } else {
-        messenger.showSnackBar(
-          SnackBar(content: Text(e.message ?? e.code)),
-        );
+      final token = await auth.getIdToken();
+      if (token == null || token.isEmpty) {
+        throw StateError('invalid-id-token');
       }
+      debugPrint(
+        '[Dopamine][delete-account] request /api/profile/me uid=$uid tokenLen=${token.length}',
+      );
+
+      try {
+        await DopamineApi.deleteProfileData(idToken: token);
+      } on ApiException catch (e) {
+        debugPrint(
+          '[Dopamine][delete-account] deleteProfileData failed: ${e.message}',
+        );
+        if (!context.mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(e.message)));
+        return;
+      } catch (e) {
+        debugPrint('[Dopamine][delete-account] deleteProfileData failed: $e');
+        if (!context.mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+        return;
+      }
+
+      try {
+        await auth.deleteAccount();
+      } on FirebaseAuthException catch (e) {
+        debugPrint(
+          '[Dopamine][delete-account] auth.deleteAccount failed: code=${e.code} message=${e.message}',
+        );
+        if (!context.mounted) return;
+        if (e.code == 'requires-recent-login') {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.profileRequiresRecentLogin)),
+          );
+        } else {
+          messenger.showSnackBar(SnackBar(content: Text(e.message ?? e.code)));
+        }
+        return;
+      } catch (e) {
+        debugPrint('[Dopamine][delete-account] auth.deleteAccount failed: $e');
+        if (!context.mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+        return;
+      }
+    } on StateError {
+      if (!context.mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+    } catch (e) {
+      debugPrint('[Dopamine][delete-account] unexpected failed: $e');
+      if (!context.mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
     }
   }
 
@@ -296,9 +390,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     await context.read<AuthProvider<DopamineUser>>().logout();
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileLogoutDone)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileLogoutDone)));
     }
   }
 
@@ -339,17 +433,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (fb == null) return;
     final done = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => CommunityComposeScreen(
-          editCommentId: item.commentId,
-        ),
+        builder: (_) => CommunityComposeScreen(editCommentId: item.commentId),
       ),
     );
     if (done == true && mounted) {
       await _loadData();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileActivityPostUpdated)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostUpdated)));
     }
   }
 
@@ -370,17 +462,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = await user.getIdToken();
     if (token == null || !mounted) return;
     try {
-      await DopamineApi.toggleCommentLike(
-        idToken: token,
-        commentId: p.id,
-      );
+      await DopamineApi.toggleCommentLike(idToken: token, commentId: p.id);
       if (!mounted) return;
       await _loadData();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.errorLoadFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
     }
   }
 
@@ -416,22 +505,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = await fb.getIdToken();
     if (token == null || token.isEmpty) return;
     try {
-      await DopamineApi.deleteAssetComment(
-        id: item.commentId,
-        idToken: token,
-      );
+      await DopamineApi.deleteAssetComment(id: item.commentId, idToken: token);
       if (!context.mounted) return;
       await _loadData();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileActivityPostDeleted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
     } catch (e) {
       if (!context.mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -466,15 +550,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String locale,
     ProfileActivityItem item,
   ) {
-    final timeStr = DateFormat.yMMMd(locale)
-        .add_jm()
-        .format(item.at.toLocal());
+    final timeStr = DateFormat.yMMMd(locale).add_jm().format(item.at.toLocal());
 
     final cardShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(14),
-      side: BorderSide(
-        color: Colors.white.withValues(alpha: 0.14),
-      ),
+      side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
     );
 
     if ((item.kind == 'my_post' || item.kind == 'my_reply') &&
@@ -585,218 +665,313 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    context.watch<AuthProvider<DopamineUser>>();
-    final fb = FirebaseAuth.instance.currentUser;
-    final locale = Localizations.localeOf(context).toLanguageTag();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.navProfile),
-      ),
-      body: fb != null
-          ? RefreshIndicator(
-              color: DopamineTheme.neonGreen,
-              onRefresh: _loadData,
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  16,
-                  20,
-                  32 + homeShellBottomInset(context),
-                ),
-                children: [
-                  Text(
-                    l10n.profileSignedInSection,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: DopamineTheme.neonGreen,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _AccountProfilePhotoCard(
-                    theme: theme,
-                    l10n: l10n,
-                    user: fb,
-                    uploadingPhoto: _uploadingPhoto,
-                    onPickPhoto: () => _pickProfilePhoto(l10n),
-                    onRemovePhoto: () => _removeProfilePhoto(l10n),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    l10n.profileDisplayName,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: DopamineTheme.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: _nameController,
-                    maxLength: 80,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: DopamineTheme.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: l10n.profileDisplayNameHint,
-                      hintStyle: TextStyle(
-                        color: DopamineTheme.textSecondary.withValues(alpha: 0.85),
+  Widget _buildSignedInBody(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    User fb,
+    bool profileSaved,
+    String? profilePhotoUrl,
+    String locale,
+  ) {
+    return RefreshIndicator(
+      color: DopamineTheme.neonGreen,
+      onRefresh: _loadData,
+      child: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.profileSignedInSection,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: DopamineTheme.neonGreen,
                       ),
-                      filled: true,
-                      fillColor: Colors.black.withValues(alpha: 0.22),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                    const SizedBox(height: 16),
+                    _AccountProfilePhotoCard(
+                      theme: theme,
+                      l10n: l10n,
+                      photoUrl: profilePhotoUrl,
+                      profileSaved: profileSaved,
+                      uploadingPhoto: _uploadingPhoto,
+                      onPickPhoto: () => _pickProfilePhoto(l10n),
+                      onRemovePhoto: () => _removeProfilePhoto(l10n),
+                    ),
+                    const SizedBox(height: 22),
+                    Text(
+                      l10n.profileDisplayName,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: DopamineTheme.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _nameController,
+                      maxLength: 80,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: DopamineTheme.textPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: l10n.profileDisplayNameHint,
+                        hintStyle: TextStyle(
+                          color: DopamineTheme.textSecondary.withValues(
+                            alpha: 0.85,
+                          ),
                         ),
-                      ),
-                      counterStyle: TextStyle(
-                        color: DopamineTheme.textSecondary.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FilledButton(
-                      onPressed: _savingName ? null : () => _saveDisplayName(l10n),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: DopamineTheme.neonGreen,
-                        foregroundColor: const Color(0xFF0A0A0A),
-                      ),
-                      child: _savingName
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Color(0xFF0A0A0A),
-                              ),
-                            )
-                          : Text(l10n.profileSaveDisplayName),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: DopamineTheme.neonGreen,
+                        filled: true,
+                        fillColor: Colors.black.withValues(alpha: 0.22),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
+                        ),
+                        counterStyle: TextStyle(
+                          color: DopamineTheme.textSecondary.withValues(
+                            alpha: 0.7,
                           ),
                         ),
                       ),
-                    )
-                  else if (_loadError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _loadError is ApiException
-                            ? (_loadError as ApiException).message
-                            : l10n.errorLoadFailed,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: DopamineTheme.accentRed,
-                        ),
-                      ),
-                    )
-                  else if (_stats != null)
-                    _StatsRow(
-                      stats: _stats!,
-                      l10n: l10n,
                     ),
-                  const SizedBox(height: 24),
-                  Text(
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton(
+                        onPressed: _savingName
+                            ? null
+                            : () => _saveDisplayName(l10n),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: DopamineTheme.neonGreen,
+                          foregroundColor: const Color(0xFF0A0A0A),
+                        ),
+                        child: _savingName
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF0A0A0A),
+                                ),
+                              )
+                            : Text(l10n.profileSaveDisplayName),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: DopamineTheme.neonGreen,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (_loadError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          _loadError is ApiException
+                              ? (_loadError as ApiException).message
+                              : l10n.errorLoadFailed,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: DopamineTheme.accentRed,
+                          ),
+                        ),
+                      )
+                    else if (_stats != null)
+                      _StatsRow(stats: _stats!, l10n: l10n),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => _logout(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: DopamineTheme.textPrimary,
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.35),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(l10n.profileLogout),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () => _confirmDelete(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: DopamineTheme.accentRed,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(l10n.profileDeleteAccount),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _ProfileStickyHeaderDelegate(
+                child: Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
                     l10n.profileActivityTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: DopamineTheme.neonGreen,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  if (_activity.isEmpty && !_loading && _loadError == null)
-                    Text(
-                      l10n.emptyState,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: DopamineTheme.textSecondary,
-                      ),
-                    )
-                  else
-                    for (final item in _activity)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: item.hasCommunityCardPayload
-                            ? CommunityPostCard(
-                                post: item.toCommunityPost(
-                                  authorUid: fb.uid,
-                                  fallbackAuthorDisplayName:
-                                      (fb.displayName?.trim().isNotEmpty ==
-                                              true)
-                                          ? fb.displayName!.trim()
-                                          : 'User',
-                                ),
-                                locale: locale,
-                                myUid: fb.uid,
-                                showFollowButton: false,
-                                followingByUid: null,
-                                onToggleFollow: null,
-                                onToggleLike: _toggleActivityLike,
-                                onEditOwnPost: (p) {
-                                  final i = _activityItemForCommentId(p.id);
-                                  if (i != null) {
-                                    _editOwnActivity(context, i);
-                                  }
-                                },
-                                onDeleteOwnPost: (p) {
-                                  final i = _activityItemForCommentId(p.id);
-                                  if (i != null) {
-                                    _deleteOwnActivity(context, i);
-                                  }
-                                },
-                              )
-                            : _buildActivityCard(
-                                context,
-                                theme,
-                                l10n,
-                                locale,
-                                item,
-                              ),
-                      ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => _logout(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: DopamineTheme.textPrimary,
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.35),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: Text(l10n.profileLogout),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: () => _confirmDelete(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: DopamineTheme.accentRed,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: Text(l10n.profileDeleteAccount),
-                    ),
-                  ),
-                ],
+                ),
               ),
+            ),
+          ];
+        },
+        body: _buildActivityList(
+          context,
+          theme,
+          l10n,
+          fb,
+          profilePhotoUrl,
+          locale,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityList(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+    User fb,
+    String? profilePhotoUrl,
+    String locale,
+  ) {
+    if (_loading && _activity.isEmpty) {
+      return const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: DopamineTheme.neonGreen,
+          ),
+        ),
+      );
+    }
+
+    if (_loadError != null && _activity.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            _loadError is ApiException
+                ? (_loadError as ApiException).message
+                : l10n.errorLoadFailed,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: DopamineTheme.accentRed,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_activity.isEmpty) {
+      return Center(
+        child: Text(
+          l10n.emptyState,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: DopamineTheme.textSecondary,
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        28 + homeShellBottomInset(context),
+      ),
+      itemCount: _activity.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final item = _activity[index];
+        return item.hasCommunityCardPayload
+            ? CommunityPostCard(
+                post: item.toCommunityPost(
+                  authorUid: fb.uid,
+                  fallbackAuthorDisplayName:
+                      _nameController.text.trim().isNotEmpty
+                      ? _nameController.text.trim()
+                      : 'User',
+                  authorPhotoUrl: profilePhotoUrl?.trim().isNotEmpty == true
+                      ? profilePhotoUrl!.trim()
+                      : null,
+                ),
+                locale: locale,
+                myUid: fb.uid,
+                showFollowButton: false,
+                followingByUid: null,
+                onToggleFollow: null,
+                onToggleLike: _toggleActivityLike,
+                onEditOwnPost: (p) {
+                  final i = _activityItemForCommentId(p.id);
+                  if (i != null) {
+                    _editOwnActivity(context, i);
+                  }
+                },
+                onDeleteOwnPost: (p) {
+                  final i = _activityItemForCommentId(p.id);
+                  if (i != null) {
+                    _deleteOwnActivity(context, i);
+                  }
+                },
+              )
+            : _buildActivityCard(context, theme, l10n, locale, item);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final auth = context.watch<AuthProvider<DopamineUser>>();
+    final fb = FirebaseAuth.instance.currentUser;
+    final appSignedIn = _isAppSignedIn(auth);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final profileSaved = appSignedIn;
+    final profilePhotoUrl = auth.userProfile?.photoUrl;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.navProfile)),
+      body: appSignedIn
+          ? _buildSignedInBody(
+              context,
+              theme,
+              l10n,
+              fb!,
+              profileSaved,
+              profilePhotoUrl,
+              locale,
             )
           : Center(
               child: Padding(
@@ -832,12 +1007,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+class _ProfileStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _ProfileStickyHeaderDelegate({required this.child});
+
+  final Widget child;
+
+  @override
+  double get minExtent => 52;
+
+  @override
+  double get maxExtent => 52;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant _ProfileStickyHeaderDelegate oldDelegate) {
+    return oldDelegate.child != child;
+  }
+}
+
 /// 계정 영역 — 프로필 사진 카드 (글래스 톤 + 아이콘 액션)
 class _AccountProfilePhotoCard extends StatelessWidget {
   const _AccountProfilePhotoCard({
     required this.theme,
     required this.l10n,
-    required this.user,
+    required this.photoUrl,
+    required this.profileSaved,
     required this.uploadingPhoto,
     required this.onPickPhoto,
     required this.onRemovePhoto,
@@ -845,23 +1047,23 @@ class _AccountProfilePhotoCard extends StatelessWidget {
 
   final ThemeData theme;
   final AppLocalizations l10n;
-  final User user;
+  final String? photoUrl;
+  final bool profileSaved;
   final bool uploadingPhoto;
   final VoidCallback onPickPhoto;
   final VoidCallback onRemovePhoto;
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = user.photoURL?.trim().isNotEmpty == true;
+    final normalizedPhotoUrl = photoUrl?.trim();
+    final hasPhoto = profileSaved && normalizedPhotoUrl?.isNotEmpty == true;
     final borderGlow = DopamineTheme.neonGreen.withValues(alpha: 0.35);
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.14),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -878,29 +1080,10 @@ class _AccountProfilePhotoCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.portrait_rounded,
-                size: 20,
-                color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.profilePhotoTitle,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: DopamineTheme.textPrimary,
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
           Center(
             child: Stack(
               alignment: Alignment.center,
@@ -913,7 +1096,9 @@ class _AccountProfilePhotoCard extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: DopamineTheme.neonGreen.withValues(alpha: 0.12),
+                          color: DopamineTheme.neonGreen.withValues(
+                            alpha: 0.12,
+                          ),
                           blurRadius: 20,
                           spreadRadius: 0,
                         ),
@@ -931,11 +1116,10 @@ class _AccountProfilePhotoCard extends StatelessWidget {
                         ),
                       ),
                       child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor:
-                            Colors.white.withValues(alpha: 0.1),
+                        radius: 44,
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
                         child: ClipOval(
-                          child: _profileAvatarChild(user),
+                          child: _profileAvatarChild(normalizedPhotoUrl),
                         ),
                       ),
                     ),
@@ -964,7 +1148,7 @@ class _AccountProfilePhotoCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -994,11 +1178,10 @@ class _AccountProfilePhotoCard extends StatelessWidget {
     );
   }
 
-  static Widget _profileAvatarChild(User user) {
-    final url = user.photoURL?.trim();
-    if (url != null && url.isNotEmpty) {
+  static Widget _profileAvatarChild(String? normalizedPhotoUrl) {
+    if (normalizedPhotoUrl != null && normalizedPhotoUrl.isNotEmpty) {
       return Image.network(
-        url,
+        normalizedPhotoUrl,
         width: 100,
         height: 100,
         fit: BoxFit.cover,
@@ -1066,10 +1249,7 @@ class _ProfilePhotoIconAction extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({
-    required this.stats,
-    required this.l10n,
-  });
+  const _StatsRow({required this.stats, required this.l10n});
 
   final ProfileStats stats;
   final AppLocalizations l10n;
@@ -1092,9 +1272,8 @@ class _StatsRow extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const FollowListScreen(
-                    kind: FollowListKind.following,
-                  ),
+                  builder: (_) =>
+                      const FollowListScreen(kind: FollowListKind.following),
                 ),
               );
             },
@@ -1107,9 +1286,8 @@ class _StatsRow extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const FollowListScreen(
-                    kind: FollowListKind.followers,
-                  ),
+                  builder: (_) =>
+                      const FollowListScreen(kind: FollowListKind.followers),
                 ),
               );
             },
@@ -1121,11 +1299,7 @@ class _StatsRow extends StatelessWidget {
 }
 
 class _StatCell extends StatelessWidget {
-  const _StatCell({
-    required this.value,
-    required this.label,
-    this.onTap,
-  });
+  const _StatCell({required this.value, required this.label, this.onTap});
 
   final String value;
   final String label;

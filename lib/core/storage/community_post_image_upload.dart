@@ -6,16 +6,17 @@ import 'package:http_parser/http_parser.dart';
 import '../config/api_config.dart';
 import '../network/api_exception.dart';
 
-/// Supabase Storage (`dopamine-assets`) — 서버 [POST /api/feed/community-image] 경유.
-Future<String> uploadCommunityPostImage({
+Future<String> _uploadImage({
   required String idToken,
   required List<int> bytes,
   required String filename,
-  String contentType = 'image/jpeg',
+  required String contentType,
+  required String scope,
 }) async {
   final uri = Uri.parse('${ApiConfig.baseUrl}/api/feed/community-image');
   final request = http.MultipartRequest('POST', uri);
   request.headers['Authorization'] = 'Bearer $idToken';
+  request.fields['scope'] = scope;
   MediaType? mediaType;
   try {
     mediaType = MediaType.parse(contentType);
@@ -45,4 +46,36 @@ Future<String> uploadCommunityPostImage({
     throw ApiException('Missing image URL');
   }
   return url;
+}
+
+/// Supabase Storage (`dopamine-assets`) — 서버 [POST /api/feed/community-image] 경유.
+Future<String> uploadCommunityPostImage({
+  required String idToken,
+  required List<int> bytes,
+  required String filename,
+  String contentType = 'image/jpeg',
+}) async {
+  return _uploadImage(
+    idToken: idToken,
+    bytes: bytes,
+    filename: filename,
+    contentType: contentType,
+    scope: 'community',
+  );
+}
+
+/// 프로필 사진 전용 업로드. Storage 경로는 `profiles/{uid}/...`.
+Future<String> uploadProfileImage({
+  required String idToken,
+  required List<int> bytes,
+  required String filename,
+  String contentType = 'image/jpeg',
+}) async {
+  return _uploadImage(
+    idToken: idToken,
+    bytes: bytes,
+    filename: filename,
+    contentType: contentType,
+    scope: 'profile',
+  );
 }

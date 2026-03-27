@@ -35,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<RankedAsset>? _upItems;
   List<RankedAsset>? _downItems;
   bool _rankingsLoading = true;
+  /// 필터 확인 후 새 랭킹을 받아올 때까지 상단 로딩 바 표시용
+  bool _rankingsRefreshing = false;
   Object? _rankingsError;
   Timer? _rankingPollTimer;
   int _rankingRequestId = 0;
@@ -143,10 +145,19 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {
       _rankingClasses = classes;
+      _rankingsRefreshing = true;
     });
     _logRankings('filter applied → reschedule poll if enabled');
     _scheduleRankingPoll();
-    await _refreshRankings();
+    try {
+      await _refreshRankings();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _rankingsRefreshing = false;
+        });
+      }
+    }
   }
 
   List<RankedAsset> _topRankings(List<RankedAsset>? items) {
@@ -335,6 +346,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+            if (_rankingsRefreshing)
+              SliverToBoxAdapter(
+                child: LinearProgressIndicator(
+                  minHeight: 3,
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  color: DopamineTheme.neonGreen,
+                ),
+              ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
