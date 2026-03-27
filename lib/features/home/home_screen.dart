@@ -39,8 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _rankingPollTimer;
   int _rankingRequestId = 0;
 
-  late final Future<List<ThemeItem>> _hotThemesFuture =
-      DopamineApi.fetchThemes('hot');
+  late final Future<List<ThemeItem>> _hotThemesFuture = DopamineApi.fetchThemes(
+    'hot',
+  );
   late final Future<List<ThemeItem>> _crashedThemesFuture =
       DopamineApi.fetchThemes('crashed');
   late final Future<MarketSummary> _marketFuture =
@@ -150,9 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<RankedAsset> _topRankings(List<RankedAsset>? items) {
     if (items == null || items.isEmpty) return const [];
-    return items.length > _rankingTopN
-        ? items.sublist(0, _rankingTopN)
-        : items;
+    return items.length > _rankingTopN ? items.sublist(0, _rankingTopN) : items;
   }
 
   List<Widget> _animatedRankingSlivers({
@@ -279,18 +278,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        l10n.homeHeaderTitleDecorated,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                          color: DopamineTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
+                      _HomeBlazingTitle(text: l10n.homeHeaderTitleDecorated),
+                      const SizedBox(height: 12),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           if (auth.isLoggedIn())
                             const SizedBox(width: 48)
@@ -304,10 +295,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               icon: Icon(
                                 Icons.login_rounded,
-                                color: DopamineTheme.textSecondary
-                                    .withValues(alpha: 0.95),
+                                color: DopamineTheme.textSecondary.withValues(
+                                  alpha: 0.95,
+                                ),
                               ),
-                              onPressed: () => presentDopamineAuthScreen(context),
+                              onPressed: () =>
+                                  presentDopamineAuthScreen(context),
                             ),
                           Expanded(
                             child: Text(
@@ -328,9 +321,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               minHeight: 48,
                             ),
                             icon: Icon(
-                              Icons.filter_list_rounded,
-                              color: DopamineTheme.textSecondary
-                                  .withValues(alpha: 0.95),
+                              Icons.filter_alt_rounded,
+                              color: DopamineTheme.textSecondary.withValues(
+                                alpha: 0.95,
+                              ),
                             ),
                             onPressed: _openRankingFilter,
                           ),
@@ -348,6 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.trending_up_rounded,
                   iconColor: DopamineTheme.neonGreen,
                   title: l10n.rankingsUpTitle,
+                  emphasize: true,
                 ),
               ),
             ),
@@ -387,24 +382,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 10),
                       FutureBuilder<List<ThemeItem>>(
                         future: _hotThemesFuture,
-                        builder: (context, snapshot) => _buildThemeList(
-                          snapshot,
-                          l10n,
-                          theme,
-                          up: true,
-                        ),
+                        builder: (context, snapshot) =>
+                            _buildThemeList(snapshot, l10n, theme, up: true),
                       ),
                       const SizedBox(height: 18),
                       _SubsectionTitle(title: l10n.themesCrashedTitle),
                       const SizedBox(height: 10),
                       FutureBuilder<List<ThemeItem>>(
                         future: _crashedThemesFuture,
-                        builder: (context, snapshot) => _buildThemeList(
-                          snapshot,
-                          l10n,
-                          theme,
-                          up: false,
-                        ),
+                        builder: (context, snapshot) =>
+                            _buildThemeList(snapshot, l10n, theme, up: false),
                       ),
                     ],
                   ),
@@ -610,10 +597,7 @@ class _PurpleGradientBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            DopamineTheme.purpleTop,
-            DopamineTheme.purpleBottom,
-          ],
+          colors: [DopamineTheme.purpleTop, DopamineTheme.purpleBottom],
         ),
       ),
     );
@@ -636,9 +620,7 @@ class _GlassPanel extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.32),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.14),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: child,
@@ -648,31 +630,111 @@ class _GlassPanel extends StatelessWidget {
   }
 }
 
+/// 상단 앱 타이틀 — 골드→오렌지 그라데이션 + 네온 글로우
+class _HomeBlazingTitle extends StatelessWidget {
+  const _HomeBlazingTitle({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    const baseStyle = TextStyle(
+      fontSize: 27,
+      height: 1.05,
+      fontWeight: FontWeight.w900,
+      letterSpacing: -0.9,
+    );
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Transform.translate(
+          offset: const Offset(0, 1),
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: baseStyle.copyWith(
+                color: const Color(0xFFFF9100).withValues(alpha: 0.55),
+              ),
+            ),
+          ),
+        ),
+        ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFFF8E1),
+              Color(0xFFFFE082),
+              Color(0xFFFFCA28),
+              Color(0xFFFF9100),
+              Color(0xFFFF6D00),
+            ],
+            stops: [0.0, 0.25, 0.45, 0.72, 1.0],
+          ).createShader(bounds),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: baseStyle.copyWith(color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({
     required this.icon,
     required this.iconColor,
     required this.title,
+    this.emphasize = false,
   });
 
   final IconData icon;
   final Color iconColor;
   final String title;
+  final bool emphasize;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, color: iconColor, size: 24),
+        Icon(icon, color: iconColor, size: emphasize ? 28 : 24),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.3,
-                  color: DopamineTheme.textPrimary,
-                ),
+            style:
+                (emphasize
+                        ? theme.textTheme.headlineSmall
+                        : theme.textTheme.titleLarge)
+                    ?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: emphasize ? -0.6 : -0.3,
+                      height: 1.15,
+                      color: DopamineTheme.textPrimary,
+                      shadows: emphasize
+                          ? [
+                              Shadow(
+                                color: DopamineTheme.neonGreen.withValues(
+                                  alpha: 0.35,
+                                ),
+                                blurRadius: 18,
+                              ),
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.85),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ]
+                          : null,
+                    ),
           ),
         ),
       ],
@@ -690,9 +752,9 @@ class _SubsectionTitle extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: DopamineTheme.textSecondary,
-          ),
+        fontWeight: FontWeight.w700,
+        color: DopamineTheme.textSecondary,
+      ),
     );
   }
 }
@@ -727,6 +789,189 @@ Color _assetClassBadgeColor(String? assetClass) {
   }
 }
 
+/// 1~3위 포디엄 테두리·랭크 뱃지 그라데이션 (상승=금·은·동 톤, 하락=레드 계열)
+class _PodiumStyle {
+  const _PodiumStyle({
+    required this.accent,
+    required this.rankGradient,
+    required this.rankTextColor,
+  });
+
+  final Color accent;
+  final List<Color> rankGradient;
+  final Color rankTextColor;
+
+  static _PodiumStyle? forRank(int rank, bool upList) {
+    if (rank < 1 || rank > 3) return null;
+    if (upList) {
+      switch (rank) {
+        case 1:
+          // 금 (Gold): 따뜻한 앰버·골드 메탈릭
+          return _PodiumStyle(
+            accent: const Color(0xFFD4AF37),
+            rankGradient: const [
+              Color(0xFFFFF8E1),
+              Color(0xFFFFD54F),
+              Color(0xFFFFA000),
+              Color(0xFFFF8F00),
+            ],
+            rankTextColor: const Color(0xFF2D1F0A),
+          );
+        case 2:
+          // 은 (Silver): 쿨 그레이·스틸 메탈릭
+          return _PodiumStyle(
+            accent: const Color(0xFF9CA3AF),
+            rankGradient: const [
+              Color(0xFFF8FAFC),
+              Color(0xFFE2E8F0),
+              Color(0xFF94A3B8),
+              Color(0xFF64748B),
+            ],
+            rankTextColor: const Color(0xFF1E293B),
+          );
+        case 3:
+          // 동 (Bronze): 구리·브론즈 메탈릭
+          return _PodiumStyle(
+            accent: const Color(0xFFB87333),
+            rankGradient: const [
+              Color(0xFFFFE0B2),
+              Color(0xFFCD7F32),
+              Color(0xFF8D5524),
+              Color(0xFF5D3A1A),
+            ],
+            rankTextColor: const Color(0xFF1F1408),
+          );
+      }
+    } else {
+      switch (rank) {
+        case 1:
+          return _PodiumStyle(
+            accent: const Color(0xFFFF1744),
+            rankGradient: const [
+              Color(0xFFFF8A80),
+              Color(0xFFFF5252),
+              Color(0xFFD50000),
+            ],
+            rankTextColor: const Color(0xFF1A0000),
+          );
+        case 2:
+          return _PodiumStyle(
+            accent: const Color(0xFFFF5252),
+            rankGradient: const [
+              Color(0xFFFFCDD2),
+              Color(0xFFFF8A80),
+              Color(0xFFE53935),
+            ],
+            rankTextColor: const Color(0xFF1A0000),
+          );
+        case 3:
+          return _PodiumStyle(
+            accent: const Color(0xFFFF8A80),
+            rankGradient: const [
+              Color(0xFFFFE0E0),
+              Color(0xFFFFAB91),
+              Color(0xFFE64A19),
+            ],
+            rankTextColor: const Color(0xFF3E2723),
+          );
+      }
+    }
+    return null;
+  }
+}
+
+/// 1위 카드: 테두리·글로우가 부드럽게 맥동하는 애니메이션
+class _FirstPlacePulsingShell extends StatefulWidget {
+  const _FirstPlacePulsingShell({
+    required this.borderRadius,
+    required this.blurSigma,
+    required this.podium,
+    required this.child,
+  });
+
+  final double borderRadius;
+  final double blurSigma;
+  final _PodiumStyle podium;
+  final Widget child;
+
+  @override
+  State<_FirstPlacePulsingShell> createState() =>
+      _FirstPlacePulsingShellState();
+}
+
+class _FirstPlacePulsingShellState extends State<_FirstPlacePulsingShell>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+    _pulse = CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = widget.podium.accent;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(widget.borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: widget.blurSigma,
+          sigmaY: widget.blurSigma,
+        ),
+        child: AnimatedBuilder(
+          animation: _pulse,
+          builder: (context, child) {
+            final t = _pulse.value;
+            final borderColor = Color.lerp(
+              accent.withValues(alpha: 0.72),
+              accent.withValues(alpha: 1.0),
+              t,
+            )!;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.42 + 0.04 * t),
+                borderRadius: BorderRadius.circular(widget.borderRadius),
+                border: Border.all(color: borderColor, width: 2.3 + 1.1 * t),
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.32 + 0.28 * t),
+                    blurRadius: 16 + 24 * t,
+                    spreadRadius: 0.5 + 2.5 * t,
+                  ),
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.14 + 0.22 * t),
+                    blurRadius: 32 + 20 * t,
+                    spreadRadius: -1,
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.06 + 0.14 * t),
+                    blurRadius: 10 + 12 * t,
+                  ),
+                ],
+              ),
+              child: child,
+            );
+          },
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
 class _GlassAssetRow extends StatelessWidget {
   const _GlassAssetRow({
     required this.rank,
@@ -750,137 +995,191 @@ class _GlassAssetRow extends StatelessWidget {
     final pctColor = upList
         ? (pct >= 0 ? DopamineTheme.neonGreen : DopamineTheme.accentRed)
         : (pct <= 0 ? DopamineTheme.accentRed : DopamineTheme.neonGreen);
-    final rankBadgeColor = upList ? DopamineTheme.neonGreen : DopamineTheme.accentRed;
+    final defaultRankColor = upList
+        ? DopamineTheme.neonGreen
+        : DopamineTheme.accentRed;
+
+    final podium = _PodiumStyle.forRank(rank, upList);
+    final isPodium = podium != null;
+    final borderRadius = isPodium ? 18.0 : 16.0;
+    final blurSigma = isPodium ? 16.0 : 14.0;
+
+    final nameStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: DopamineTheme.textPrimary,
+    );
+
+    final pctStyle = isPodium
+        ? theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: pctColor,
+            letterSpacing: -0.5,
+            height: 1.15,
+            shadows: [
+              Shadow(color: pctColor.withValues(alpha: 0.45), blurRadius: 10),
+            ],
+          )
+        : theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: pctColor,
+            letterSpacing: -0.3,
+          );
+
+    final symStyle = theme.textTheme.bodySmall?.copyWith(
+      color: DopamineTheme.textSecondary,
+    );
+
+    final isFirstPlace = rank == 1 && podium != null;
+
+    final rankingRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: isPodium
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: podium.rankGradient,
+                  )
+                : null,
+            color: isPodium ? null : defaultRankColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: (isPodium ? podium.accent : defaultRankColor).withValues(
+                  alpha: 0.55,
+                ),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+          child: Text(
+            '$rank',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: isPodium ? podium.rankTextColor : const Color(0xFF0A0A0A),
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (badgeLabel != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: assetClassColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: assetClassColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          badgeLabel,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: assetClassColor,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(child: Text(asset.name, style: nameStyle)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(asset.symbol, style: symStyle),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(PercentFormat.signedPercent(pct, locale), style: pctStyle),
+            SizedBox(height: isPodium ? 6 : 4),
+            Icon(
+              Icons.show_chart_rounded,
+              size: isPodium ? 20 : 16,
+              color: pctColor.withValues(alpha: 0.9),
+            ),
+          ],
+        ),
+      ],
+    );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: isPodium ? 14 : 10),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => AssetDetailScreen.open(context, asset),
-          borderRadius: BorderRadius.circular(16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      alignment: Alignment.center,
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: isFirstPlace
+              ? _FirstPlacePulsingShell(
+                  borderRadius: borderRadius,
+                  blurSigma: blurSigma,
+                  podium: podium,
+                  child: rankingRow,
+                )
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(
+                      sigmaX: blurSigma,
+                      sigmaY: blurSigma,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isPodium ? 16 : 14,
+                        vertical: isPodium ? 16 : 14,
+                      ),
                       decoration: BoxDecoration(
-                        color: rankBadgeColor,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: rankBadgeColor.withValues(alpha: 0.45),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        '$rank',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: const Color(0xFF0A0A0A),
-                          fontWeight: FontWeight.w900,
+                        color: Colors.black.withValues(
+                          alpha: isPodium ? 0.42 : 0.35,
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (badgeLabel != null) ...[
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: assetClassColor.withValues(
-                                          alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: assetClassColor
-                                            .withValues(alpha: 0.5),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      badgeLabel,
-                                      style:
-                                          theme.textTheme.labelSmall?.copyWith(
-                                        color: assetClassColor,
-                                        fontWeight: FontWeight.w800,
-                                        height: 1.1,
-                                      ),
-                                    ),
-                                  ),
+                        borderRadius: BorderRadius.circular(borderRadius),
+                        border: Border.all(
+                          color: isPodium
+                              ? podium.accent.withValues(alpha: 0.92)
+                              : Colors.white.withValues(alpha: 0.12),
+                          width: isPodium ? 2.5 : 1,
+                        ),
+                        boxShadow: isPodium
+                            ? [
+                                BoxShadow(
+                                  color: podium.accent.withValues(alpha: 0.42),
+                                  blurRadius: 22,
+                                  spreadRadius: 0,
                                 ),
-                                const SizedBox(width: 8),
-                              ],
-                              Expanded(
-                                child: Text(
-                                  asset.name,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: DopamineTheme.textPrimary,
-                                  ),
+                                BoxShadow(
+                                  color: podium.accent.withValues(alpha: 0.18),
+                                  blurRadius: 6,
+                                  spreadRadius: 1,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            asset.symbol,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: DopamineTheme.textSecondary,
-                            ),
-                          ),
-                        ],
+                              ]
+                            : null,
                       ),
+                      child: rankingRow,
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          PercentFormat.signedPercent(pct, locale),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: pctColor,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Icon(
-                          Icons.show_chart_rounded,
-                          size: 16,
-                          color: pctColor.withValues(alpha: 0.9),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -908,8 +1207,9 @@ class _GlassThemeRow extends StatelessWidget {
     final pctColor = hotList
         ? (pct >= 0 ? DopamineTheme.neonGreen : DopamineTheme.accentRed)
         : (pct <= 0 ? DopamineTheme.accentRed : DopamineTheme.neonGreen);
-    final badgeColor =
-        hotList ? DopamineTheme.neonGreen : DopamineTheme.accentRed;
+    final badgeColor = hotList
+        ? DopamineTheme.neonGreen
+        : DopamineTheme.accentRed;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -921,9 +1221,7 @@ class _GlassThemeRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.35),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -1001,10 +1299,7 @@ class _GlassThemeRow extends StatelessWidget {
 }
 
 class _MarketSummaryGrid extends StatelessWidget {
-  const _MarketSummaryGrid({
-    required this.l10n,
-    required this.summary,
-  });
+  const _MarketSummaryGrid({required this.l10n, required this.summary});
 
   final AppLocalizations l10n;
   final MarketSummary summary;
@@ -1043,9 +1338,7 @@ class _MarketSummaryGrid extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1074,10 +1367,7 @@ class _MarketSummaryGrid extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile({
-    required this.label,
-    required this.value,
-  });
+  const _StatTile({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1090,9 +1380,7 @@ class _StatTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1129,9 +1417,9 @@ class _InlineError extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         detail,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: DopamineTheme.accentRed,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: DopamineTheme.accentRed),
       ),
     );
   }
