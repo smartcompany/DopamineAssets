@@ -22,12 +22,16 @@ class CommunityComposeScreen extends StatefulWidget {
     super.key,
     this.initialSymbol,
     this.initialAssetClass,
+    this.initialDisplayName,
     this.editCommentId,
     this.editPrefill,
   });
 
   final String? initialSymbol;
   final String? initialAssetClass;
+
+  /// [initialSymbol] 이 홈 랭킹 목록에 없을 때 표시명(예: 종목 상세에서 진입)
+  final String? initialDisplayName;
 
   /// 프로필 등에서 수정 시 — 전체 댓글을 GET으로 불러옴
   final String? editCommentId;
@@ -196,6 +200,13 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
           return;
         }
       }
+      final dn = widget.initialDisplayName?.trim();
+      _selectedAsset = RankedAsset.communityShell(
+        symbol: sym,
+        assetClass: _assetClass,
+        displayName: (dn != null && dn.isNotEmpty) ? dn : sym,
+      );
+      return;
     }
     _selectedAsset = list.isNotEmpty ? list.first : null;
   }

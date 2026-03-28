@@ -13,6 +13,7 @@ import '../../core/network/dopamine_api.dart';
 import '../../data/models/asset_detail.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
+import '../community/community_compose_screen.dart';
 import 'asset_candle_chart_screen.dart';
 import 'asset_posts_section.dart';
 import 'asset_news_section.dart';
@@ -151,6 +152,32 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                         color: DopamineTheme.textPrimary,
                                       ),
                                 ),
+                              ),
+                              IconButton(
+                                tooltip: l10n.communityComposeTitle,
+                                style: IconButton.styleFrom(
+                                  foregroundColor: DopamineTheme.neonGreen
+                                      .withValues(alpha: 0.95),
+                                  side: BorderSide(
+                                    color: DopamineTheme.neonGreen
+                                        .withValues(alpha: 0.5),
+                                    width: 1.25,
+                                  ),
+                                  shape: const CircleBorder(),
+                                  padding: const EdgeInsets.all(10),
+                                ),
+                                onPressed: () {
+                                  Navigator.of(context).push<void>(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => CommunityComposeScreen(
+                                        initialSymbol: d.symbol,
+                                        initialAssetClass: d.assetClass,
+                                        initialDisplayName: d.name,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.edit_note_rounded),
                               ),
                               IconButton(
                                 tooltip: l10n.assetDetailOpenCommunity,
