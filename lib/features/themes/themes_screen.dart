@@ -3,7 +3,9 @@ import 'package:dopamine_assets/l10n/app_localizations.dart';
 
 import '../../core/formatting/percent_format.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
+import '../asset/asset_detail_screen.dart';
 import '../../widgets/async_body.dart';
 
 class ThemesScreen extends StatefulWidget {
@@ -14,16 +16,32 @@ class ThemesScreen extends StatefulWidget {
 }
 
 class _ThemesScreenState extends State<ThemesScreen> {
-  late final Future<List<ThemeItem>> _hotFuture;
-  late final Future<List<ThemeItem>> _crashedFuture;
-  late final Future<List<ThemeItem>> _emergingFuture;
+  late Future<List<ThemeItem>> _hotFuture;
+  late Future<List<ThemeItem>> _crashedFuture;
+  late Future<List<ThemeItem>> _emergingFuture;
+  String _locale = '';
 
   @override
   void initState() {
     super.initState();
-    _hotFuture = DopamineApi.fetchThemes('hot');
-    _crashedFuture = DopamineApi.fetchThemes('crashed');
-    _emergingFuture = DopamineApi.fetchThemes('emerging');
+    _locale = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    _restartThemeFutures();
+  }
+
+  void _restartThemeFutures() {
+    _hotFuture = DopamineApi.fetchThemes('hot', locale: _locale);
+    _crashedFuture = DopamineApi.fetchThemes('crashed', locale: _locale);
+    _emergingFuture = DopamineApi.fetchThemes('emerging', locale: _locale);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final lang = Localizations.localeOf(context).languageCode;
+    if (lang == _locale) return;
+    _locale = lang;
+    _restartThemeFutures();
+    setState(() {});
   }
 
   @override
@@ -117,15 +135,21 @@ class _ThemeTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              item.name,
-              style: theme.textTheme.titleMedium,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => AssetDetailScreen.open(
+              context,
+              RankedAsset.fromThemeItem(item),
             ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.name,
+                style: theme.textTheme.titleMedium,
+              ),
             const SizedBox(height: 6),
             Text(
               '${l10n.themeScore}: ${item.themeScore.toStringAsFixed(1)}',
@@ -144,6 +168,7 @@ class _ThemeTile extends StatelessWidget {
               style: theme.textTheme.bodySmall,
             ),
           ],
+        ),
         ),
       ),
     );

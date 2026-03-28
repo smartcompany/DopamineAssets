@@ -15,6 +15,7 @@ import '../../core/storage/community_post_image_upload.dart';
 import '../../core/text/ugc_banned_words.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
+import '../../data/models/theme_item.dart';
 import '../../theme/dopamine_theme.dart';
 
 class CommunityComposeScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class CommunityComposeScreen extends StatefulWidget {
     this.initialSymbol,
     this.initialAssetClass,
     this.initialDisplayName,
+    this.initialThemeId,
     this.editCommentId,
     this.editPrefill,
   });
@@ -32,6 +34,9 @@ class CommunityComposeScreen extends StatefulWidget {
 
   /// [initialSymbol] 이 홈 랭킹 목록에 없을 때 표시명(예: 종목 상세에서 진입)
   final String? initialDisplayName;
+
+  /// 테마 상세에서 진입 시 — 목록에서 동일 테마를 골라 둠
+  final String? initialThemeId;
 
   /// 프로필 등에서 수정 시 — 전체 댓글을 GET으로 불러옴
   final String? editCommentId;
@@ -70,7 +75,12 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     'kr_stock',
     'crypto',
     'commodity',
+    'theme',
   ];
+
+  List<ThemeItem>? _themeCatalog;
+  bool _themeCatalogLoading = false;
+  Object? _themeCatalogError;
 
   bool get _isEditMode =>
       widget.editPrefill != null || widget.editCommentId != null;
@@ -97,6 +107,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         final sug = context.read<HomeAssetSuggestions>();
         setState(() => _syncSelectionFromSuggestions(sug));
       }
+      _loadThemeCatalog();
     });
     _bodyFocusNode.addListener(() {
       if (mounted) setState(() {});
@@ -118,6 +129,125 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       assetClass: assetClass,
       displayName: displayName,
     );
+  }
+
+  ThemeItem _legacyThemePickerRow(String name) {
+    return ThemeItem(
+      id: '__legacy__',
+      name: name,
+      avgChangePct: 0,
+      volumeLiftPct: 0,
+      symbolCount: 0,
+      themeScore: 0,
+      symbols: const <String>[],
+      detailSymbol: '',
+      detailAssetClass: 'us_stock',
+    );
+  }
+
+  Future<void> _loadThemeCatalog() async {
+    if (_themeCatalog != null) {
+      if (_assetClass == 'theme' &&
+          widget.editPrefill == null &&
+          widget.editCommentId == null) {
+        _applyInitialThemeSelection();
+      }
+      return;
+    }
+    if (_themeCatalogLoading) return;
+    if (!mounted) return;
+    final lang = Localizations.localeOf(context).languageCode;
+    setState(() {
+      _themeCatalogLoading = true;
+      _themeCatalogError = null;
+    });
+    try {
+      final hot = await DopamineApi.fetchThemes('hot', locale: lang);
+      final crashed = await DopamineApi.fetchThemes('crashed', locale: lang);
+      final emerging = await DopamineApi.fetchThemes('emerging', locale: lang);
+      final byId = <String, ThemeItem>{};
+      for (final t in [...hot, ...crashed, ...emerging]) {
+        byId[t.id] = t;
+      }
+      final merged = byId.values.toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      if (!mounted) return;
+      setState(() {
+        _themeCatalog = merged;
+        _themeCatalogLoading = false;
+      });
+      final editing = widget.editPrefill != null || widget.editCommentId != null;
+      if (_assetClass == 'theme' && !editing) {
+        _applyInitialThemeSelection();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _themeCatalogLoading = false;
+        _themeCatalogError = e;
+      });
+    }
+  }
+
+  void _applyInitialThemeSelection() {
+    if (!mounted || _assetClass != 'theme' || _themeCatalog == null) return;
+    final editing = widget.editPrefill != null || widget.editCommentId != null;
+    if (editing) return;
+    final tid = widget.initialThemeId?.trim();
+    final sym = widget.initialSymbol?.trim();
+    final dn = widget.initialDisplayName?.trim();
+    ThemeItem? found;
+    if (tid != null && tid.isNotEmpty) {
+      for (final t in _themeCatalog!) {
+        if (t.id == tid) {
+          found = t;
+          break;
+        }
+      }
+    }
+    if (found == null && sym != null && sym.isNotEmpty) {
+      for (final t in _themeCatalog!) {
+        if (t.name == sym) {
+          found = t;
+          break;
+        }
+      }
+    }
+    if (found == null && dn != null && dn.isNotEmpty) {
+      for (final t in _themeCatalog!) {
+        if (t.name == dn) {
+          found = t;
+          break;
+        }
+      }
+    }
+    setState(() {
+      if (found != null) {
+        _selectedAsset = RankedAsset.communityShell(
+          symbol: found.name,
+          assetClass: 'theme',
+          displayName: found.name,
+        );
+      } else if (sym != null && sym.isNotEmpty) {
+        _selectedAsset = RankedAsset.communityShell(
+          symbol: sym,
+          assetClass: 'theme',
+          displayName: dn ?? sym,
+        );
+      }
+    });
+  }
+
+  List<ThemeItem> _themeRowsForDropdown() {
+    final catalog = _themeCatalog ?? const <ThemeItem>[];
+    final sel = _selectedAsset;
+    if (sel != null &&
+        sel.assetClass == 'theme' &&
+        sel.symbol.trim().isNotEmpty &&
+        !catalog.any((t) => t.name == sel.symbol)) {
+      return [_legacyThemePickerRow(sel.symbol), ...catalog];
+    }
+    return List<ThemeItem>.from(catalog);
   }
 
   void _applyCommunityPostPrefill(CommunityPost p) {
@@ -192,6 +322,10 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
   void _syncSelectionFromSuggestions(HomeAssetSuggestions sug) {
     final sym = widget.initialSymbol?.trim();
+    if (_assetClass == 'theme') {
+      _selectedAsset = null;
+      return;
+    }
     final list = sug.assetsForClass(_assetClass);
     if (sym != null && sym.isNotEmpty) {
       for (final a in list) {
@@ -229,6 +363,8 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         return l10n.assetClassBadgeCrypto;
       case 'commodity':
         return l10n.assetClassBadgeCommodity;
+      case 'theme':
+        return l10n.assetClassBadgeTheme;
       default:
         return code;
     }
@@ -710,10 +846,17 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                                 if (v == null) return;
                                 setState(() {
                                   _assetClass = v;
-                                  final next = sug.assetsForClass(v);
-                                  _selectedAsset = next.isNotEmpty
-                                      ? next.first
-                                      : null;
+                                  if (v == 'theme') {
+                                    _selectedAsset = null;
+                                    if (_themeCatalog != null) {
+                                      _applyInitialThemeSelection();
+                                    }
+                                  } else {
+                                    final next = sug.assetsForClass(v);
+                                    _selectedAsset = next.isNotEmpty
+                                        ? next.first
+                                        : null;
+                                  }
                                 });
                               },
                       ),
@@ -721,14 +864,134 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    l10n.communityComposeSymbolLabel,
+                    _assetClass == 'theme'
+                        ? l10n.communityComposeThemePickerLabel
+                        : l10n.communityComposeSymbolLabel,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: DopamineTheme.textSecondary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  if (symbols.isEmpty)
+                  if (_assetClass == 'theme')
+                    _themeCatalogError != null
+                        ? Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              l10n.errorLoadFailed,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: DopamineTheme.accentRed,
+                              ),
+                            ),
+                          )
+                        : _themeCatalogLoading && _themeCatalog == null
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: DopamineTheme.neonGreen,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Builder(
+                                builder: (ctx) {
+                                  final rows = _themeRowsForDropdown();
+                                  if (rows.isEmpty) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Text(
+                                        l10n.emptyState,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          color: DopamineTheme.textSecondary,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final selName = _selectedAsset?.assetClass ==
+                                              'theme' &&
+                                          (_selectedAsset?.symbol ?? '')
+                                              .trim()
+                                              .isNotEmpty
+                                      ? _selectedAsset!.symbol.trim()
+                                      : null;
+                                  final names = rows.map((e) => e.name).toSet();
+                                  final value = selName != null && names.contains(selName)
+                                      ? selName
+                                      : null;
+                                  return InputDecorator(
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      contentPadding:
+                                          _composeFieldContentPadding,
+                                      filled: true,
+                                      fillColor: Colors.black.withValues(
+                                        alpha: 0.22,
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        key: ValueKey<String>(
+                                          rows.map((e) => e.id).join(','),
+                                        ),
+                                        isDense: true,
+                                        isExpanded: true,
+                                        value: value,
+                                        hint: Text(
+                                          l10n.communityComposePickTheme,
+                                          style: TextStyle(
+                                            color: DopamineTheme.textSecondary
+                                                .withValues(alpha: 0.85),
+                                          ),
+                                        ),
+                                        dropdownColor: const Color(0xFF1E1A28),
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                          color: DopamineTheme.textPrimary,
+                                        ),
+                                        items: [
+                                          for (final t in rows)
+                                            DropdownMenuItem<String>(
+                                              value: t.name,
+                                              child: Text(
+                                                t.name,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                        ],
+                                        onChanged: _lockAssetPick
+                                            ? null
+                                            : (String? v) {
+                                                if (v == null) return;
+                                                setState(() {
+                                                  _selectedAsset =
+                                                      RankedAsset.communityShell(
+                                                    symbol: v,
+                                                    assetClass: 'theme',
+                                                    displayName: v,
+                                                  );
+                                                });
+                                              },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                  else if (symbols.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(

@@ -472,6 +472,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         return l10n.assetClassBadgeCrypto;
       case 'commodity':
         return l10n.assetClassBadgeCommodity;
+      case 'theme':
+        return l10n.assetClassBadgeTheme;
       default:
         return assetClass;
     }

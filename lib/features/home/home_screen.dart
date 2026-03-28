@@ -36,8 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<RankedAsset>? _downItems;
   bool _rankingsLoading = true;
 
-  /// 랭킹·테마·시장 요약 로드 중 — 타이틀 바로 아래 [ _HomeHeaderProgressLine ] 표시
-  bool _homeHeaderLoading = true;
   Object? _rankingsError;
   Timer? _rankingPollTimer;
   int _rankingRequestId = 0;
@@ -45,14 +43,29 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<ThemeItem>> _hotThemesFuture;
   late Future<List<ThemeItem>> _crashedThemesFuture;
   late Future<MarketSummary> _marketFuture;
+  String _themeFetchLocale = '';
 
   @override
   void initState() {
     super.initState();
-    _hotThemesFuture = DopamineApi.fetchThemes('hot');
-    _crashedThemesFuture = DopamineApi.fetchThemes('crashed');
+    _themeFetchLocale =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    _hotThemesFuture = DopamineApi.fetchThemes('hot', locale: _themeFetchLocale);
+    _crashedThemesFuture =
+        DopamineApi.fetchThemes('crashed', locale: _themeFetchLocale);
     _marketFuture = DopamineApi.fetchMarketSummary();
     _bootstrapRankings();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final lang = Localizations.localeOf(context).languageCode;
+    if (lang == _themeFetchLocale) return;
+    _themeFetchLocale = lang;
+    _hotThemesFuture = DopamineApi.fetchThemes('hot', locale: lang);
+    _crashedThemesFuture = DopamineApi.fetchThemes('crashed', locale: lang);
+    setState(() {});
   }
 
   /// 랭킹 + 핫/급락 테마 + 시장 요약을 한 번에 갱신 (당겨서 새로고침·초기 부트스트랩 공통)
@@ -60,30 +73,33 @@ class _HomeScreenState extends State<HomeScreen> {
     required Future<List<ThemeItem>> hot,
     required Future<List<ThemeItem>> crashed,
     required Future<MarketSummary> market,
+    bool showRankingLoadingIndicator = false,
   }) async {
-    await Future.wait([_refreshRankings(), hot, crashed, market]);
+    await Future.wait([
+      _refreshRankings(showLoadingIndicator: showRankingLoadingIndicator),
+      hot,
+      crashed,
+      market,
+    ]);
   }
 
   Future<void> _pullRefreshHome() async {
     if (!mounted) return;
-    final hot = DopamineApi.fetchThemes('hot');
-    final crashed = DopamineApi.fetchThemes('crashed');
+    final lang = Localizations.localeOf(context).languageCode;
+    final hot = DopamineApi.fetchThemes('hot', locale: lang);
+    final crashed = DopamineApi.fetchThemes('crashed', locale: lang);
     final market = DopamineApi.fetchMarketSummary();
     setState(() {
-      _homeHeaderLoading = true;
       _hotThemesFuture = hot;
       _crashedThemesFuture = crashed;
       _marketFuture = market;
     });
-    try {
-      await _reloadRankingsThemesMarket(
-        hot: hot,
-        crashed: crashed,
-        market: market,
-      );
-    } finally {
-      if (mounted) setState(() => _homeHeaderLoading = false);
-    }
+    await _reloadRankingsThemesMarket(
+      hot: hot,
+      crashed: crashed,
+      market: market,
+      showRankingLoadingIndicator: true,
+    );
   }
 
   @override
@@ -108,18 +124,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {
       _rankingClasses = c;
-      _homeHeaderLoading = true;
     });
     _logRankings('initial fetch (bootstrap)');
-    try {
-      await _reloadRankingsThemesMarket(
-        hot: _hotThemesFuture,
-        crashed: _crashedThemesFuture,
-        market: _marketFuture,
-      );
-    } finally {
-      if (mounted) setState(() => _homeHeaderLoading = false);
-    }
+    await _reloadRankingsThemesMarket(
+      hot: _hotThemesFuture,
+      crashed: _crashedThemesFuture,
+      market: _marketFuture,
+      showRankingLoadingIndicator: false,
+    );
     if (!mounted) return;
     _scheduleRankingPoll();
   }
@@ -140,10 +152,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _refreshRankings() async {
+  Future<void> _refreshRankings({bool showLoadingIndicator = false}) async {
     final id = ++_rankingRequestId;
     final c = _rankingClasses ?? await RankingFilterPrefs.load();
     _logRankings('request #$id start (include=${c.join(",")})');
+    if (showLoadingIndicator && mounted) {
+      setState(() => _rankingsLoading = true);
+    }
     try {
       final results = await Future.wait([
         DopamineApi.fetchRankingsUp(includeAssetClasses: c),
@@ -185,15 +200,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {
       _rankingClasses = classes;
-      _homeHeaderLoading = true;
     });
     _logRankings('filter applied → reschedule poll if enabled');
     _scheduleRankingPoll();
-    try {
-      await _refreshRankings();
-    } finally {
-      if (mounted) setState(() => _homeHeaderLoading = false);
-    }
+    await _refreshRankings(showLoadingIndicator: true);
   }
 
   List<RankedAsset> _topRankings(List<RankedAsset>? items) {
@@ -210,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final slice = _topRankings(items);
 
     if (_rankingsLoading && items == null) {
-      return [const SliverToBoxAdapter(child: SizedBox(height: 12))];
+      return [const SliverToBoxAdapter(child: SizedBox.shrink())];
     }
 
     if (_rankingsError != null && items == null) {
@@ -322,10 +332,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           _HomeBlazingTitle(
                             text: l10n.homeHeaderTitleDecorated,
                           ),
-                          if (_homeHeaderLoading) ...[
-                            const SizedBox(height: 10),
-                            const _HomeHeaderProgressLine(),
-                          ],
                           const SizedBox(height: 12),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -392,6 +398,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                if (_rankingsLoading && _upItems == null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                      child: const _HomeSectionProgressLine(),
+                    ),
+                  ),
                 ..._animatedRankingSlivers(up: true, l10n: l10n, theme: theme),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -403,6 +416,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                if (_rankingsLoading && _downItems == null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                      child: const _HomeSectionProgressLine(),
+                    ),
+                  ),
                 ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
                 SliverToBoxAdapter(
                   child: Padding(
@@ -415,6 +435,29 @@ class _HomeScreenState extends State<HomeScreen> {
                         letterSpacing: -0.4,
                       ),
                     ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: FutureBuilder<List<ThemeItem>>(
+                    future: _hotThemesFuture,
+                    builder: (context, hotSnap) {
+                      return FutureBuilder<List<ThemeItem>>(
+                        future: _crashedThemesFuture,
+                        builder: (context, crashSnap) {
+                          final hotWait =
+                              hotSnap.connectionState == ConnectionState.waiting;
+                          final crashWait = crashSnap.connectionState ==
+                              ConnectionState.waiting;
+                          if (!hotWait && !crashWait) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                            child: const _HomeSectionProgressLine(),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -640,9 +683,9 @@ class _PurpleGradientBackground extends StatelessWidget {
   }
 }
 
-/// 홈 상단 타이틀 바로 아래 공통 로딩 라인 (초기 로드 · 필터 · 당겨서 새로고침)
-class _HomeHeaderProgressLine extends StatelessWidget {
-  const _HomeHeaderProgressLine();
+/// 섹션 제목(상승·하락·테마) 바로 아래 로딩 라인
+class _HomeSectionProgressLine extends StatelessWidget {
+  const _HomeSectionProgressLine();
 
   @override
   Widget build(BuildContext context) {
@@ -822,6 +865,8 @@ String? _assetClassBadgeLabel(AppLocalizations l10n, String? assetClass) {
       return l10n.assetClassBadgeCrypto;
     case 'commodity':
       return l10n.assetClassBadgeCommodity;
+    case 'theme':
+      return l10n.assetClassBadgeTheme;
     default:
       return null;
   }
@@ -837,6 +882,8 @@ Color _assetClassBadgeColor(String? assetClass) {
       return const Color(0xFFCE93D8);
     case 'commodity':
       return const Color(0xFFFFD54F);
+    case 'theme':
+      return DopamineTheme.neonGreen.withValues(alpha: 0.85);
     default:
       return DopamineTheme.textSecondary;
   }
@@ -1256,83 +1303,97 @@ class _GlassThemeRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: badgeColor.withValues(alpha: 0.45),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    '$rank',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF0A0A0A),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            AssetDetailScreen.open(
+              context,
+              RankedAsset.fromThemeItem(item),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: DopamineTheme.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.homeThemeStockLine(item.symbolCount),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: DopamineTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      PercentFormat.signedPercent(pct, locale),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: pctColor,
+                    Container(
+                      width: 38,
+                      height: 38,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: badgeColor,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: badgeColor.withValues(alpha: 0.45),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '$rank',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFF0A0A0A),
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Icon(
-                      Icons.show_chart_rounded,
-                      size: 16,
-                      color: pctColor.withValues(alpha: 0.9),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: DopamineTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            l10n.homeThemeStockLine(item.symbolCount),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: DopamineTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          PercentFormat.signedPercent(pct, locale),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: pctColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Icon(
+                          Icons.show_chart_rounded,
+                          size: 16,
+                          color: pctColor.withValues(alpha: 0.9),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

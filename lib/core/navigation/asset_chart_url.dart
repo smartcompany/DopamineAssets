@@ -35,6 +35,9 @@ String _yahooChartSymbol(String assetClass, String raw) {
     case 'us_stock':
     case 'kr_stock':
     case 'commodity':
+      return t;
+    case 'theme':
+      return '';
     default:
       return t;
   }

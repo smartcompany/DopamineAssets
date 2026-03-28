@@ -298,6 +298,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityComposeSymbolLabel => '종목 심볼';
 
   @override
+  String get communityComposeThemePickerLabel => '테마 이름';
+
+  @override
+  String get communityComposePickTheme => '테마를 선택하세요';
+
+  @override
   String get communityComposeSymbolHint => '예: TSLA, IBRX';
 
   @override
@@ -467,6 +473,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetClassBadgeCommodity => '원자재';
 
   @override
+  String get assetClassBadgeTheme => '테마';
+
+  @override
+  String get communityComposeThemeNameHint => '테마 이름 (예: 에너지·원자재)';
+
+  @override
   String get rankingFilterTitle => '자산 필터';
 
   @override
@@ -597,4 +609,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get assetChartFootnote => '일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다.';
+
+  @override
+  String get themeDetailChartTitle => '테마 평균 추이';
+
+  @override
+  String get themeDetailChartFootnote =>
+      '구성 종목별로 구간 첫 종가를 100으로 맞춘 뒤, 같은 날짜의 값을 평균한 합성 지수입니다. Yahoo 일봉 · 서버 집계. 투자 권유가 아닙니다.';
 }

@@ -656,6 +656,18 @@ abstract class AppLocalizations {
   /// **'종목 심볼'**
   String get communityComposeSymbolLabel;
 
+  /// No description provided for @communityComposeThemePickerLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'테마 이름'**
+  String get communityComposeThemePickerLabel;
+
+  /// No description provided for @communityComposePickTheme.
+  ///
+  /// In ko, this message translates to:
+  /// **'테마를 선택하세요'**
+  String get communityComposePickTheme;
+
   /// No description provided for @communityComposeSymbolHint.
   ///
   /// In ko, this message translates to:
@@ -980,6 +992,18 @@ abstract class AppLocalizations {
   /// **'원자재'**
   String get assetClassBadgeCommodity;
 
+  /// No description provided for @assetClassBadgeTheme.
+  ///
+  /// In ko, this message translates to:
+  /// **'테마'**
+  String get assetClassBadgeTheme;
+
+  /// No description provided for @communityComposeThemeNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'테마 이름 (예: 에너지·원자재)'**
+  String get communityComposeThemeNameHint;
+
   /// No description provided for @rankingFilterTitle.
   ///
   /// In ko, this message translates to:
@@ -1237,6 +1261,18 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다.'**
   String get assetChartFootnote;
+
+  /// No description provided for @themeDetailChartTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'테마 평균 추이'**
+  String get themeDetailChartTitle;
+
+  /// No description provided for @themeDetailChartFootnote.
+  ///
+  /// In ko, this message translates to:
+  /// **'구성 종목별로 구간 첫 종가를 100으로 맞춘 뒤, 같은 날짜의 값을 평균한 합성 지수입니다. Yahoo 일봉 · 서버 집계. 투자 권유가 아닙니다.'**
+  String get themeDetailChartFootnote;
 }
 
 class _AppLocalizationsDelegate

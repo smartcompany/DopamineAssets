@@ -16,17 +16,21 @@ class AssetCandleChartScreen extends StatefulWidget {
     required this.symbol,
     required this.assetClass,
     this.title,
+    this.themeId,
   });
 
   final String symbol;
   final String assetClass;
   final String? title;
+  /// 설정 시 [fetchThemeChartBars] 로 테마 평균 추이 (심볼 일봉 무시).
+  final String? themeId;
 
   static Future<void> open(
     BuildContext context, {
     required String symbol,
     required String assetClass,
     String? title,
+    String? themeId,
   }) {
     return Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -34,6 +38,7 @@ class AssetCandleChartScreen extends StatefulWidget {
           symbol: symbol,
           assetClass: assetClass,
           title: title,
+          themeId: themeId,
         ),
       ),
     );
@@ -49,6 +54,10 @@ class _AssetCandleChartScreenState extends State<AssetCandleChartScreen> {
   late Future<List<AssetChartBar>> _future = _load();
 
   Future<List<AssetChartBar>> _load() {
+    final tid = widget.themeId?.trim();
+    if (tid != null && tid.isNotEmpty) {
+      return DopamineApi.fetchThemeChartBars(themeId: tid, range: _range);
+    }
     return DopamineApi.fetchAssetChartBars(
       symbol: widget.symbol,
       assetClass: widget.assetClass,
@@ -369,7 +378,10 @@ class _AssetCandleChartScreenState extends State<AssetCandleChartScreen> {
                               ),
                               const SizedBox(height: 14),
                               Text(
-                                l10n.assetChartFootnote,
+                                widget.themeId != null &&
+                                        widget.themeId!.trim().isNotEmpty
+                                    ? l10n.themeDetailChartFootnote
+                                    : l10n.assetChartFootnote,
                                 softWrap: true,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: DopamineTheme.textSecondary

@@ -121,6 +121,8 @@
   "communityComposeOptionalTitle": "Title (optional)",
   "communityComposeTitleHint": "Add a title or leave blank",
   "communityComposeSymbolLabel": "Symbol",
+  "communityComposeThemePickerLabel": "Theme",
+  "communityComposePickTheme": "Choose a theme",
   "communityComposeSymbolHint": "e.g. TSLA, IBRX",
   "communityComposeAssetClassLabel": "Asset type",
   "communityComposeBodyLabel": "Body",
@@ -189,6 +191,8 @@
   "assetClassBadgeKrStock": "Korea",
   "assetClassBadgeCrypto": "Crypto",
   "assetClassBadgeCommodity": "Commodity",
+  "assetClassBadgeTheme": "Theme",
+  "communityComposeThemeNameHint": "Theme name (e.g. Energy & commodities)",
   "rankingFilterTitle": "Asset classes",
   "rankingFilterConfirm": "OK",
   "rankingFilterCancel": "Cancel",
@@ -238,5 +242,7 @@
   "assetChartRange1mo": "1M",
   "assetChartRange3mo": "3M",
   "assetChartRange1y": "1Y",
-  "assetChartFootnote": "Daily candles via Yahoo (server). Not investment advice."
+  "assetChartFootnote": "Daily candles via Yahoo (server). Not investment advice.",
+  "themeDetailChartTitle": "Theme average (normalized)",
+  "themeDetailChartFootnote": "Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice."
 }

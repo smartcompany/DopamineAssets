@@ -1,3 +1,5 @@
+import 'theme_item.dart';
+
 final class RankedAsset {
   const RankedAsset({
     required this.symbol,
@@ -8,6 +10,8 @@ final class RankedAsset {
     this.assetClass,
     this.commodityKind,
     this.summaryLine,
+    this.themeId,
+    this.themeSymbols,
   });
 
   final String symbol;
@@ -18,6 +22,10 @@ final class RankedAsset {
   final String? assetClass;
   final String? commodityKind;
   final String? summaryLine;
+  /// [assetClass] == `theme` 일 때 서버 테마 id (차트·상세 API).
+  final String? themeId;
+  /// 테마 구성 Yahoo 티커 — 뉴스 검색용.
+  final List<String>? themeSymbols;
 
   factory RankedAsset.fromJson(Map<String, dynamic> json) {
     return RankedAsset(
@@ -29,6 +37,8 @@ final class RankedAsset {
       assetClass: json['assetClass'] as String?,
       commodityKind: json['commodityKind'] as String?,
       summaryLine: json['summaryLine'] as String?,
+      themeId: json['themeId'] as String?,
+      themeSymbols: null,
     );
   }
 
@@ -46,6 +56,20 @@ final class RankedAsset {
       volumeChangePct: 0,
       dopamineScore: 0,
       assetClass: assetClass,
+    );
+  }
+
+  /// 홈/테마 목록의 [ThemeItem] → 종목 상세 UI와 동일 화면.
+  factory RankedAsset.fromThemeItem(ThemeItem item) {
+    return RankedAsset(
+      symbol: item.name,
+      name: item.name,
+      priceChangePct: item.avgChangePct,
+      volumeChangePct: item.volumeLiftPct,
+      dopamineScore: item.themeScore,
+      assetClass: 'theme',
+      themeId: item.id,
+      themeSymbols: item.symbols,
     );
   }
 }

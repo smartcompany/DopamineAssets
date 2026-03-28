@@ -127,10 +127,18 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               if (d == null) {
                 return Center(child: Text(l10n.emptyState));
               }
-              final chartUri = yahooChartPageUri(
-                assetClass: d.assetClass,
-                symbol: d.symbol,
-              );
+              final isTheme = d.assetClass == 'theme';
+              final chartUri = isTheme
+                  ? null
+                  : yahooChartPageUri(
+                      assetClass: d.assetClass,
+                      symbol: d.symbol,
+                    );
+              final themeIdForChart = widget.rankedAsset.themeId?.trim() ??
+                  d.themeId?.trim() ??
+                  '';
+              final showThemeChart =
+                  isTheme && themeIdForChart.isNotEmpty;
               return SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 100, 20, 32),
                 child: Column(
@@ -173,6 +181,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                         initialSymbol: d.symbol,
                                         initialAssetClass: d.assetClass,
                                         initialDisplayName: d.name,
+                                        initialThemeId: a.themeId ?? d.themeId,
                                       ),
                                     ),
                                   );
@@ -204,7 +213,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                 },
                                 icon: const Icon(Icons.forum_rounded),
                               ),
-                              if (chartUri != null)
+                              if (chartUri != null || showThemeChart)
                                 IconButton(
                                   tooltip: l10n.assetDetailOpenChart,
                                   style: IconButton.styleFrom(
@@ -219,25 +228,38 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                     padding: const EdgeInsets.all(10),
                                   ),
                                   onPressed: () {
-                                    AssetCandleChartScreen.open(
-                                      context,
-                                      symbol: d.symbol,
-                                      assetClass: d.assetClass,
-                                      title: l10n.assetDetailOpenChart,
-                                    );
+                                    if (showThemeChart) {
+                                      AssetCandleChartScreen.open(
+                                        context,
+                                        symbol: d.name,
+                                        assetClass: d.assetClass,
+                                        title: l10n.themeDetailChartTitle,
+                                        themeId: themeIdForChart,
+                                      );
+                                    } else {
+                                      AssetCandleChartScreen.open(
+                                        context,
+                                        symbol: d.symbol,
+                                        assetClass: d.assetClass,
+                                        title: l10n.assetDetailOpenChart,
+                                      );
+                                    }
                                   },
                                   icon: const Icon(Icons.bar_chart_rounded),
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            d.symbol,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: DopamineTheme.textSecondary,
+                          if (!isTheme) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              d.symbol,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: DopamineTheme.textSecondary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 14),
+                            const SizedBox(height: 14),
+                          ] else
+                            const SizedBox(height: 14),
                           _kvRow(
                             theme,
                             l10n.assetDetailPriceChange,
@@ -248,7 +270,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                           ),
                           _kvRow(
                             theme,
-                            l10n.dopamineScoreLabel,
+                            isTheme
+                                ? l10n.themeScore
+                                : l10n.dopamineScoreLabel,
                             a.dopamineScore.toStringAsFixed(1),
                           ),
                         ],
@@ -340,10 +364,13 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                       ),
                     ],
                     AssetNewsSection(
-                      assetClass: d.assetClass,
+                      assetClass: isTheme ? 'us_stock' : d.assetClass,
                       symbol: d.symbol,
                       name: d.name,
                       uiLocaleName: l10n.localeName,
+                      themeSymbols: isTheme
+                          ? (a.themeSymbols ?? d.themeSymbols)
+                          : null,
                     ),
                     AssetPostsSection(
                       symbol: d.symbol,

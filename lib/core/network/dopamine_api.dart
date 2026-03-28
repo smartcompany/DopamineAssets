@@ -59,9 +59,17 @@ abstract final class DopamineApi {
     return q;
   }
 
-  static Future<List<ThemeItem>> fetchThemes(String kind) async {
+  /// [locale]: `ko` | `en` 등 — 서버가 테마 표시 이름을 맞춤. 비우면 Accept-Language / en.
+  static Future<List<ThemeItem>> fetchThemes(
+    String kind, {
+    String? locale,
+  }) async {
+    final q = <String, String>{'kind': kind};
+    if (locale != null && locale.isNotEmpty) {
+      q['locale'] = locale;
+    }
     final response = await _client.get(
-      _uri('/api/themes').replace(queryParameters: {'kind': kind}),
+      _uri('/api/themes').replace(queryParameters: q),
       headers: _jsonHeaders,
     );
     _ensureOk(response);
@@ -90,6 +98,10 @@ abstract final class DopamineApi {
       'assetClass': ac,
       'name': asset.name,
     };
+    final tid = asset.themeId?.trim();
+    if (tid != null && tid.isNotEmpty) {
+      q['themeId'] = tid;
+    }
     if (asset.commodityKind != null && asset.commodityKind!.isNotEmpty) {
       q['commodityKind'] = asset.commodityKind!;
     }
@@ -141,6 +153,84 @@ abstract final class DopamineApi {
     return raw
         .map((e) => AssetChartBar.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// 테마 구성 종목 일봉을 정규화·평균한 합성 시리즈. [range]: `1mo` | `3mo` | `1y`.
+  static Future<List<AssetChartBar>> fetchThemeChartBars({
+    required String themeId,
+    String range = '3mo',
+  }) async {
+    final uri = _uri('/api/feed/theme-chart').replace(
+      queryParameters: <String, String>{
+        'themeId': themeId,
+        'range': range,
+      },
+    );
+    final response = await _client.get(uri, headers: _jsonHeaders);
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][theme-chart] GET $uri');
+      debugPrint(
+        '[DopamineApi][theme-chart] status=${response.statusCode}',
+      );
+    }
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid theme chart payload');
+    }
+    final raw = decoded['bars'];
+    if (raw is! List<dynamic>) {
+      throw ApiException('Invalid theme chart bars');
+    }
+    return raw
+        .map((e) => AssetChartBar.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 뉴스 검색어를 직접 지정 (테마명 등).
+  static Future<AssetNewsFeed> fetchNewsBySearchQuery({
+    required String q,
+    String assetClass = 'us_stock',
+    int limit = 8,
+  }) async {
+    final uri = _uri('/api/feed/asset-news').replace(
+      queryParameters: {
+        'q': q,
+        'limit': limit.clamp(1, 30).toString(),
+        'assetClass': assetClass,
+      },
+    );
+    final response = await _client.get(uri, headers: _jsonHeaders);
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][asset-news-query] GET $uri');
+      debugPrint(
+        '[DopamineApi][asset-news-query] status=${response.statusCode}',
+      );
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return const AssetNewsFeed(items: [], loadFailed: true);
+    }
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return const AssetNewsFeed(items: [], loadFailed: true);
+      }
+      final raw = decoded['items'];
+      if (raw is! List<dynamic>) {
+        return const AssetNewsFeed(items: [], loadFailed: true);
+      }
+      final items = <AssetNewsItem>[];
+      for (final e in raw) {
+        if (e is! Map<String, dynamic>) continue;
+        final title = e['title'] as String? ?? '';
+        final url = e['url'] as String? ?? '';
+        if (title.isEmpty || url.isEmpty) continue;
+        items.add(AssetNewsItem.fromJson(e));
+      }
+      return AssetNewsFeed(items: items);
+    } catch (_) {
+      return const AssetNewsFeed(items: [], loadFailed: true);
+    }
   }
 
   /// 외부 뉴스 소스. 실패해도 예외 대신 [AssetNewsFeed.loadFailed] 로 표시.

@@ -11,6 +11,16 @@ import 'asset_news_webview_screen.dart';
 
 const int _kNewsPreviewCount = 3;
 
+bool _listEq(List<String>? a, List<String>? b) {
+  if (identical(a, b)) return true;
+  if (a == null || b == null) return a == b;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
+}
+
 class AssetNewsSection extends StatefulWidget {
   const AssetNewsSection({
     super.key,
@@ -18,6 +28,8 @@ class AssetNewsSection extends StatefulWidget {
     required this.symbol,
     required this.name,
     required this.uiLocaleName,
+    this.searchQuery,
+    this.themeSymbols,
   });
 
   final String assetClass;
@@ -25,6 +37,10 @@ class AssetNewsSection extends StatefulWidget {
   final String name;
   /// [AppLocalizations.localeName] — intl/ARB와 동일 기준.
   final String uiLocaleName;
+  /// 비어 있지 않으면 [symbol]/[name] 대신 이 문자열로 뉴스 검색 (테마명 등).
+  final String? searchQuery;
+  /// 테마 구성 티커 — 콤마 검색어로 뉴스 조회 (테마 상세).
+  final List<String>? themeSymbols;
 
   @override
   State<AssetNewsSection> createState() => _AssetNewsSectionState();
@@ -35,12 +51,33 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
   var _newsExpanded = false;
 
   Future<AssetNewsFeed> _load() async {
-    final feed = await DopamineApi.fetchAssetNews(
-      assetClass: widget.assetClass,
-      symbol: widget.symbol,
-      name: widget.name,
-      limit: 8,
-    );
+    final tickers = widget.themeSymbols
+            ?.map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList() ??
+        const <String>[];
+    final sq = widget.searchQuery?.trim();
+    final AssetNewsFeed feed;
+    if (tickers.isNotEmpty) {
+      feed = await DopamineApi.fetchNewsBySearchQuery(
+        q: tickers.join(','),
+        assetClass: widget.assetClass,
+        limit: 8,
+      );
+    } else if (sq != null && sq.isNotEmpty) {
+      feed = await DopamineApi.fetchNewsBySearchQuery(
+        q: sq,
+        assetClass: widget.assetClass,
+        limit: 8,
+      );
+    } else {
+      feed = await DopamineApi.fetchAssetNews(
+        assetClass: widget.assetClass,
+        symbol: widget.symbol,
+        name: widget.name,
+        limit: 8,
+      );
+    }
     return localizeNewsTitles(feed, widget.uiLocaleName);
   }
 
@@ -166,7 +203,9 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
     if (oldWidget.assetClass != widget.assetClass ||
         oldWidget.symbol != widget.symbol ||
         oldWidget.name != widget.name ||
-        oldWidget.uiLocaleName != widget.uiLocaleName) {
+        oldWidget.uiLocaleName != widget.uiLocaleName ||
+        oldWidget.searchQuery != widget.searchQuery ||
+        !_listEq(oldWidget.themeSymbols, widget.themeSymbols)) {
       setState(() {
         _newsExpanded = false;
         _future = _load();

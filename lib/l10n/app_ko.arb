@@ -121,6 +121,8 @@
   "communityComposeOptionalTitle": "제목 (선택)",
   "communityComposeTitleHint": "제목을 입력하거나 비워 두세요",
   "communityComposeSymbolLabel": "종목 심볼",
+  "communityComposeThemePickerLabel": "테마 이름",
+  "communityComposePickTheme": "테마를 선택하세요",
   "communityComposeSymbolHint": "예: TSLA, IBRX",
   "communityComposeAssetClassLabel": "자산 유형",
   "communityComposeBodyLabel": "본문",
@@ -189,6 +191,8 @@
   "assetClassBadgeKrStock": "한국 주식",
   "assetClassBadgeCrypto": "암호화폐",
   "assetClassBadgeCommodity": "원자재",
+  "assetClassBadgeTheme": "테마",
+  "communityComposeThemeNameHint": "테마 이름 (예: 에너지·원자재)",
   "rankingFilterTitle": "자산 필터",
   "rankingFilterConfirm": "확인",
   "rankingFilterCancel": "취소",
@@ -238,5 +242,7 @@
   "assetChartRange1mo": "1M",
   "assetChartRange3mo": "3M",
   "assetChartRange1y": "1Y",
-  "assetChartFootnote": "일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다."
+  "assetChartFootnote": "일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다.",
+  "themeDetailChartTitle": "테마 평균 추이",
+  "themeDetailChartFootnote": "구성 종목별로 구간 첫 종가를 100으로 맞춘 뒤, 같은 날짜의 값을 평균한 합성 지수입니다. Yahoo 일봉 · 서버 집계. 투자 권유가 아닙니다."
 }

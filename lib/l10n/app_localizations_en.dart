@@ -300,6 +300,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityComposeSymbolLabel => 'Symbol';
 
   @override
+  String get communityComposeThemePickerLabel => 'Theme';
+
+  @override
+  String get communityComposePickTheme => 'Choose a theme';
+
+  @override
   String get communityComposeSymbolHint => 'e.g. TSLA, IBRX';
 
   @override
@@ -470,6 +476,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetClassBadgeCommodity => 'Commodity';
 
   @override
+  String get assetClassBadgeTheme => 'Theme';
+
+  @override
+  String get communityComposeThemeNameHint =>
+      'Theme name (e.g. Energy & commodities)';
+
+  @override
   String get rankingFilterTitle => 'Asset classes';
 
   @override
@@ -603,4 +616,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get assetChartFootnote =>
       'Daily candles via Yahoo (server). Not investment advice.';
+
+  @override
+  String get themeDetailChartTitle => 'Theme average (normalized)';
+
+  @override
+  String get themeDetailChartFootnote =>
+      'Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice.';
 }

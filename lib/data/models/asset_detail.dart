@@ -16,12 +16,16 @@ final class AssetDetail {
     required this.asOf,
     this.commodityKind,
     this.moveSummaryKo,
+    this.themeId,
+    this.themeSymbols,
   });
 
   final String symbol;
   final String name;
   final String assetClass;
   final String? commodityKind;
+  final String? themeId;
+  final List<String>? themeSymbols;
   final String? sector;
   final String? industry;
   final String? marketCap;
@@ -37,10 +41,15 @@ final class AssetDetail {
 
   factory AssetDetail.fromJson(Map<String, dynamic> json) {
     final sources = json['dataSources'];
+    final ts = json['themeSymbols'];
     return AssetDetail(
       symbol: json['symbol'] as String,
       name: json['name'] as String,
       assetClass: json['assetClass'] as String,
+      themeId: json['themeId'] as String?,
+      themeSymbols: ts is List<dynamic>
+          ? ts.map((e) => e.toString()).toList()
+          : null,
       commodityKind: json['commodityKind'] as String?,
       sector: json['sector'] as String?,
       industry: json['industry'] as String?,
