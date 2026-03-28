@@ -21,6 +21,8 @@ import '../../theme/dopamine_theme.dart';
 import '../asset/asset_detail_screen.dart';
 import '../community/community_compose_screen.dart';
 import '../community/community_post_card.dart';
+import '../community/community_post_detail_screen.dart';
+import 'blocked_users_screen.dart';
 import 'follow_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -256,6 +258,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _refreshStatsOnly() async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final token = await fb.getIdToken();
+    if (token == null || token.isEmpty) return;
+    try {
+      final stats = await DopamineApi.fetchProfileStats(idToken: token);
+      if (mounted) setState(() => _stats = stats);
+    } catch (_) {}
+  }
+
   Future<void> _saveDisplayName(AppLocalizations l10n) async {
     final text = _nameController.text.trim();
     if (text.isEmpty || text.length > 80) {
@@ -450,6 +463,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (a.commentId == commentId) return a;
     }
     return null;
+  }
+
+  Future<void> _openActivityPostDetail(CommunityPost p) async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final changed = await CommunityPostDetailScreen.open(
+      context,
+      post: p,
+      locale: locale,
+      myUid: fb.uid,
+      followingByUid: null,
+      onToggleFollow: null,
+      onPostUpdated: (_) {
+        if (mounted) {
+          _loadData();
+        }
+      },
+    );
+    if (changed && mounted) {
+      await _loadData();
+    }
   }
 
   Future<void> _toggleActivityLike(CommunityPost p) async {
@@ -791,7 +826,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       )
                     else if (_stats != null)
-                      _StatsRow(stats: _stats!, l10n: l10n),
+                      _StatsRow(
+                        stats: _stats!,
+                        l10n: l10n,
+                        onBlockedListChanged: _refreshStatsOnly,
+                      ),
                     const SizedBox(height: 22),
                     SizedBox(
                       width: double.infinity,
@@ -932,6 +971,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 followingByUid: null,
                 onToggleFollow: null,
                 onToggleLike: _toggleActivityLike,
+                onOpenPostDetail: _openActivityPostDetail,
                 onEditOwnPost: (p) {
                   final i = _activityItemForCommentId(p.id);
                   if (i != null) {
@@ -1249,10 +1289,15 @@ class _ProfilePhotoIconAction extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats, required this.l10n});
+  const _StatsRow({
+    required this.stats,
+    required this.l10n,
+    required this.onBlockedListChanged,
+  });
 
   final ProfileStats stats;
   final AppLocalizations l10n;
+  final Future<void> Function() onBlockedListChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1293,6 +1338,23 @@ class _StatsRow extends StatelessWidget {
             },
           ),
         ),
+        Expanded(
+          child: _StatCell(
+            value: stats.blockedCount.toString(),
+            label: l10n.profileStatBlocked,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => BlockedUsersScreen(
+                    onListChanged: () {
+                      onBlockedListChanged();
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
@@ -1310,11 +1372,15 @@ class _StatCell extends StatelessWidget {
     final theme = Theme.of(context);
     final child = Column(
       children: [
-        Text(
-          value,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w900,
-            color: DopamineTheme.textPrimary,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: DopamineTheme.textPrimary,
+            ),
           ),
         ),
         const SizedBox(height: 4),

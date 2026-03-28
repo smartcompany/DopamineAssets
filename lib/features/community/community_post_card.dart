@@ -19,7 +19,10 @@ class CommunityPostCard extends StatelessWidget {
     this.onToggleLike,
     this.onEditOwnPost,
     this.onDeleteOwnPost,
+    this.onReportPost,
+    this.onBlockAuthor,
     this.onOpenAuthorProfile,
+    this.onOpenPostDetail,
     this.showFollowButton = true,
     this.showLikeButton = true,
   });
@@ -32,7 +35,10 @@ class CommunityPostCard extends StatelessWidget {
   final Future<void> Function(CommunityPost p)? onToggleLike;
   final void Function(CommunityPost p)? onEditOwnPost;
   final void Function(CommunityPost p)? onDeleteOwnPost;
+  final Future<void> Function(CommunityPost p)? onReportPost;
+  final Future<void> Function(CommunityPost p)? onBlockAuthor;
   final void Function(CommunityPost p)? onOpenAuthorProfile;
+  final void Function(CommunityPost p)? onOpenPostDetail;
   final bool showFollowButton;
   final bool showLikeButton;
 
@@ -59,21 +65,34 @@ class CommunityPostCard extends StatelessWidget {
     final timeStr = DateFormat.yMMMd(locale)
         .add_jm()
         .format(post.createdAt.toLocal());
-    final showMenu =
+    final showOwnMenu =
         myUid != null &&
         post.authorUid == myUid &&
-        onEditOwnPost != null &&
-        onDeleteOwnPost != null;
+        (onEditOwnPost != null || onDeleteOwnPost != null);
+    final showOtherMenu =
+        myUid != null &&
+        post.authorUid != myUid &&
+        (onReportPost != null || onBlockAuthor != null);
+    final showOverflowMenu = showOwnMenu || showOtherMenu;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpenPostDetail != null ? () => onOpenPostDetail!(post) : null,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (post.moderationHiddenFromPublic &&
+                  myUid != null &&
+                  post.authorUid == myUid) ...[
+                _ModerationHiddenBanner(text: l10n.communityPostHiddenByReportNotice),
+                const SizedBox(height: 10),
+              ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +176,7 @@ class CommunityPostCard extends StatelessWidget {
                     );
                   },
                 ),
-                if (showMenu)
+                if (showOverflowMenu)
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_horiz_rounded,
@@ -165,28 +184,75 @@ class CommunityPostCard extends StatelessWidget {
                       size: 26,
                     ),
                     tooltip: l10n.communityMoreMenu,
-                    onSelected: (v) {
+                    onSelected: (v) async {
                       if (v == 'edit') {
-                        onEditOwnPost!(post);
+                        onEditOwnPost?.call(post);
                       } else if (v == 'delete') {
-                        onDeleteOwnPost!(post);
+                        onDeleteOwnPost?.call(post);
+                      } else if (v == 'report') {
+                        await onReportPost?.call(post);
+                      } else if (v == 'block') {
+                        await onBlockAuthor?.call(post);
                       }
                     },
-                    itemBuilder: (ctx) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Text(l10n.profileActivityEditPost),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Text(
-                          l10n.profileActivityDeletePost,
-                          style: TextStyle(
-                            color: Theme.of(ctx).colorScheme.error,
+                    itemBuilder: (ctx) {
+                      if (showOwnMenu) {
+                        return [
+                          if (onEditOwnPost != null)
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Text(l10n.profileActivityEditPost),
+                            ),
+                          if (onDeleteOwnPost != null)
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                l10n.profileActivityDeletePost,
+                                style: TextStyle(
+                                  color: Theme.of(ctx).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                        ];
+                      }
+                      return [
+                        if (onReportPost != null)
+                          PopupMenuItem(
+                            value: 'report',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.flag_outlined,
+                                  size: 20,
+                                  color: DopamineTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(l10n.communityReportPostShort),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                        if (onBlockAuthor != null)
+                          PopupMenuItem(
+                            value: 'block',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.person_off_outlined,
+                                  size: 20,
+                                  color: Theme.of(ctx).colorScheme.error,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  l10n.communityBlockAuthorShort,
+                                  style: TextStyle(
+                                    color: Theme.of(ctx).colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ];
+                    },
                   ),
               ],
             ),
@@ -240,17 +306,7 @@ class CommunityPostCard extends StatelessWidget {
                 height: 1.32,
               ),
             ),
-            const SizedBox(height: 8),
-            if (post.replyCount > 0) ...[
-              const SizedBox(height: 4),
-              Text(
-                l10n.communityReplyCount(post.replyCount),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: DopamineTheme.neonGreen.withValues(alpha: 0.9),
-                ),
-              ),
-            ],
-            SizedBox(height: post.replyCount > 0 ? 4 : 6),
+            const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -317,35 +373,69 @@ class CommunityPostCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (showLikeButton && onToggleLike != null) ...[
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => onToggleLike!(post),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              post.likedByMe
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                              size: 20,
-                              color: post.likedByMe
-                                  ? DopamineTheme.accentRed
-                                  : DopamineTheme.textSecondary,
+                    if ((showLikeButton && onToggleLike != null) ||
+                        onOpenPostDetail != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (showLikeButton && onToggleLike != null)
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => onToggleLike!(post),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    post.likedByMe
+                                        ? Icons.favorite_rounded
+                                        : Icons.favorite_border_rounded,
+                                    size: 20,
+                                    color: post.likedByMe
+                                        ? DopamineTheme.accentRed
+                                        : DopamineTheme.textSecondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n.communityLikeCount(post.likeCount),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: DopamineTheme.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              l10n.communityLikeCount(post.likeCount),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: DopamineTheme.textSecondary,
-                                fontWeight: FontWeight.w600,
+                          if (onOpenPostDetail != null) ...[
+                            if (showLikeButton && onToggleLike != null)
+                              const SizedBox(width: 14),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => onOpenPostDetail!(post),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline_rounded,
+                                    size: 20,
+                                    color: DopamineTheme.textSecondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n.communityCommentCount(post.replyCount),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: DopamineTheme.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
+                    if ((showLikeButton && onToggleLike != null) ||
+                        onOpenPostDetail != null)
                       const SizedBox(height: 3),
-                    ],
                     Text(
                       timeStr,
                       style: theme.textTheme.labelSmall?.copyWith(
@@ -357,6 +447,45 @@ class CommunityPostCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ],
+        ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModerationHiddenBanner extends StatelessWidget {
+  const _ModerationHiddenBanner({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.amber.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.visibility_off_outlined,
+              size: 20,
+              color: Colors.amber.shade700,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  height: 1.35,
+                  color: DopamineTheme.textPrimary,
+                ),
+              ),
             ),
           ],
         ),

@@ -30,6 +30,11 @@
   "profileStatPosts": "Posts",
   "profileStatFollowing": "Following",
   "profileStatFollowers": "Followers",
+  "profileStatBlocked": "Blocked",
+  "profileBlockedTitle": "Blocked users",
+  "profileBlockedListEmpty": "You have not blocked anyone.",
+  "profileUnblockAction": "Unblock",
+  "profileUnblockedDone": "Unblocked.",
   "profileActivityTitle": "Activity",
   "profileActivityMyPost": "Your post",
   "profileActivityPostOnAsset": "Post on {assetName}",
@@ -58,6 +63,37 @@
   "communityUnfollow": "Following",
   "communityOpenAssetDetail": "Asset details",
   "communityMoreMenu": "More",
+  "communityReportPost": "Report",
+  "communityBlockAuthor": "Block user",
+  "communityPostHiddenByReportNotice": "This post is hidden from other users after a report review.",
+  "communityBlockAuthorHint": "Blocking unfollows this user and hides their posts from you.",
+  "communityBlockAuthorMenuSubtitle": "User",
+  "communityReportPostMenuSubtitle": "This post",
+  "communityBlockAuthorShort": "Block",
+  "communityReportPostShort": "Report",
+  "communityReportDialogTitle": "Report this post?",
+  "communityReportReasonHint": "Reason (optional)",
+  "communityReportSend": "Report",
+  "communityReportSheetTitle": "Report",
+  "communityReportSheetSubtitle": "Select a reason for your report.",
+  "communityReportReasonSpam": "Spam or ads",
+  "communityReportReasonAbuse": "Harassment or hate",
+  "communityReportReasonSexual": "Sexual content",
+  "communityReportReasonViolence": "Violence or threats",
+  "communityReportReasonOther": "Other",
+  "communityReportDetailHint": "Add details (optional)",
+  "communityReportSubmitButton": "Submit report",
+  "communityReportSubmitted": "Thanks — your report was submitted.",
+  "communityBlockAuthorTitle": "Block this user?",
+  "communityBlockAuthorMessage": "You will no longer see posts or this profile from {authorName}.",
+  "@communityBlockAuthorMessage": {
+    "placeholders": {
+      "authorName": {
+        "type": "String"
+      }
+    }
+  },
+  "communityUserBlocked": "User blocked.",
   "communityLikeLogin": "Sign in to like.",
   "communityLikeCount": "{count}",
   "@communityLikeCount": {
@@ -67,6 +103,16 @@
       }
     }
   },
+  "communityCommentCount": "{count}",
+  "@communityCommentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "communityPostDetailTitle": "Post",
+  "communityCommentsTitle": "Comments",
   "communityWrite": "Write",
   "communityComposeTitle": "New post",
   "communityComposeSubmit": "Post",

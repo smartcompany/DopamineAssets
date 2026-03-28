@@ -30,6 +30,11 @@
   "profileStatPosts": "게시글",
   "profileStatFollowing": "팔로잉",
   "profileStatFollowers": "팔로워",
+  "profileStatBlocked": "차단",
+  "profileBlockedTitle": "차단한 사용자",
+  "profileBlockedListEmpty": "차단한 사용자가 없습니다.",
+  "profileUnblockAction": "차단 해제",
+  "profileUnblockedDone": "차단을 해제했습니다.",
   "profileActivityTitle": "활동 내역",
   "profileActivityMyPost": "내가 쓴 글",
   "profileActivityPostOnAsset": "{assetName} 에 쓴 글",
@@ -58,6 +63,37 @@
   "communityUnfollow": "팔로잉 중",
   "communityOpenAssetDetail": "종목 상세",
   "communityMoreMenu": "더보기",
+  "communityReportPost": "신고",
+  "communityBlockAuthor": "사용자 차단",
+  "communityPostHiddenByReportNotice": "신고 검토로 이 글은 다른 이용자에게 보이지 않습니다.",
+  "communityBlockAuthorHint": "이 사용자를 차단하면 언팔로우되며, 상대가 쓴 글이 보이지 않습니다.",
+  "communityBlockAuthorMenuSubtitle": "사용자",
+  "communityReportPostMenuSubtitle": "이 글",
+  "communityBlockAuthorShort": "차단",
+  "communityReportPostShort": "신고",
+  "communityReportDialogTitle": "이 글을 신고할까요?",
+  "communityReportReasonHint": "사유 (선택)",
+  "communityReportSend": "신고",
+  "communityReportSheetTitle": "신고하기",
+  "communityReportSheetSubtitle": "신고 사유를 선택해주세요.",
+  "communityReportReasonSpam": "스팸/광고",
+  "communityReportReasonAbuse": "욕설/비방/혐오 표현",
+  "communityReportReasonSexual": "성적/음란한 내용",
+  "communityReportReasonViolence": "폭력/위협",
+  "communityReportReasonOther": "기타",
+  "communityReportDetailHint": "자세한 내용을 적어주세요. (선택)",
+  "communityReportSubmitButton": "신고 보내기",
+  "communityReportSubmitted": "신고가 접수되었습니다. 감사합니다.",
+  "communityBlockAuthorTitle": "이 사용자를 차단할까요?",
+  "communityBlockAuthorMessage": "{authorName}님의 글과 프로필이 더 이상 표시되지 않습니다.",
+  "@communityBlockAuthorMessage": {
+    "placeholders": {
+      "authorName": {
+        "type": "String"
+      }
+    }
+  },
+  "communityUserBlocked": "차단했습니다.",
   "communityLikeLogin": "좋아요하려면 로그인하세요.",
   "communityLikeCount": "{count}",
   "@communityLikeCount": {
@@ -67,6 +103,16 @@
       }
     }
   },
+  "communityCommentCount": "{count}",
+  "@communityCommentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "communityPostDetailTitle": "본문",
+  "communityCommentsTitle": "댓글",
   "communityWrite": "글쓰기",
   "communityComposeTitle": "글쓰기",
   "communityComposeSubmit": "게시",

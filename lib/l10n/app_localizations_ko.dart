@@ -99,6 +99,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileStatFollowers => '팔로워';
 
   @override
+  String get profileStatBlocked => '차단';
+
+  @override
+  String get profileBlockedTitle => '차단한 사용자';
+
+  @override
+  String get profileBlockedListEmpty => '차단한 사용자가 없습니다.';
+
+  @override
+  String get profileUnblockAction => '차단 해제';
+
+  @override
+  String get profileUnblockedDone => '차단을 해제했습니다.';
+
+  @override
   String get profileActivityTitle => '활동 내역';
 
   @override
@@ -164,12 +179,99 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityMoreMenu => '더보기';
 
   @override
+  String get communityReportPost => '신고';
+
+  @override
+  String get communityBlockAuthor => '사용자 차단';
+
+  @override
+  String get communityPostHiddenByReportNotice =>
+      '신고 검토로 이 글은 다른 이용자에게 보이지 않습니다.';
+
+  @override
+  String get communityBlockAuthorHint =>
+      '이 사용자를 차단하면 언팔로우되며, 상대가 쓴 글이 보이지 않습니다.';
+
+  @override
+  String get communityBlockAuthorMenuSubtitle => '사용자';
+
+  @override
+  String get communityReportPostMenuSubtitle => '이 글';
+
+  @override
+  String get communityBlockAuthorShort => '차단';
+
+  @override
+  String get communityReportPostShort => '신고';
+
+  @override
+  String get communityReportDialogTitle => '이 글을 신고할까요?';
+
+  @override
+  String get communityReportReasonHint => '사유 (선택)';
+
+  @override
+  String get communityReportSend => '신고';
+
+  @override
+  String get communityReportSheetTitle => '신고하기';
+
+  @override
+  String get communityReportSheetSubtitle => '신고 사유를 선택해주세요.';
+
+  @override
+  String get communityReportReasonSpam => '스팸/광고';
+
+  @override
+  String get communityReportReasonAbuse => '욕설/비방/혐오 표현';
+
+  @override
+  String get communityReportReasonSexual => '성적/음란한 내용';
+
+  @override
+  String get communityReportReasonViolence => '폭력/위협';
+
+  @override
+  String get communityReportReasonOther => '기타';
+
+  @override
+  String get communityReportDetailHint => '자세한 내용을 적어주세요. (선택)';
+
+  @override
+  String get communityReportSubmitButton => '신고 보내기';
+
+  @override
+  String get communityReportSubmitted => '신고가 접수되었습니다. 감사합니다.';
+
+  @override
+  String get communityBlockAuthorTitle => '이 사용자를 차단할까요?';
+
+  @override
+  String communityBlockAuthorMessage(String authorName) {
+    return '$authorName님의 글과 프로필이 더 이상 표시되지 않습니다.';
+  }
+
+  @override
+  String get communityUserBlocked => '차단했습니다.';
+
+  @override
   String get communityLikeLogin => '좋아요하려면 로그인하세요.';
 
   @override
   String communityLikeCount(int count) {
     return '$count';
   }
+
+  @override
+  String communityCommentCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String get communityPostDetailTitle => '본문';
+
+  @override
+  String get communityCommentsTitle => '댓글';
 
   @override
   String get communityWrite => '글쓰기';

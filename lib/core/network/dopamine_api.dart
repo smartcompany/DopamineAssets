@@ -373,6 +373,33 @@ abstract final class DopamineApi {
     return AssetComment.fromJson(item);
   }
 
+  static Future<List<AssetComment>> fetchAssetCommentThread({
+    required String rootCommentId,
+    String? idToken,
+  }) async {
+    final path =
+        '/api/feed/asset-comments/${Uri.encodeComponent(rootCommentId)}/thread';
+    final uri = _uri(path);
+    final headers =
+        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final response = await _client.get(uri, headers: headers);
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][asset-comments] GET thread $uri');
+    }
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid comment thread payload');
+    }
+    final items = decoded['items'];
+    if (items is! List<dynamic>) {
+      throw ApiException('Invalid comment thread items');
+    }
+    return items
+        .map((e) => AssetComment.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   static Future<AssetComment> fetchAssetCommentById({
     required String id,
     String? idToken,
@@ -457,6 +484,32 @@ abstract final class DopamineApi {
     _ensureOk(response);
   }
 
+  static Future<void> reportAssetComment({
+    required String commentId,
+    required String idToken,
+    String? reason,
+  }) async {
+    final path =
+        '/api/feed/asset-comments/${Uri.encodeComponent(commentId)}/report';
+    final uri = _uri(path);
+    final payload = <String, dynamic>{
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    };
+    final response = await _client.post(
+      uri,
+      headers: <String, String>{
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+      body: jsonEncode(payload),
+    );
+    if (kDebugMode) {
+      debugPrint('[DopamineApi][asset-comments] POST report $uri');
+    }
+    _ensureOk(response);
+  }
+
   static Future<ProfileStats> fetchProfileStats({
     required String idToken,
   }) async {
@@ -529,6 +582,27 @@ abstract final class DopamineApi {
     final items = decoded['items'];
     if (items is! List<dynamic>) {
       throw ApiException('Invalid followers items');
+    }
+    return items
+        .map((e) => ProfileUserRow.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<List<ProfileUserRow>> fetchProfileBlockedUsers({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/blocked'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid blocked users list');
+    }
+    final items = decoded['items'];
+    if (items is! List<dynamic>) {
+      throw ApiException('Invalid blocked users items');
     }
     return items
         .map((e) => ProfileUserRow.fromJson(e as Map<String, dynamic>))

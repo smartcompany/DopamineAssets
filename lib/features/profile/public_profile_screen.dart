@@ -9,6 +9,8 @@ import '../../data/models/community_post.dart';
 import '../../theme/dopamine_theme.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../community/community_post_card.dart';
+import '../community/community_post_detail_screen.dart';
+import '../community/community_report_sheet.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   const PublicProfileScreen({
@@ -142,6 +144,134 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
   }
 
+  Future<void> _openPostDetail(CommunityPost p) async {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final changed = await CommunityPostDetailScreen.open(
+      context,
+      post: p,
+      locale: locale,
+      myUid: myUid,
+      followingByUid: null,
+      onToggleFollow: null,
+      onPostUpdated: (_) {
+        if (mounted) {
+          _loadData();
+        }
+      },
+    );
+    if (changed && mounted) {
+      await _loadData();
+    }
+  }
+
+  Future<void> _togglePostLike(CommunityPost p) async {
+    final token = await _idTokenOrLogin();
+    if (token == null || !mounted) return;
+    try {
+      await DopamineApi.toggleCommentLike(idToken: token, commentId: p.id);
+      if (mounted) await _loadData();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorLoadFailed)),
+      );
+    }
+  }
+
+  Future<void> _reportCommunityPost(CommunityPost p) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final reasonText = await showCommunityReportSheet(context);
+    if (reasonText == null || !mounted) return;
+    final token = await fb.getIdToken();
+    if (token == null) return;
+    try {
+      await DopamineApi.reportAssetComment(
+        commentId: p.id,
+        idToken: token,
+        reason: reasonText,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.communityReportSubmitted)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    }
+  }
+
+  Future<void> _blockAuthorFromPost(CommunityPost p) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final name = _displayName.isNotEmpty ? _displayName : widget.authorName;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.communityBlockAuthorTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.communityBlockAuthorMessage(name)),
+            const SizedBox(height: 10),
+            Text(
+              l10n.communityBlockAuthorHint,
+              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: DopamineTheme.textSecondary,
+                  ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.profileDeleteCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              l10n.communityBlockAuthorShort,
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final token = await fb.getIdToken();
+    if (token == null) return;
+    try {
+      await DopamineApi.blockUser(
+        idToken: token,
+        targetUid: widget.authorUid,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.communityUserBlocked)),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    }
+  }
+
   Future<void> _toggleBlock() async {
     final token = await _idTokenOrLogin();
     if (token == null || !mounted) return;
@@ -218,10 +348,29 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: FilledButton.tonal(
-                        onPressed: (_working || _blockedByMe) ? null : _toggleFollow,
-                        child: Text(_isFollowing ? l10n.communityUnfollow : l10n.communityFollow),
-                      ),
+                      child: _isFollowing
+                          ? OutlinedButton(
+                              onPressed:
+                                  (_working || _blockedByMe) ? null : _toggleFollow,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: DopamineTheme.neonGreen,
+                                side: BorderSide(
+                                  color: DopamineTheme.neonGreen.withValues(
+                                    alpha: 0.85,
+                                  ),
+                                ),
+                              ),
+                              child: Text(l10n.communityUnfollow),
+                            )
+                          : FilledButton(
+                              onPressed:
+                                  (_working || _blockedByMe) ? null : _toggleFollow,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: DopamineTheme.neonGreen,
+                                foregroundColor: const Color(0xFF0A0A0A),
+                              ),
+                              child: Text(l10n.communityFollow),
+                            ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -285,6 +434,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   );
                 }
                 final locale = Localizations.localeOf(context).toLanguageTag();
+                final myUid = FirebaseAuth.instance.currentUser?.uid;
+                final showModeration =
+                    myUid != null && myUid != widget.authorUid;
                 return ListView.separated(
                   padding: EdgeInsets.fromLTRB(
                     16,
@@ -298,8 +450,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     return CommunityPostCard(
                       post: _posts[index],
                       locale: locale,
-                      myUid: FirebaseAuth.instance.currentUser?.uid,
+                      myUid: myUid,
                       showFollowButton: false,
+                      onToggleLike: _togglePostLike,
+                      onOpenPostDetail: _openPostDetail,
+                      onReportPost:
+                          showModeration ? _reportCommunityPost : null,
+                      onBlockAuthor:
+                          showModeration ? _blockAuthorFromPost : null,
                     );
                   },
                 );

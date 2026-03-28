@@ -17,6 +17,8 @@ import '../../theme/dopamine_theme.dart';
 import '../profile/public_profile_screen.dart';
 import 'community_compose_screen.dart';
 import 'community_post_card.dart';
+import 'community_post_detail_screen.dart';
+import 'community_report_sheet.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -151,6 +153,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  Future<void> _openPostDetail(CommunityPost p) async {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final changed = await CommunityPostDetailScreen.open(
+      context,
+      post: p,
+      locale: locale,
+      myUid: myUid,
+      followingByUid: _followingByUid,
+      onToggleFollow: _toggleFollow,
+      onPostUpdated: (u) {
+        final i = _posts.indexWhere((x) => x.id == u.id);
+        if (i >= 0) {
+          setState(() => _posts[i] = u);
+        }
+      },
+    );
+    if (changed && mounted) {
+      _scheduleFetch();
+    }
+  }
+
   Future<void> _toggleLike(int index, CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
     final fb = FirebaseAuth.instance.currentUser;
@@ -267,6 +291,99 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
     if (done == true && mounted) {
       _scheduleFetch();
+    }
+  }
+
+  Future<void> _reportCommunityPost(CommunityPost p) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final reasonText = await showCommunityReportSheet(context);
+    if (reasonText == null || !mounted) return;
+    final token = await fb.getIdToken();
+    if (token == null) return;
+    try {
+      await DopamineApi.reportAssetComment(
+        commentId: p.id,
+        idToken: token,
+        reason: reasonText,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.communityReportSubmitted)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    }
+  }
+
+  Future<void> _blockAuthorFromPost(CommunityPost p) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.communityBlockAuthorTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.communityBlockAuthorMessage(p.authorDisplayName)),
+            const SizedBox(height: 10),
+            Text(
+              l10n.communityBlockAuthorHint,
+              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: DopamineTheme.textSecondary,
+                  ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.profileDeleteCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              l10n.communityBlockAuthorShort,
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final token = await fb.getIdToken();
+    if (token == null) return;
+    try {
+      await DopamineApi.blockUser(idToken: token, targetUid: p.authorUid);
+      if (!mounted) return;
+      setState(() {
+        _posts = _posts.where((x) => x.authorUid != p.authorUid).toList();
+        _followingByUid = Map<String, bool>.from(_followingByUid)
+          ..remove(p.authorUid);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.communityUserBlocked)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
     }
   }
 
@@ -656,80 +773,115 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
           ),
           Expanded(
-            child: Builder(
-              builder: (context) {
-                if (_loading) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: DopamineTheme.neonGreen,
-                    ),
-                  );
-                }
-                if (_fetchError != null) {
-                  final err = _fetchError!;
-                  final msg = err is ApiException
-                      ? err.message
-                      : err.toString();
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            msg,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: DopamineTheme.accentRed,
+            child: RefreshIndicator(
+              color: DopamineTheme.neonGreen,
+              onRefresh: _scheduleFetch,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final minScrollExtent = constraints.maxHeight > 0
+                      ? constraints.maxHeight
+                      : 400.0;
+                  if (_loading) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: minScrollExtent,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: DopamineTheme.neonGreen,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          FilledButton(
-                            onPressed: _scheduleFetch,
-                            child: Text(l10n.retry),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                final items = _posts;
-                if (items.isEmpty) {
-                  return Center(
-                    child: Text(
-                      l10n.emptyState,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: DopamineTheme.textSecondary,
-                      ),
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    0,
-                    16,
-                    24 + homeShellBottomInset(context),
-                  ),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) {
-                    final p = items[i];
-                    return CommunityPostCard(
-                      post: p,
-                      locale: locale,
-                      myUid: myUid,
-                      followingByUid: _followingByUid,
-                      onOpenAuthorProfile: _openAuthorProfile,
-                      onToggleFollow: _toggleFollow,
-                      onToggleLike: (post) => _toggleLike(i, post),
-                      onEditOwnPost: _openEditCompose,
-                      onDeleteOwnPost: _deleteCommunityPost,
+                        ),
+                      ],
                     );
-                  },
-                );
-              },
+                  }
+                  if (_fetchError != null) {
+                    final err = _fetchError!;
+                    final msg = err is ApiException
+                        ? err.message
+                        : err.toString();
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: minScrollExtent,
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    msg,
+                                    textAlign: TextAlign.center,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: DopamineTheme.accentRed,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  FilledButton(
+                                    onPressed: _scheduleFetch,
+                                    child: Text(l10n.retry),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  final items = _posts;
+                  if (items.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: minScrollExtent,
+                          child: Center(
+                            child: Text(
+                              l10n.emptyState,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: DopamineTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      24 + homeShellBottomInset(context),
+                    ),
+                    itemCount: items.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, i) {
+                      final p = items[i];
+                      return CommunityPostCard(
+                        post: p,
+                        locale: locale,
+                        myUid: myUid,
+                        followingByUid: _followingByUid,
+                        onOpenAuthorProfile: _openAuthorProfile,
+                        onToggleFollow: _toggleFollow,
+                        onToggleLike: (post) => _toggleLike(i, post),
+                        onOpenPostDetail: _openPostDetail,
+                        onEditOwnPost: _openEditCompose,
+                        onDeleteOwnPost: _deleteCommunityPost,
+                        onReportPost: _reportCommunityPost,
+                        onBlockAuthor: _blockAuthorFromPost,
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],

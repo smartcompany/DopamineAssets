@@ -14,6 +14,7 @@ final class CommunityPost {
     required this.replyCount,
     this.likeCount = 0,
     this.likedByMe = false,
+    this.moderationHiddenFromPublic = false,
   });
 
   final String id;
@@ -32,10 +33,13 @@ final class CommunityPost {
   final int replyCount;
   final int likeCount;
   final bool likedByMe;
+  /// 신고 등으로 타인에게 비노출(작성자 본인은 열람·활동 목록 가능)
+  final bool moderationHiddenFromPublic;
 
   CommunityPost copyWith({
     int? likeCount,
     bool? likedByMe,
+    bool? moderationHiddenFromPublic,
   }) {
     return CommunityPost(
       id: id,
@@ -52,6 +56,8 @@ final class CommunityPost {
       replyCount: replyCount,
       likeCount: likeCount ?? this.likeCount,
       likedByMe: likedByMe ?? this.likedByMe,
+      moderationHiddenFromPublic:
+          moderationHiddenFromPublic ?? this.moderationHiddenFromPublic,
     );
   }
 
@@ -82,6 +88,8 @@ final class CommunityPost {
       replyCount: (json['reply_count'] as num?)?.toInt() ?? 0,
       likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
       likedByMe: json['liked_by_me'] as bool? ?? false,
+      moderationHiddenFromPublic:
+          json['moderation_hidden_from_public'] as bool? ?? false,
     );
   }
 }

@@ -101,6 +101,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileStatFollowers => 'Followers';
 
   @override
+  String get profileStatBlocked => 'Blocked';
+
+  @override
+  String get profileBlockedTitle => 'Blocked users';
+
+  @override
+  String get profileBlockedListEmpty => 'You have not blocked anyone.';
+
+  @override
+  String get profileUnblockAction => 'Unblock';
+
+  @override
+  String get profileUnblockedDone => 'Unblocked.';
+
+  @override
   String get profileActivityTitle => 'Activity';
 
   @override
@@ -166,12 +181,99 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityMoreMenu => 'More';
 
   @override
+  String get communityReportPost => 'Report';
+
+  @override
+  String get communityBlockAuthor => 'Block user';
+
+  @override
+  String get communityPostHiddenByReportNotice =>
+      'This post is hidden from other users after a report review.';
+
+  @override
+  String get communityBlockAuthorHint =>
+      'Blocking unfollows this user and hides their posts from you.';
+
+  @override
+  String get communityBlockAuthorMenuSubtitle => 'User';
+
+  @override
+  String get communityReportPostMenuSubtitle => 'This post';
+
+  @override
+  String get communityBlockAuthorShort => 'Block';
+
+  @override
+  String get communityReportPostShort => 'Report';
+
+  @override
+  String get communityReportDialogTitle => 'Report this post?';
+
+  @override
+  String get communityReportReasonHint => 'Reason (optional)';
+
+  @override
+  String get communityReportSend => 'Report';
+
+  @override
+  String get communityReportSheetTitle => 'Report';
+
+  @override
+  String get communityReportSheetSubtitle => 'Select a reason for your report.';
+
+  @override
+  String get communityReportReasonSpam => 'Spam or ads';
+
+  @override
+  String get communityReportReasonAbuse => 'Harassment or hate';
+
+  @override
+  String get communityReportReasonSexual => 'Sexual content';
+
+  @override
+  String get communityReportReasonViolence => 'Violence or threats';
+
+  @override
+  String get communityReportReasonOther => 'Other';
+
+  @override
+  String get communityReportDetailHint => 'Add details (optional)';
+
+  @override
+  String get communityReportSubmitButton => 'Submit report';
+
+  @override
+  String get communityReportSubmitted => 'Thanks — your report was submitted.';
+
+  @override
+  String get communityBlockAuthorTitle => 'Block this user?';
+
+  @override
+  String communityBlockAuthorMessage(String authorName) {
+    return 'You will no longer see posts or this profile from $authorName.';
+  }
+
+  @override
+  String get communityUserBlocked => 'User blocked.';
+
+  @override
   String get communityLikeLogin => 'Sign in to like.';
 
   @override
   String communityLikeCount(int count) {
     return '$count';
   }
+
+  @override
+  String communityCommentCount(int count) {
+    return '$count';
+  }
+
+  @override
+  String get communityPostDetailTitle => 'Post';
+
+  @override
+  String get communityCommentsTitle => 'Comments';
 
   @override
   String get communityWrite => 'Write';

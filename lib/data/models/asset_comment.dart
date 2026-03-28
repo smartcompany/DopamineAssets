@@ -13,6 +13,7 @@ final class AssetComment {
     this.assetSymbol,
     this.assetClass,
     this.assetDisplayName,
+    this.moderationHiddenFromPublic = false,
   });
 
   final String id;
@@ -29,10 +30,12 @@ final class AssetComment {
   final String? assetSymbol;
   final String? assetClass;
   final String? assetDisplayName;
+  final bool moderationHiddenFromPublic;
 
   AssetComment copyWith({
     int? likeCount,
     bool? likedByMe,
+    bool? moderationHiddenFromPublic,
   }) {
     return AssetComment(
       id: id,
@@ -48,6 +51,8 @@ final class AssetComment {
       assetSymbol: assetSymbol,
       assetClass: assetClass,
       assetDisplayName: assetDisplayName,
+      moderationHiddenFromPublic:
+          moderationHiddenFromPublic ?? this.moderationHiddenFromPublic,
     );
   }
 
@@ -75,6 +80,8 @@ final class AssetComment {
       assetSymbol: rawSym is String ? rawSym : null,
       assetClass: rawCls is String ? rawCls : null,
       assetDisplayName: rawAdn is String ? rawAdn : null,
+      moderationHiddenFromPublic:
+          json['moderation_hidden_from_public'] as bool? ?? false,
     );
   }
 }

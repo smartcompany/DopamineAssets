@@ -41,18 +41,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _rankingPollTimer;
   int _rankingRequestId = 0;
 
-  late final Future<List<ThemeItem>> _hotThemesFuture = DopamineApi.fetchThemes(
-    'hot',
-  );
-  late final Future<List<ThemeItem>> _crashedThemesFuture =
-      DopamineApi.fetchThemes('crashed');
-  late final Future<MarketSummary> _marketFuture =
-      DopamineApi.fetchMarketSummary();
+  late Future<List<ThemeItem>> _hotThemesFuture;
+  late Future<List<ThemeItem>> _crashedThemesFuture;
+  late Future<MarketSummary> _marketFuture;
 
   @override
   void initState() {
     super.initState();
+    _hotThemesFuture = DopamineApi.fetchThemes('hot');
+    _crashedThemesFuture = DopamineApi.fetchThemes('crashed');
+    _marketFuture = DopamineApi.fetchMarketSummary();
     _bootstrapRankings();
+  }
+
+  Future<void> _pullRefreshHome() async {
+    if (!mounted) return;
+    setState(() {
+      _hotThemesFuture = DopamineApi.fetchThemes('hot');
+      _crashedThemesFuture = DopamineApi.fetchThemes('crashed');
+      _marketFuture = DopamineApi.fetchMarketSummary();
+    });
+    await _refreshRankings();
   }
 
   @override
@@ -276,11 +285,14 @@ class _HomeScreenState extends State<HomeScreen> {
       fit: StackFit.expand,
       children: [
         const _PurpleGradientBackground(),
-        CustomScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          slivers: [
+        RefreshIndicator(
+          color: DopamineTheme.neonGreen,
+          onRefresh: _pullRefreshHome,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
             SliverToBoxAdapter(
               child: SafeArea(
                 bottom: false,
@@ -469,6 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
+          ),
         ),
       ],
     );
@@ -1028,21 +1041,11 @@ class _GlassAssetRow extends StatelessWidget {
       color: DopamineTheme.textPrimary,
     );
 
-    final pctStyle = isPodium
-        ? theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w900,
-            color: pctColor,
-            letterSpacing: -0.5,
-            height: 1.15,
-            shadows: [
-              Shadow(color: pctColor.withValues(alpha: 0.45), blurRadius: 10),
-            ],
-          )
-        : theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w900,
-            color: pctColor,
-            letterSpacing: -0.3,
-          );
+    final pctStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w900,
+      color: pctColor,
+      letterSpacing: -0.3,
+    );
 
     final symStyle = theme.textTheme.bodySmall?.copyWith(
       color: DopamineTheme.textSecondary,
@@ -1132,10 +1135,10 @@ class _GlassAssetRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(PercentFormat.signedPercent(pct, locale), style: pctStyle),
-            SizedBox(height: isPodium ? 6 : 4),
+            const SizedBox(height: 4),
             Icon(
               Icons.show_chart_rounded,
-              size: isPodium ? 20 : 16,
+              size: 16,
               color: pctColor.withValues(alpha: 0.9),
             ),
           ],

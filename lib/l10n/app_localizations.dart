@@ -278,6 +278,36 @@ abstract class AppLocalizations {
   /// **'팔로워'**
   String get profileStatFollowers;
 
+  /// No description provided for @profileStatBlocked.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단'**
+  String get profileStatBlocked;
+
+  /// No description provided for @profileBlockedTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단한 사용자'**
+  String get profileBlockedTitle;
+
+  /// No description provided for @profileBlockedListEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단한 사용자가 없습니다.'**
+  String get profileBlockedListEmpty;
+
+  /// No description provided for @profileUnblockAction.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단 해제'**
+  String get profileUnblockAction;
+
+  /// No description provided for @profileUnblockedDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단을 해제했습니다.'**
+  String get profileUnblockedDone;
+
   /// No description provided for @profileActivityTitle.
   ///
   /// In ko, this message translates to:
@@ -404,6 +434,150 @@ abstract class AppLocalizations {
   /// **'더보기'**
   String get communityMoreMenu;
 
+  /// No description provided for @communityReportPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고'**
+  String get communityReportPost;
+
+  /// No description provided for @communityBlockAuthor.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용자 차단'**
+  String get communityBlockAuthor;
+
+  /// No description provided for @communityPostHiddenByReportNotice.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고 검토로 이 글은 다른 이용자에게 보이지 않습니다.'**
+  String get communityPostHiddenByReportNotice;
+
+  /// No description provided for @communityBlockAuthorHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 사용자를 차단하면 언팔로우되며, 상대가 쓴 글이 보이지 않습니다.'**
+  String get communityBlockAuthorHint;
+
+  /// No description provided for @communityBlockAuthorMenuSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용자'**
+  String get communityBlockAuthorMenuSubtitle;
+
+  /// No description provided for @communityReportPostMenuSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 글'**
+  String get communityReportPostMenuSubtitle;
+
+  /// No description provided for @communityBlockAuthorShort.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단'**
+  String get communityBlockAuthorShort;
+
+  /// No description provided for @communityReportPostShort.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고'**
+  String get communityReportPostShort;
+
+  /// No description provided for @communityReportDialogTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 글을 신고할까요?'**
+  String get communityReportDialogTitle;
+
+  /// No description provided for @communityReportReasonHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'사유 (선택)'**
+  String get communityReportReasonHint;
+
+  /// No description provided for @communityReportSend.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고'**
+  String get communityReportSend;
+
+  /// No description provided for @communityReportSheetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고하기'**
+  String get communityReportSheetTitle;
+
+  /// No description provided for @communityReportSheetSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고 사유를 선택해주세요.'**
+  String get communityReportSheetSubtitle;
+
+  /// No description provided for @communityReportReasonSpam.
+  ///
+  /// In ko, this message translates to:
+  /// **'스팸/광고'**
+  String get communityReportReasonSpam;
+
+  /// No description provided for @communityReportReasonAbuse.
+  ///
+  /// In ko, this message translates to:
+  /// **'욕설/비방/혐오 표현'**
+  String get communityReportReasonAbuse;
+
+  /// No description provided for @communityReportReasonSexual.
+  ///
+  /// In ko, this message translates to:
+  /// **'성적/음란한 내용'**
+  String get communityReportReasonSexual;
+
+  /// No description provided for @communityReportReasonViolence.
+  ///
+  /// In ko, this message translates to:
+  /// **'폭력/위협'**
+  String get communityReportReasonViolence;
+
+  /// No description provided for @communityReportReasonOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get communityReportReasonOther;
+
+  /// No description provided for @communityReportDetailHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'자세한 내용을 적어주세요. (선택)'**
+  String get communityReportDetailHint;
+
+  /// No description provided for @communityReportSubmitButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고 보내기'**
+  String get communityReportSubmitButton;
+
+  /// No description provided for @communityReportSubmitted.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고가 접수되었습니다. 감사합니다.'**
+  String get communityReportSubmitted;
+
+  /// No description provided for @communityBlockAuthorTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 사용자를 차단할까요?'**
+  String get communityBlockAuthorTitle;
+
+  /// No description provided for @communityBlockAuthorMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'{authorName}님의 글과 프로필이 더 이상 표시되지 않습니다.'**
+  String communityBlockAuthorMessage(String authorName);
+
+  /// No description provided for @communityUserBlocked.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단했습니다.'**
+  String get communityUserBlocked;
+
   /// No description provided for @communityLikeLogin.
   ///
   /// In ko, this message translates to:
@@ -415,6 +589,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'{count}'**
   String communityLikeCount(int count);
+
+  /// No description provided for @communityCommentCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}'**
+  String communityCommentCount(int count);
+
+  /// No description provided for @communityPostDetailTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'본문'**
+  String get communityPostDetailTitle;
+
+  /// No description provided for @communityCommentsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글'**
+  String get communityCommentsTitle;
 
   /// No description provided for @communityWrite.
   ///

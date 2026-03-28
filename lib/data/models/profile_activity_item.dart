@@ -22,6 +22,7 @@ final class ProfileActivityItem {
     this.likerDisplayName,
     this.targetAuthorUid,
     this.targetAuthorDisplayName,
+    this.moderationHiddenFromPublic,
   });
 
   final String kind;
@@ -46,6 +47,7 @@ final class ProfileActivityItem {
   final String? likerDisplayName;
   final String? targetAuthorUid;
   final String? targetAuthorDisplayName;
+  final bool? moderationHiddenFromPublic;
 
   factory ProfileActivityItem.fromJson(Map<String, dynamic> json) {
     final rawUrls = json['imageUrls'];
@@ -73,6 +75,7 @@ final class ProfileActivityItem {
       likerDisplayName: json['likerDisplayName'] as String?,
       targetAuthorUid: json['targetAuthorUid'] as String?,
       targetAuthorDisplayName: json['targetAuthorDisplayName'] as String?,
+      moderationHiddenFromPublic: json['moderationHiddenFromPublic'] as bool?,
     );
   }
 }
@@ -99,17 +102,20 @@ final class ProfileStats {
     required this.postsCount,
     required this.followingCount,
     required this.followersCount,
+    this.blockedCount = 0,
   });
 
   final int postsCount;
   final int followingCount;
   final int followersCount;
+  final int blockedCount;
 
   factory ProfileStats.fromJson(Map<String, dynamic> json) {
     return ProfileStats(
       postsCount: (json['postsCount'] as num?)?.toInt() ?? 0,
       followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
       followersCount: (json['followersCount'] as num?)?.toInt() ?? 0,
+      blockedCount: (json['blockedCount'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -147,6 +153,7 @@ extension ProfileActivityItemCommunity on ProfileActivityItem {
       replyCount: replyCount ?? 0,
       likeCount: likeCount ?? 0,
       likedByMe: likedByMe ?? false,
+      moderationHiddenFromPublic: moderationHiddenFromPublic ?? false,
     );
   }
 }

@@ -41,6 +41,12 @@ class CommunityComposeScreen extends StatefulWidget {
 class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   static const _maxImages = 6;
 
+  /// 제목 필드와 동일한 한 줄 입력 높이(패딩) — 드롭다운 기본 터치 타깃 여백 제거용
+  static const EdgeInsets _composeFieldContentPadding = EdgeInsets.symmetric(
+    horizontal: 12,
+    vertical: 12,
+  );
+
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
   final _bodyFocusNode = FocusNode();
@@ -67,8 +73,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   String? get _effectiveEditId =>
       widget.editPrefill?.id ?? widget.editCommentId;
 
-  bool get _lockAssetPick =>
-      _isEditMode && !_isReplyEdit;
+  bool get _lockAssetPick => _isEditMode && !_isReplyEdit;
 
   @override
   void initState() {
@@ -166,12 +171,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
             cls.isNotEmpty &&
             _classes.contains(cls)) {
           _assetClass = cls;
-          _selectedAsset = _resolveAsset(
-            sug,
-            sym,
-            cls,
-            c.assetDisplayName,
-          );
+          _selectedAsset = _resolveAsset(sug, sym, cls, c.assetDisplayName);
         } else {
           _selectedAsset = null;
         }
@@ -258,9 +258,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
   Future<void> _pickImages() async {
     if (_totalImageCount >= _maxImages) return;
-    final picked = await ImagePicker().pickMultiImage(
-      imageQuality: 82,
-    );
+    final picked = await ImagePicker().pickMultiImage(imageQuality: 82);
     if (picked.isEmpty || !mounted) return;
     setState(() {
       for (final p in picked) {
@@ -282,9 +280,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
     final body = _bodyController.text.trim();
     if (body.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.communityComposeNeedBody)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityComposeNeedBody)));
       return;
     }
 
@@ -304,9 +302,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       final token = await fb.getIdToken();
       if (token == null || token.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.assetPostsSendError)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.assetPostsSendError)));
         }
         return;
       }
@@ -334,9 +332,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         await DopamineApi.patchAssetComment(
           id: editId,
           body: body,
-          title: _isReplyEdit
-              ? null
-              : (titleText.isEmpty ? null : titleText),
+          title: _isReplyEdit ? null : (titleText.isEmpty ? null : titleText),
           imageUrls: allUrls,
           idToken: token,
         );
@@ -374,16 +370,15 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.assetPostsSendError;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
-  Widget _thumbnailStrip({EdgeInsetsGeometry padding =
-      const EdgeInsets.fromLTRB(12, 4, 12, 8)}) {
+  Widget _thumbnailStrip({
+    EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(12, 4, 12, 8),
+  }) {
     final n = _existingImageUrls.length + _images.length;
     if (n == 0) return const SizedBox.shrink();
     return SizedBox(
@@ -542,8 +537,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
             child: Row(
               children: [
                 IconButton(
-                  onPressed:
-                      _totalImageCount >= _maxImages ? null : _pickImages,
+                  onPressed: _totalImageCount >= _maxImages
+                      ? null
+                      : _pickImages,
                   icon: const Icon(Icons.add_photo_alternate_outlined),
                   color: DopamineTheme.neonGreen,
                   tooltip: l10n.communityComposeAddPhotoShort,
@@ -576,9 +572,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         widget.editCommentId != null &&
         widget.editPrefill == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.communityComposeEditTitle),
-        ),
+        appBar: AppBar(title: Text(l10n.communityComposeEditTitle)),
         body: const Center(
           child: CircularProgressIndicator(
             strokeWidth: 2,
@@ -645,77 +639,18 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                   ),
                   const SizedBox(height: 16),
                 ] else ...[
-                Text(
-                  l10n.communityComposeAssetClassLabel,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: DopamineTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                InputDecorator(
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.black.withValues(alpha: 0.22),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
+                  Text(
+                    l10n.communityComposeAssetClassLabel,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: DopamineTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      value: _assetClass,
-                      dropdownColor: const Color(0xFF1E1A28),
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: DopamineTheme.textPrimary,
-                      ),
-                      items: [
-                        for (final c in _classes)
-                          DropdownMenuItem(
-                            value: c,
-                            child: Text(_classLabel(c, l10n)),
-                          ),
-                      ],
-                      onChanged: _lockAssetPick
-                          ? null
-                          : (v) {
-                              if (v == null) return;
-                              setState(() {
-                                _assetClass = v;
-                                final next = sug.assetsForClass(v);
-                                _selectedAsset =
-                                    next.isNotEmpty ? next.first : null;
-                              });
-                            },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.communityComposeSymbolLabel,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: DopamineTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                if (symbols.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      l10n.communityComposeNoRankedSymbols,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: DopamineTheme.textSecondary,
-                        height: 1.35,
-                      ),
-                    ),
-                  )
-                else
+                  const SizedBox(height: 6),
                   InputDecorator(
                     decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: _composeFieldContentPadding,
                       filled: true,
                       fillColor: Colors.black.withValues(alpha: 0.22),
                       border: OutlineInputBorder(
@@ -726,76 +661,149 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                       ),
                     ),
                     child: DropdownButtonHideUnderline(
-                      child: DropdownButton<RankedAsset>(
-                        key: ValueKey(_assetClass),
+                      child: DropdownButton<String>(
+                        isDense: true,
                         isExpanded: true,
-                        value: _matchingSelection(symbols),
-                        hint: Text(
-                          l10n.communityComposePickSymbol,
-                          style: TextStyle(
-                            color: DopamineTheme.textSecondary
-                                .withValues(alpha: 0.85),
-                          ),
-                        ),
+                        value: _assetClass,
                         dropdownColor: const Color(0xFF1E1A28),
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: DopamineTheme.textPrimary,
                         ),
                         items: [
-                          for (final a in symbols)
+                          for (final c in _classes)
                             DropdownMenuItem(
-                              value: a,
-                              child: Text(
-                                '${a.symbol} · ${a.name}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              value: c,
+                              child: Text(_classLabel(c, l10n)),
                             ),
                         ],
                         onChanged: _lockAssetPick
                             ? null
                             : (v) {
-                                if (v != null) {
-                                  setState(() => _selectedAsset = v);
-                                }
+                                if (v == null) return;
+                                setState(() {
+                                  _assetClass = v;
+                                  final next = sug.assetsForClass(v);
+                                  _selectedAsset = next.isNotEmpty
+                                      ? next.first
+                                      : null;
+                                });
                               },
                       ),
                     ),
                   ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.communityComposeOptionalTitle,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: DopamineTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _titleController,
-                  maxLength: 200,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: DopamineTheme.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: l10n.communityComposeTitleHint,
-                    hintStyle: TextStyle(
-                      color: DopamineTheme.textSecondary.withValues(alpha: 0.85),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.communityComposeSymbolLabel,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: DopamineTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    filled: true,
-                    fillColor: Colors.black.withValues(alpha: 0.22),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                  const SizedBox(height: 6),
+                  if (symbols.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        l10n.communityComposeNoRankedSymbols,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: DopamineTheme.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                    )
+                  else
+                    InputDecorator(
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: _composeFieldContentPadding,
+                        filled: true,
+                        fillColor: Colors.black.withValues(alpha: 0.22),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<RankedAsset>(
+                          key: ValueKey(_assetClass),
+                          isDense: true,
+                          isExpanded: true,
+                          value: _matchingSelection(symbols),
+                          hint: Text(
+                            l10n.communityComposePickSymbol,
+                            style: TextStyle(
+                              color: DopamineTheme.textSecondary.withValues(
+                                alpha: 0.85,
+                              ),
+                            ),
+                          ),
+                          dropdownColor: const Color(0xFF1E1A28),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: DopamineTheme.textPrimary,
+                          ),
+                          items: [
+                            for (final a in symbols)
+                              DropdownMenuItem(
+                                value: a,
+                                child: Text(
+                                  '${a.symbol} · ${a.name}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                          onChanged: _lockAssetPick
+                              ? null
+                              : (v) {
+                                  if (v != null) {
+                                    setState(() => _selectedAsset = v);
+                                  }
+                                },
+                        ),
                       ),
                     ),
-                    counterStyle: TextStyle(
-                      color: DopamineTheme.textSecondary.withValues(alpha: 0.7),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.communityComposeOptionalTitle,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: DopamineTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _titleController,
+                    maxLength: 200,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: DopamineTheme.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: _composeFieldContentPadding,
+                      hintText: l10n.communityComposeTitleHint,
+                      hintStyle: TextStyle(
+                        color: DopamineTheme.textSecondary.withValues(
+                          alpha: 0.85,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.black.withValues(alpha: 0.22),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.12),
+                        ),
+                      ),
+                      counterStyle: TextStyle(
+                        color: DopamineTheme.textSecondary.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
                 Text(
                   l10n.communityComposeBodyLabel,
@@ -832,8 +840,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                           alignLabelWithHint: true,
                           hintText: l10n.communityComposeBodyHint,
                           hintStyle: TextStyle(
-                            color: DopamineTheme.textSecondary
-                                .withValues(alpha: 0.75),
+                            color: DopamineTheme.textSecondary.withValues(
+                              alpha: 0.75,
+                            ),
                             height: 1.35,
                           ),
                           filled: false,
@@ -845,8 +854,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                             8,
                           ),
                           counterStyle: TextStyle(
-                            color: DopamineTheme.textSecondary
-                                .withValues(alpha: 0.7),
+                            color: DopamineTheme.textSecondary.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         ),
                       ),
