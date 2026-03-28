@@ -30,6 +30,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileSignedInSection => '계정';
 
   @override
+  String get profileAccountRefreshTooltip => '프로필·활동 새로고침';
+
+  @override
   String get profileDisplayName => '표시 이름';
 
   @override
@@ -161,6 +164,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileDisplayNameSaved => '표시 이름을 저장했습니다.';
 
   @override
+  String get profileFollowUnfollow => '언팔로우';
+
+  @override
   String get profileFollowTitleFollowing => '팔로잉';
 
   @override
@@ -170,7 +176,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityFollow => '팔로우';
 
   @override
-  String get communityUnfollow => '팔로잉 중';
+  String get communityUnfollow => '언팔로우';
 
   @override
   String get communityOpenAssetDetail => '종목 상세';
@@ -331,6 +337,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get communityComposeEditReplyTitle => '답글 수정';
+
+  @override
+  String ugcBannedWordsMessage(String term) {
+    return '허용되지 않는 표현이 포함되어 있습니다: $term';
+  }
 
   @override
   String get navRankings => '랭킹';

@@ -11,6 +11,7 @@ import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/profile/profile_stats_store.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
@@ -145,6 +146,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _followingByUid = Map<String, bool>.from(_followingByUid)
           ..[p.authorUid] = !now;
       });
+      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -378,6 +380,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.communityUserBlocked)),
       );
+      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
@@ -497,30 +500,29 @@ class _CommunityScreenState extends State<CommunityScreen> {
     context.watch<HomeAssetSuggestions>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.navCommunity),
-        actions: [
-          if (!auth.isLoggedIn())
-            TextButton(
-              onPressed: () => presentDopamineAuthScreen(context),
-              child: Text(
-                l10n.actionLogin,
-                style: const TextStyle(
-                  color: DopamineTheme.neonGreen,
-                  fontWeight: FontWeight.w600,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!auth.isLoggedIn())
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => presentDopamineAuthScreen(context),
+                  child: Text(
+                    l10n.actionLogin,
+                    style: const TextStyle(
+                      color: DopamineTheme.neonGreen,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                 if (_symbolFilterActive || _bodySearchTerms.isNotEmpty) ...[
                   Wrap(
                     spacing: 8,
@@ -885,6 +887,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

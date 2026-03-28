@@ -8,6 +8,8 @@ import 'auth/dopamine_auth_service.dart';
 import 'auth/dopamine_user.dart';
 import 'core/feed/home_asset_suggestions.dart';
 import 'core/navigation/home_shell_navigation.dart';
+import 'core/profile/profile_stats_store.dart';
+import 'core/text/ugc_banned_words.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -27,6 +29,7 @@ Future<void> main() async {
         '312575797891-32oqllsgnd6dcp9uhr85h9s7idsmlg6t.apps.googleusercontent.com',
   );
   await authProvider.initialize();
+  await UgcBannedWords.preload();
   runApp(
     MultiProvider(
       providers: [
@@ -38,6 +41,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider<HomeAssetSuggestions>(
           create: (_) => HomeAssetSuggestions(),
+        ),
+        ChangeNotifierProvider<ProfileStatsStore>.value(
+          value: ProfileStatsStore.instance,
         ),
       ],
       child: const DopamineApp(),

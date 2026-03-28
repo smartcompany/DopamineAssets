@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSignedInSection => 'Account';
 
   @override
+  String get profileAccountRefreshTooltip => 'Refresh profile and activity';
+
+  @override
   String get profileDisplayName => 'Display name';
 
   @override
@@ -163,6 +166,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameSaved => 'Display name updated.';
 
   @override
+  String get profileFollowUnfollow => 'Unfollow';
+
+  @override
   String get profileFollowTitleFollowing => 'Following';
 
   @override
@@ -172,7 +178,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityFollow => 'Follow';
 
   @override
-  String get communityUnfollow => 'Following';
+  String get communityUnfollow => 'Unfollow';
 
   @override
   String get communityOpenAssetDetail => 'Asset details';
@@ -333,6 +339,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get communityComposeEditReplyTitle => 'Edit reply';
+
+  @override
+  String ugcBannedWordsMessage(String term) {
+    return 'This text contains disallowed wording: $term';
+  }
 
   @override
   String get navRankings => 'Rankings';

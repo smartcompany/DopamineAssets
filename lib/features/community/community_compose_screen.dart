@@ -12,6 +12,7 @@ import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/storage/community_post_image_upload.dart';
+import '../../core/text/ugc_banned_words.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
@@ -286,6 +287,24 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       return;
     }
 
+    final badBody = UgcBannedWords.firstMatch(body);
+    if (badBody != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.ugcBannedWordsMessage(badBody))),
+      );
+      return;
+    }
+    final titleText = _titleController.text.trim();
+    if (!_isReplyEdit && titleText.isNotEmpty) {
+      final badTitle = UgcBannedWords.firstMatch(titleText);
+      if (badTitle != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.ugcBannedWordsMessage(badTitle))),
+        );
+        return;
+      }
+    }
+
     final editId = _effectiveEditId;
     if (editId == null) {
       final sel = _selectedAsset;
@@ -328,7 +347,6 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       if (editId != null) {
         final newUrls = await uploadNewPicks();
         final allUrls = [..._existingImageUrls, ...newUrls];
-        final titleText = _titleController.text.trim();
         await DopamineApi.patchAssetComment(
           id: editId,
           body: body,
@@ -343,7 +361,6 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
       final sel = _selectedAsset!;
       final urls = await uploadNewPicks();
-      final titleText = _titleController.text.trim();
       final ac = sel.assetClass;
       if (ac == null || ac.isEmpty) {
         if (mounted) {

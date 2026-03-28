@@ -740,8 +740,26 @@ abstract final class DopamineApi {
   }
 
   static void _ensureOk(http.Response response) {
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException('HTTP ${response.statusCode}');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final msg = decoded['message'];
+        if (msg is String && msg.isNotEmpty) {
+          throw ApiException(msg);
+        }
+        final detail = decoded['detail'];
+        if (detail is String && detail.isNotEmpty) {
+          throw ApiException(detail);
+        }
+        final err = decoded['error'];
+        if (err is String && err.isNotEmpty) {
+          throw ApiException(err);
+        }
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
     }
+    throw ApiException('HTTP ${response.statusCode}');
   }
 }

@@ -7,6 +7,7 @@
   "navCommunity": "커뮤니티",
   "navProfile": "프로필",
   "profileSignedInSection": "계정",
+  "profileAccountRefreshTooltip": "프로필·활동 새로고침",
   "profileDisplayName": "표시 이름",
   "profilePhotoTitle": "프로필 사진",
   "profilePhotoRemove": "사진 삭제",
@@ -57,10 +58,11 @@
   "profileActivityPostUpdated": "수정되었습니다.",
   "profileFollowListEmpty": "아직 없습니다.",
   "profileDisplayNameSaved": "표시 이름을 저장했습니다.",
+  "profileFollowUnfollow": "언팔로우",
   "profileFollowTitleFollowing": "팔로잉",
   "profileFollowTitleFollowers": "팔로워",
   "communityFollow": "팔로우",
-  "communityUnfollow": "팔로잉 중",
+  "communityUnfollow": "언팔로우",
   "communityOpenAssetDetail": "종목 상세",
   "communityMoreMenu": "더보기",
   "communityReportPost": "신고",
@@ -132,6 +134,14 @@
   "communityComposeEditTitle": "글 수정",
   "communityComposeSave": "저장",
   "communityComposeEditReplyTitle": "답글 수정",
+  "ugcBannedWordsMessage": "허용되지 않는 표현이 포함되어 있습니다: {term}",
+  "@ugcBannedWordsMessage": {
+    "placeholders": {
+      "term": {
+        "type": "String"
+      }
+    }
+  },
   "navRankings": "랭킹",
   "navThemes": "테마",
   "navMarket": "시장",

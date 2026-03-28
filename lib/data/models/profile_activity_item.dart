@@ -84,15 +84,18 @@ final class ProfileUserRow {
   const ProfileUserRow({
     required this.uid,
     this.displayName,
+    this.photoUrl,
   });
 
   final String uid;
   final String? displayName;
+  final String? photoUrl;
 
   factory ProfileUserRow.fromJson(Map<String, dynamic> json) {
     return ProfileUserRow(
       uid: json['uid'] as String,
       displayName: json['displayName'] as String?,
+      photoUrl: json['photoUrl'] as String?,
     );
   }
 }

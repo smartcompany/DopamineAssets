@@ -140,6 +140,12 @@ abstract class AppLocalizations {
   /// **'계정'**
   String get profileSignedInSection;
 
+  /// No description provided for @profileAccountRefreshTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필·활동 새로고침'**
+  String get profileAccountRefreshTooltip;
+
   /// No description provided for @profileDisplayName.
   ///
   /// In ko, this message translates to:
@@ -398,6 +404,12 @@ abstract class AppLocalizations {
   /// **'표시 이름을 저장했습니다.'**
   String get profileDisplayNameSaved;
 
+  /// No description provided for @profileFollowUnfollow.
+  ///
+  /// In ko, this message translates to:
+  /// **'언팔로우'**
+  String get profileFollowUnfollow;
+
   /// No description provided for @profileFollowTitleFollowing.
   ///
   /// In ko, this message translates to:
@@ -419,7 +431,7 @@ abstract class AppLocalizations {
   /// No description provided for @communityUnfollow.
   ///
   /// In ko, this message translates to:
-  /// **'팔로잉 중'**
+  /// **'언팔로우'**
   String get communityUnfollow;
 
   /// No description provided for @communityOpenAssetDetail.
@@ -721,6 +733,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'답글 수정'**
   String get communityComposeEditReplyTitle;
+
+  /// No description provided for @ugcBannedWordsMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'허용되지 않는 표현이 포함되어 있습니다: {term}'**
+  String ugcBannedWordsMessage(String term);
 
   /// No description provided for @navRankings.
   ///

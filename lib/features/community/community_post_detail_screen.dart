@@ -8,6 +8,8 @@ import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/profile/profile_stats_store.dart';
+import '../../core/text/ugc_banned_words.dart';
 import '../../data/models/asset_comment.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
@@ -376,6 +378,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.communityUserBlocked)),
         );
+        ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -389,6 +392,13 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     final text = _composer.text.trim();
     if (text.isEmpty || text.length > 2000) return;
+    final bad = UgcBannedWords.firstMatch(text);
+    if (bad != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))),
+      );
+      return;
+    }
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) {
       await presentDopamineAuthScreen(context);
@@ -415,11 +425,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         _threadDirty = true;
       });
       await _loadThread();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.assetPostsSendError)),
-      );
+      final msg = e is ApiException ? e.message : l10n.assetPostsSendError;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _sending = false);
     }

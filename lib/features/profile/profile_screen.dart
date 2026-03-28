@@ -11,8 +11,11 @@ import 'package:share_lib/share_lib.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
+import '../../core/navigation/home_shell_navigation.dart';
+import '../../core/profile/profile_stats_store.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/text/ugc_banned_words.dart';
 import '../../core/storage/community_post_image_upload.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/profile_activity_item.dart';
@@ -35,10 +38,12 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   StreamSubscription<User?>? _authSub;
+  HomeShellNavigation? _shellNav;
+  /// 홈(0) · 커뮤니티(1) · 프로필(2) — 프로필 탭으로 **들어올 때만** 갱신
+  int _prevShellTabIndex = -1;
 
   bool _loading = false;
   Object? _loadError;
-  ProfileStats? _stats;
   List<ProfileActivityItem> _activity = const [];
 
   bool _savingName = false;
@@ -95,8 +100,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _syncNameField(auth.userProfile?.displayName ?? u.displayName);
         await _loadData();
       } else {
+        ProfileStatsStore.instance.clear();
         setState(() {
-          _stats = null;
           _activity = const [];
           _loadError = null;
           _loading = false;
@@ -106,8 +111,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  void _handleShellNav() {
+    final nav = _shellNav;
+    if (nav == null || !mounted) return;
+    final t = nav.tabIndex;
+    if (t == 2 && _prevShellTabIndex != 2) {
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      if (_isAppSignedIn(auth) && FirebaseAuth.instance.currentUser != null) {
+        if (_activity.isEmpty) {
+          _loadData();
+        } else {
+          ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
+        }
+      }
+    }
+    _prevShellTabIndex = t;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nav = context.read<HomeShellNavigation>();
+    if (!identical(_shellNav, nav)) {
+      _shellNav?.removeListener(_handleShellNav);
+      _shellNav = nav;
+      _prevShellTabIndex = nav.tabIndex;
+      _shellNav!.addListener(_handleShellNav);
+    }
+  }
+
   @override
   void dispose() {
+    _shellNav?.removeListener(_handleShellNav);
     _authSub?.cancel();
     _nameController.dispose();
     super.dispose();
@@ -244,8 +279,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final stats = await DopamineApi.fetchProfileStats(idToken: token);
       final act = await DopamineApi.fetchProfileActivity(idToken: token);
       if (!mounted) return;
+      ProfileStatsStore.instance.apply(stats);
       setState(() {
-        _stats = stats;
         _activity = act;
         _loading = false;
       });
@@ -258,23 +293,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _refreshStatsOnly() async {
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) return;
-    final token = await fb.getIdToken();
-    if (token == null || token.isEmpty) return;
-    try {
-      final stats = await DopamineApi.fetchProfileStats(idToken: token);
-      if (mounted) setState(() => _stats = stats);
-    } catch (_) {}
-  }
-
   Future<void> _saveDisplayName(AppLocalizations l10n) async {
     final text = _nameController.text.trim();
     if (text.isEmpty || text.length > 80) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+      return;
+    }
+
+    final bad = UgcBannedWords.firstMatch(text);
+    if (bad != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))),
+      );
       return;
     }
 
@@ -709,10 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String? profilePhotoUrl,
     String locale,
   ) {
-    return RefreshIndicator(
-      color: DopamineTheme.neonGreen,
-      onRefresh: _loadData,
-      child: NestedScrollView(
+    return NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverToBoxAdapter(
@@ -721,12 +750,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.profileSignedInSection,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: DopamineTheme.neonGreen,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.profileSignedInSection,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: DopamineTheme.neonGreen,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: l10n.profileAccountRefreshTooltip,
+                          onPressed: _loading ? null : () => _loadData(),
+                          icon: Icon(
+                            Icons.refresh_rounded,
+                            color: _loading
+                                ? DopamineTheme.textSecondary.withValues(
+                                    alpha: 0.35,
+                                  )
+                                : DopamineTheme.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     _AccountProfilePhotoCard(
@@ -747,59 +795,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    TextField(
-                      controller: _nameController,
-                      maxLength: 80,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: DopamineTheme.textPrimary,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: l10n.profileDisplayNameHint,
-                        hintStyle: TextStyle(
-                          color: DopamineTheme.textSecondary.withValues(
-                            alpha: 0.85,
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Colors.black.withValues(alpha: 0.22),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.12),
-                          ),
-                        ),
-                        counterStyle: TextStyle(
-                          color: DopamineTheme.textSecondary.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton(
-                        onPressed: _savingName
-                            ? null
-                            : () => _saveDisplayName(l10n),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: DopamineTheme.neonGreen,
-                          foregroundColor: const Color(0xFF0A0A0A),
-                        ),
-                        child: _savingName
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color(0xFF0A0A0A),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _nameController,
+                            maxLength: 80,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: DopamineTheme.textPrimary,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: l10n.profileDisplayNameHint,
+                              hintStyle: TextStyle(
+                                color: DopamineTheme.textSecondary.withValues(
+                                  alpha: 0.85,
                                 ),
-                              )
-                            : Text(l10n.profileSaveDisplayName),
-                      ),
+                              ),
+                              filled: true,
+                              fillColor: Colors.black.withValues(alpha: 0.22),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                ),
+                              ),
+                              counterText: '',
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        FilledButton(
+                          onPressed: _savingName
+                              ? null
+                              : () => _saveDisplayName(l10n),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: DopamineTheme.neonGreen,
+                            foregroundColor: const Color(0xFF0A0A0A),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
+                          child: _savingName
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF0A0A0A),
+                                  ),
+                                )
+                              : Text(l10n.profileSaveDisplayName),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
-                    if (_loading)
+                    if (ProfileStatsStore.instance.stats == null && _loading)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
                         child: Center(
@@ -813,7 +870,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       )
-                    else if (_loadError != null)
+                    else if (ProfileStatsStore.instance.stats == null &&
+                        _loadError != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
@@ -825,11 +883,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       )
-                    else if (_stats != null)
+                    else if (ProfileStatsStore.instance.stats != null)
                       _StatsRow(
-                        stats: _stats!,
+                        stats: ProfileStatsStore.instance.stats!,
                         l10n: l10n,
-                        onBlockedListChanged: _refreshStatsOnly,
                       ),
                     const SizedBox(height: 22),
                     SizedBox(
@@ -889,7 +946,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           profilePhotoUrl,
           locale,
         ),
-      ),
     );
   }
 
@@ -1002,47 +1058,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profilePhotoUrl = auth.userProfile?.photoUrl;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.navProfile)),
-      body: appSignedIn
-          ? _buildSignedInBody(
-              context,
-              theme,
-              l10n,
-              fb!,
-              profileSaved,
-              profilePhotoUrl,
-              locale,
-            )
-          : Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l10n.profileNotSignedIn,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: DopamineTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: () => presentDopamineAuthScreen(context),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: DopamineTheme.neonGreen,
-                        foregroundColor: const Color(0xFF0A0A0A),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 14,
+      body: SafeArea(
+        child: appSignedIn
+            ? ListenableBuilder(
+                listenable: ProfileStatsStore.instance,
+                builder: (context, _) {
+                  return _buildSignedInBody(
+                    context,
+                    theme,
+                    l10n,
+                    fb!,
+                    profileSaved,
+                    profilePhotoUrl,
+                    locale,
+                  );
+                },
+              )
+            : Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.profileNotSignedIn,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: DopamineTheme.textSecondary,
                         ),
                       ),
-                      child: Text(l10n.actionLogin),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        onPressed: () => presentDopamineAuthScreen(context),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: DopamineTheme.neonGreen,
+                          foregroundColor: const Color(0xFF0A0A0A),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 14,
+                          ),
+                        ),
+                        child: Text(l10n.actionLogin),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }
@@ -1292,15 +1354,17 @@ class _StatsRow extends StatelessWidget {
   const _StatsRow({
     required this.stats,
     required this.l10n,
-    required this.onBlockedListChanged,
   });
 
   final ProfileStats stats;
   final AppLocalizations l10n;
-  final Future<void> Function() onBlockedListChanged;
 
   @override
   Widget build(BuildContext context) {
+    void refreshCounts() {
+      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
+    }
+
     return Row(
       children: [
         Expanded(
@@ -1317,8 +1381,10 @@ class _StatsRow extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) =>
-                      const FollowListScreen(kind: FollowListKind.following),
+                  builder: (_) => FollowListScreen(
+                    kind: FollowListKind.following,
+                    onListChanged: refreshCounts,
+                  ),
                 ),
               );
             },
@@ -1331,8 +1397,9 @@ class _StatsRow extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) =>
-                      const FollowListScreen(kind: FollowListKind.followers),
+                  builder: (_) => const FollowListScreen(
+                    kind: FollowListKind.followers,
+                  ),
                 ),
               );
             },
@@ -1346,9 +1413,7 @@ class _StatsRow extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => BlockedUsersScreen(
-                    onListChanged: () {
-                      onBlockedListChanged();
-                    },
+                    onListChanged: refreshCounts,
                   ),
                 ),
               );

@@ -35,8 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   List<RankedAsset>? _upItems;
   List<RankedAsset>? _downItems;
   bool _rankingsLoading = true;
-  /// 필터 확인 후 새 랭킹을 받아올 때까지 상단 로딩 바 표시용
-  bool _rankingsRefreshing = false;
+
+  /// 랭킹·테마·시장 요약 로드 중 — 타이틀 바로 아래 [ _HomeHeaderProgressLine ] 표시
+  bool _homeHeaderLoading = true;
   Object? _rankingsError;
   Timer? _rankingPollTimer;
   int _rankingRequestId = 0;
@@ -54,14 +55,35 @@ class _HomeScreenState extends State<HomeScreen> {
     _bootstrapRankings();
   }
 
+  /// 랭킹 + 핫/급락 테마 + 시장 요약을 한 번에 갱신 (당겨서 새로고침·초기 부트스트랩 공통)
+  Future<void> _reloadRankingsThemesMarket({
+    required Future<List<ThemeItem>> hot,
+    required Future<List<ThemeItem>> crashed,
+    required Future<MarketSummary> market,
+  }) async {
+    await Future.wait([_refreshRankings(), hot, crashed, market]);
+  }
+
   Future<void> _pullRefreshHome() async {
     if (!mounted) return;
+    final hot = DopamineApi.fetchThemes('hot');
+    final crashed = DopamineApi.fetchThemes('crashed');
+    final market = DopamineApi.fetchMarketSummary();
     setState(() {
-      _hotThemesFuture = DopamineApi.fetchThemes('hot');
-      _crashedThemesFuture = DopamineApi.fetchThemes('crashed');
-      _marketFuture = DopamineApi.fetchMarketSummary();
+      _homeHeaderLoading = true;
+      _hotThemesFuture = hot;
+      _crashedThemesFuture = crashed;
+      _marketFuture = market;
     });
-    await _refreshRankings();
+    try {
+      await _reloadRankingsThemesMarket(
+        hot: hot,
+        crashed: crashed,
+        market: market,
+      );
+    } finally {
+      if (mounted) setState(() => _homeHeaderLoading = false);
+    }
   }
 
   @override
@@ -86,9 +108,18 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {
       _rankingClasses = c;
+      _homeHeaderLoading = true;
     });
     _logRankings('initial fetch (bootstrap)');
-    await _refreshRankings();
+    try {
+      await _reloadRankingsThemesMarket(
+        hot: _hotThemesFuture,
+        crashed: _crashedThemesFuture,
+        market: _marketFuture,
+      );
+    } finally {
+      if (mounted) setState(() => _homeHeaderLoading = false);
+    }
     if (!mounted) return;
     _scheduleRankingPoll();
   }
@@ -154,18 +185,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {
       _rankingClasses = classes;
-      _rankingsRefreshing = true;
+      _homeHeaderLoading = true;
     });
     _logRankings('filter applied → reschedule poll if enabled');
     _scheduleRankingPoll();
     try {
       await _refreshRankings();
     } finally {
-      if (mounted) {
-        setState(() {
-          _rankingsRefreshing = false;
-        });
-      }
+      if (mounted) setState(() => _homeHeaderLoading = false);
     }
   }
 
@@ -183,19 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final slice = _topRankings(items);
 
     if (_rankingsLoading && items == null) {
-      return [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: up ? DopamineTheme.neonGreen : DopamineTheme.accentRed,
-              ),
-            ),
-          ),
-        ),
-      ];
+      return [const SliverToBoxAdapter(child: SizedBox(height: 12))];
     }
 
     if (_rankingsError != null && items == null) {
@@ -284,203 +299,204 @@ class _HomeScreenState extends State<HomeScreen> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        const _PurpleGradientBackground(),
-        RefreshIndicator(
-          color: DopamineTheme.neonGreen,
-          onRefresh: _pullRefreshHome,
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            slivers: [
-            SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _HomeBlazingTitle(text: l10n.homeHeaderTitleDecorated),
-                      const SizedBox(height: 12),
-                      Row(
+        Positioned.fill(
+          child: IgnorePointer(child: const _PurpleGradientBackground()),
+        ),
+        Positioned.fill(
+          child: RefreshIndicator(
+            color: DopamineTheme.neonGreen,
+            onRefresh: _pullRefreshHome,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          if (auth.isLoggedIn())
-                            const SizedBox(width: 48)
-                          else
-                            IconButton(
-                              tooltip: l10n.actionLogin,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 48,
-                                minHeight: 48,
-                              ),
-                              icon: Icon(
-                                Icons.login_rounded,
-                                color: DopamineTheme.textSecondary.withValues(
-                                  alpha: 0.95,
+                          _HomeBlazingTitle(
+                            text: l10n.homeHeaderTitleDecorated,
+                          ),
+                          if (_homeHeaderLoading) ...[
+                            const SizedBox(height: 10),
+                            const _HomeHeaderProgressLine(),
+                          ],
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (auth.isLoggedIn())
+                                const SizedBox(width: 48)
+                              else
+                                IconButton(
+                                  tooltip: l10n.actionLogin,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 48,
+                                    minHeight: 48,
+                                  ),
+                                  icon: Icon(
+                                    Icons.login_rounded,
+                                    color: DopamineTheme.textSecondary
+                                        .withValues(alpha: 0.95),
+                                  ),
+                                  onPressed: () =>
+                                      presentDopamineAuthScreen(context),
+                                ),
+                              Expanded(
+                                child: Text(
+                                  l10n.homeHeadline,
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: DopamineTheme.textSecondary,
+                                    height: 1.4,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                              onPressed: () =>
-                                  presentDopamineAuthScreen(context),
-                            ),
-                          Expanded(
-                            child: Text(
-                              l10n.homeHeadline,
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: DopamineTheme.textSecondary,
-                                height: 1.4,
-                                fontWeight: FontWeight.w500,
+                              IconButton(
+                                tooltip: l10n.rankingFilterTitle,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 48,
+                                  minHeight: 48,
+                                ),
+                                icon: Icon(
+                                  Icons.filter_alt_rounded,
+                                  color: DopamineTheme.textSecondary.withValues(
+                                    alpha: 0.95,
+                                  ),
+                                ),
+                                onPressed: _openRankingFilter,
                               ),
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: l10n.rankingFilterTitle,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 48,
-                              minHeight: 48,
-                            ),
-                            icon: Icon(
-                              Icons.filter_alt_rounded,
-                              color: DopamineTheme.textSecondary.withValues(
-                                alpha: 0.95,
-                              ),
-                            ),
-                            onPressed: _openRankingFilter,
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            if (_rankingsRefreshing)
-              SliverToBoxAdapter(
-                child: LinearProgressIndicator(
-                  minHeight: 3,
-                  backgroundColor: Colors.white.withValues(alpha: 0.08),
-                  color: DopamineTheme.neonGreen,
-                ),
-              ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: _SectionTitle(
-                  icon: Icons.trending_up_rounded,
-                  iconColor: DopamineTheme.neonGreen,
-                  title: l10n.rankingsUpTitle,
-                  emphasize: true,
-                ),
-              ),
-            ),
-            ..._animatedRankingSlivers(up: true, l10n: l10n, theme: theme),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: _SectionTitle(
-                  icon: Icons.trending_down_rounded,
-                  iconColor: DopamineTheme.accentRed,
-                  title: l10n.rankingsDownTitle,
-                ),
-              ),
-            ),
-            ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: Text(
-                  l10n.sectionThemes,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: DopamineTheme.textPrimary,
-                    letterSpacing: -0.4,
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: _SectionTitle(
+                      icon: Icons.trending_up_rounded,
+                      iconColor: DopamineTheme.neonGreen,
+                      title: l10n.rankingsUpTitle,
+                      emphasize: true,
+                    ),
                   ),
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: _GlassPanel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _SubsectionTitle(title: l10n.themesHotTitle),
-                      const SizedBox(height: 10),
-                      FutureBuilder<List<ThemeItem>>(
-                        future: _hotThemesFuture,
-                        builder: (context, snapshot) =>
-                            _buildThemeList(snapshot, l10n, theme, up: true),
-                      ),
-                      const SizedBox(height: 18),
-                      _SubsectionTitle(title: l10n.themesCrashedTitle),
-                      const SizedBox(height: 10),
-                      FutureBuilder<List<ThemeItem>>(
-                        future: _crashedThemesFuture,
-                        builder: (context, snapshot) =>
-                            _buildThemeList(snapshot, l10n, theme, up: false),
-                      ),
-                    ],
+                ..._animatedRankingSlivers(up: true, l10n: l10n, theme: theme),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: _SectionTitle(
+                      icon: Icons.trending_down_rounded,
+                      iconColor: DopamineTheme.accentRed,
+                      title: l10n.rankingsDownTitle,
+                    ),
                   ),
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: _GlassPanel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.marketSummaryTitle,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: DopamineTheme.textPrimary,
-                        ),
+                ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Text(
+                      l10n.sectionThemes,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: DopamineTheme.textPrimary,
+                        letterSpacing: -0.4,
                       ),
-                      const SizedBox(height: 14),
-                      FutureBuilder<MarketSummary>(
-                        future: _marketFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(20),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: DopamineTheme.neonGreen,
-                                ),
-                              ),
-                            );
-                          }
-                          if (snapshot.hasError) {
-                            return Text(
-                              l10n.errorLoadFailed,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: DopamineTheme.accentRed,
-                              ),
-                            );
-                          }
-                          final s = snapshot.data;
-                          if (s == null) {
-                            return Text(l10n.emptyState);
-                          }
-                          return _MarketSummaryGrid(l10n: l10n, summary: s);
-                        },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: _GlassPanel(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SubsectionTitle(title: l10n.themesHotTitle),
+                          const SizedBox(height: 10),
+                          FutureBuilder<List<ThemeItem>>(
+                            future: _hotThemesFuture,
+                            builder: (context, snapshot) => _buildThemeList(
+                              snapshot,
+                              l10n,
+                              theme,
+                              up: true,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          _SubsectionTitle(title: l10n.themesCrashedTitle),
+                          const SizedBox(height: 10),
+                          FutureBuilder<List<ThemeItem>>(
+                            future: _crashedThemesFuture,
+                            builder: (context, snapshot) => _buildThemeList(
+                              snapshot,
+                              l10n,
+                              theme,
+                              up: false,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: _GlassPanel(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.marketSummaryTitle,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: DopamineTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          FutureBuilder<MarketSummary>(
+                            future: _marketFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const SizedBox(height: 12);
+                              }
+                              if (snapshot.hasError) {
+                                return Text(
+                                  l10n.errorLoadFailed,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: DopamineTheme.accentRed,
+                                  ),
+                                );
+                              }
+                              final s = snapshot.data;
+                              if (s == null) {
+                                return Text(l10n.emptyState);
+                              }
+                              return _MarketSummaryGrid(l10n: l10n, summary: s);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
-          ],
           ),
         ),
       ],
@@ -494,19 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required bool up,
   }) {
     if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: DopamineTheme.neonGreen,
-            ),
-          ),
-        ),
-      );
+      return const SizedBox(height: 10);
     }
     if (snapshot.hasError) {
       return _InlineError(snapshot.error.toString());
@@ -631,6 +635,23 @@ class _PurpleGradientBackground extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors: [DopamineTheme.purpleTop, DopamineTheme.purpleBottom],
         ),
+      ),
+    );
+  }
+}
+
+/// 홈 상단 타이틀 바로 아래 공통 로딩 라인 (초기 로드 · 필터 · 당겨서 새로고침)
+class _HomeHeaderProgressLine extends StatelessWidget {
+  const _HomeHeaderProgressLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: LinearProgressIndicator(
+        minHeight: 3,
+        backgroundColor: Colors.white.withValues(alpha: 0.12),
+        color: DopamineTheme.neonGreen,
       ),
     );
   }

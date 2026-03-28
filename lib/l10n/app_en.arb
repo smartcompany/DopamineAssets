@@ -7,6 +7,7 @@
   "navCommunity": "Community",
   "navProfile": "Profile",
   "profileSignedInSection": "Account",
+  "profileAccountRefreshTooltip": "Refresh profile and activity",
   "profileDisplayName": "Display name",
   "profilePhotoTitle": "Profile photo",
   "profilePhotoRemove": "Remove photo",
@@ -57,10 +58,11 @@
   "profileActivityPostUpdated": "Saved.",
   "profileFollowListEmpty": "No users yet.",
   "profileDisplayNameSaved": "Display name updated.",
+  "profileFollowUnfollow": "Unfollow",
   "profileFollowTitleFollowing": "Following",
   "profileFollowTitleFollowers": "Followers",
   "communityFollow": "Follow",
-  "communityUnfollow": "Following",
+  "communityUnfollow": "Unfollow",
   "communityOpenAssetDetail": "Asset details",
   "communityMoreMenu": "More",
   "communityReportPost": "Report",
@@ -132,6 +134,14 @@
   "communityComposeEditTitle": "Edit post",
   "communityComposeSave": "Save",
   "communityComposeEditReplyTitle": "Edit reply",
+  "ugcBannedWordsMessage": "This text contains disallowed wording: {term}",
+  "@ugcBannedWordsMessage": {
+    "placeholders": {
+      "term": {
+        "type": "String"
+      }
+    }
+  },
   "navRankings": "Rankings",
   "navThemes": "Themes",
   "navMarket": "Market",

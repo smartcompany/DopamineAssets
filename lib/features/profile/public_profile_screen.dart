@@ -5,6 +5,7 @@ import 'package:dopamine_assets/l10n/app_localizations.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/profile/profile_stats_store.dart';
 import '../../data/models/community_post.dart';
 import '../../theme/dopamine_theme.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
@@ -134,6 +135,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       }
       if (!mounted) return;
       await _loadData();
+      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -262,6 +264,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.communityUserBlocked)),
       );
+      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -285,6 +288,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       }
       if (!mounted) return;
       await _loadData();
+      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
