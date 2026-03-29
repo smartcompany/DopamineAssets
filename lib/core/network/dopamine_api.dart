@@ -733,6 +733,35 @@ abstract final class DopamineApi {
     _ensureOk(response);
   }
 
+  static Future<void> registerPushToken({
+    required String idToken,
+    required String fcmToken,
+    String? platform,
+  }) async {
+    final body = <String, dynamic>{
+      'fcmToken': fcmToken,
+      if (platform != null && platform.isNotEmpty) 'platform': platform,
+    };
+    final response = await _client.post(
+      _uri('/api/profile/push-token'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode(body),
+    );
+    _ensureOk(response);
+  }
+
+  static Future<void> deletePushToken({
+    required String idToken,
+    required String fcmToken,
+  }) async {
+    final response = await _client.delete(
+      _uri('/api/profile/push-token'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({'fcmToken': fcmToken}),
+    );
+    _ensureOk(response);
+  }
+
   static Future<void> followUser({
     required String idToken,
     required String targetUid,

@@ -1,4 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
@@ -9,11 +11,16 @@ import 'auth/dopamine_user.dart';
 import 'core/feed/home_asset_suggestions.dart';
 import 'core/navigation/home_shell_navigation.dart';
 import 'core/profile/profile_stats_store.dart';
+import 'core/push/dopamine_push_coordinator.dart';
+import 'core/push/firebase_messaging_bg.dart';
 import 'core/text/ugc_banned_words.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
   // Hot restart 시 Dart [Firebase.apps]는 비었는데 네이티브에는 [DEFAULT]가 남는 경우가 있어
   // isEmpty 만으로는 duplicate-app 이 난다. 콘솔 설정 문제가 아님.
   try {
@@ -30,6 +37,10 @@ Future<void> main() async {
   );
   await authProvider.initialize();
   await UgcBannedWords.preload();
+  final navigatorKey = GlobalKey<NavigatorState>();
+  if (!kIsWeb) {
+    await DopaminePushCoordinator.start(navigatorKey);
+  }
   runApp(
     MultiProvider(
       providers: [
@@ -46,7 +57,7 @@ Future<void> main() async {
           value: ProfileStatsStore.instance,
         ),
       ],
-      child: const DopamineApp(),
+      child: DopamineApp(navigatorKey: navigatorKey),
     ),
   );
 }

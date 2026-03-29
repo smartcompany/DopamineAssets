@@ -6,11 +6,14 @@ import 'features/home/home_shell.dart';
 import 'theme/dopamine_theme.dart';
 
 class DopamineApp extends StatelessWidget {
-  const DopamineApp({super.key});
+  const DopamineApp({super.key, required this.navigatorKey});
+
+  final GlobalKey<NavigatorState> navigatorKey;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: [
         ...AppLocalizations.localizationsDelegates,

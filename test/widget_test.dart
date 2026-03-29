@@ -5,7 +5,9 @@ import 'package:dopamine_assets/app.dart';
 
 void main() {
   testWidgets('DopamineApp builds', (WidgetTester tester) async {
-    await tester.pumpWidget(const DopamineApp());
+    await tester.pumpWidget(
+      DopamineApp(navigatorKey: GlobalKey<NavigatorState>()),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(MaterialApp), findsOneWidget);
   });
