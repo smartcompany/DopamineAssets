@@ -14,8 +14,6 @@ class CommunityPostCard extends StatelessWidget {
     required this.post,
     required this.locale,
     this.myUid,
-    this.followingByUid,
-    this.onToggleFollow,
     this.onToggleLike,
     this.onEditOwnPost,
     this.onDeleteOwnPost,
@@ -23,15 +21,12 @@ class CommunityPostCard extends StatelessWidget {
     this.onBlockAuthor,
     this.onOpenAuthorProfile,
     this.onOpenPostDetail,
-    this.showFollowButton = true,
     this.showLikeButton = true,
   });
 
   final CommunityPost post;
   final String locale;
   final String? myUid;
-  final Map<String, bool>? followingByUid;
-  final Future<void> Function(CommunityPost p)? onToggleFollow;
   final Future<void> Function(CommunityPost p)? onToggleLike;
   final void Function(CommunityPost p)? onEditOwnPost;
   final void Function(CommunityPost p)? onDeleteOwnPost;
@@ -39,7 +34,6 @@ class CommunityPostCard extends StatelessWidget {
   final Future<void> Function(CommunityPost p)? onBlockAuthor;
   final void Function(CommunityPost p)? onOpenAuthorProfile;
   final void Function(CommunityPost p)? onOpenPostDetail;
-  final bool showFollowButton;
   final bool showLikeButton;
 
   String _classBadge(String assetClass, AppLocalizations l10n) {
@@ -299,14 +293,17 @@ class CommunityPostCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            Text(
-              post.body,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
+            _PostBodySnippet(
+              body: post.body,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: DopamineTheme.textPrimary,
                 height: 1.32,
               ),
+              maxLines: 4,
+              seeMoreLabel: l10n.communityPostSeeMore,
+              onSeeMore: onOpenPostDetail != null
+                  ? () => onOpenPostDetail!(post)
+                  : null,
             ),
             const SizedBox(height: 10),
             Row(
@@ -322,44 +319,12 @@ class CommunityPostCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                post.authorDisplayName,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: DopamineTheme.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            if (showFollowButton &&
-                                onToggleFollow != null &&
-                                myUid != null &&
-                                post.authorUid != myUid)
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                                tooltip: (followingByUid?[post.authorUid] ?? false)
-                                    ? l10n.communityUnfollow
-                                    : l10n.communityFollow,
-                                onPressed: () => onToggleFollow!(post),
-                                icon: Icon(
-                                  (followingByUid?[post.authorUid] ?? false)
-                                      ? Icons.how_to_reg_rounded
-                                      : Icons.person_add_alt_1_rounded,
-                                  size: 20,
-                                  color: (followingByUid?[post.authorUid] ?? false)
-                                      ? DopamineTheme.textSecondary
-                                      : DopamineTheme.neonGreen,
-                                ),
-                              ),
-                          ],
+                        Text(
+                          post.authorDisplayName,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: DopamineTheme.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         _AuthorAvatar(
@@ -454,6 +419,75 @@ class CommunityPostCard extends StatelessWidget {
         ),
         ),
       ),
+    );
+  }
+}
+
+/// 본문이 [maxLines]를 넘으면 말줄임 후 `더보기 >`로 본문 화면 진입을 안내한다.
+class _PostBodySnippet extends StatelessWidget {
+  const _PostBodySnippet({
+    required this.body,
+    required this.style,
+    required this.maxLines,
+    required this.seeMoreLabel,
+    this.onSeeMore,
+  });
+
+  final String body;
+  final TextStyle? style;
+  final int maxLines;
+  final String seeMoreLabel;
+  final VoidCallback? onSeeMore;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = body.trim();
+    if (t.isEmpty) return const SizedBox.shrink();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textStyle = style ??
+            DefaultTextStyle.of(context).style.copyWith(
+                  color: DopamineTheme.textPrimary,
+                  height: 1.32,
+                );
+        final painter = TextPainter(
+          text: TextSpan(text: body, style: textStyle),
+          textDirection: Directionality.of(context),
+          maxLines: maxLines,
+        )..layout(maxWidth: constraints.maxWidth);
+
+        final clipped = painter.didExceedMaxLines;
+        final showLink = clipped && onSeeMore != null;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              body,
+              maxLines: maxLines,
+              overflow: TextOverflow.ellipsis,
+              style: textStyle,
+            ),
+            if (showLink) ...[
+              const SizedBox(height: 6),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onSeeMore,
+                child: Text(
+                  seeMoreLabel,
+                  style: textStyle.copyWith(
+                    color: DopamineTheme.neonGreen,
+                    fontWeight: FontWeight.w700,
+                    fontSize: (textStyle.fontSize ?? 14) * 0.92,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

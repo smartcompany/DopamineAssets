@@ -36,7 +36,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _loading = true;
   Object? _fetchError;
   List<CommunityPost> _posts = const [];
-  Map<String, bool> _followingByUid = const {};
 
   HomeShellNavigation? _nav;
   final _searchController = TextEditingController();
@@ -80,78 +79,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _posts = items;
         _loading = false;
       });
-      await _loadFollowStatus(items, gen);
     } catch (e) {
       if (!mounted || gen != _fetchGen) return;
       setState(() {
         _fetchError = e;
         _loading = false;
       });
-    }
-  }
-
-  Future<void> _loadFollowStatus(List<CommunityPost> posts, int gen) async {
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null || !mounted || gen != _fetchGen) {
-      if (mounted && gen == _fetchGen) {
-        setState(() => _followingByUid = {});
-      }
-      return;
-    }
-    final uids = posts
-        .map((p) => p.authorUid)
-        .toSet()
-        .where((u) => u != fb.uid)
-        .toList();
-    if (uids.isEmpty) {
-      if (mounted && gen == _fetchGen) {
-        setState(() => _followingByUid = {});
-      }
-      return;
-    }
-    final token = await fb.getIdToken();
-    if (token == null || !mounted || gen != _fetchGen) return;
-    try {
-      final map = await DopamineApi.fetchFollowStatus(
-        idToken: token,
-        targetUids: uids,
-      );
-      if (!mounted || gen != _fetchGen) return;
-      setState(() => _followingByUid = map);
-    } catch (_) {
-      if (mounted && gen == _fetchGen) {
-        setState(() => _followingByUid = {});
-      }
-    }
-  }
-
-  Future<void> _toggleFollow(CommunityPost p) async {
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
-    if (p.authorUid == fb.uid) return;
-    final token = await fb.getIdToken();
-    if (token == null || !mounted) return;
-    final now = _followingByUid[p.authorUid] ?? false;
-    try {
-      if (now) {
-        await DopamineApi.unfollowUser(idToken: token, targetUid: p.authorUid);
-      } else {
-        await DopamineApi.followUser(idToken: token, targetUid: p.authorUid);
-      }
-      if (!mounted) return;
-      setState(() {
-        _followingByUid = Map<String, bool>.from(_followingByUid)
-          ..[p.authorUid] = !now;
-      });
-      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.errorLoadFailed)),
-      );
     }
   }
 
@@ -163,8 +96,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
       post: p,
       locale: locale,
       myUid: myUid,
-      followingByUid: _followingByUid,
-      onToggleFollow: _toggleFollow,
       onPostUpdated: (u) {
         final i = _posts.indexWhere((x) => x.id == u.id);
         if (i >= 0) {
@@ -286,9 +217,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
     final done = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => CommunityComposeScreen(
-          editPrefill: p,
-        ),
+        builder: (_) => CommunityComposeScreen(editPrefill: p),
       ),
     );
     if (done == true && mounted) {
@@ -314,15 +243,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
         reason: reasonText,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.communityReportSubmitted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityReportSubmitted)));
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -346,8 +273,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Text(
               l10n.communityBlockAuthorHint,
               style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: DopamineTheme.textSecondary,
-                  ),
+                color: DopamineTheme.textSecondary,
+              ),
             ),
           ],
         ),
@@ -374,19 +301,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (!mounted) return;
       setState(() {
         _posts = _posts.where((x) => x.authorUid != p.authorUid).toList();
-        _followingByUid = Map<String, bool>.from(_followingByUid)
-          ..remove(p.authorUid);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.communityUserBlocked)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityUserBlocked)));
       ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -419,21 +342,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final token = await fb.getIdToken();
     if (token == null || token.isEmpty) return;
     try {
-      await DopamineApi.deleteAssetComment(
-        id: p.id,
-        idToken: token,
-      );
+      await DopamineApi.deleteAssetComment(id: p.id, idToken: token);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileActivityPostDeleted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
       _scheduleFetch();
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -525,370 +443,383 @@ class _CommunityScreenState extends State<CommunityScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                if (_symbolFilterActive || _bodySearchTerms.isNotEmpty) ...[
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      if (_symbolFilterActive && _symbolFilterSymbol != null)
-                        InputChip(
-                          label: Text(_symbolFilterSymbol!),
-                          deleteIcon: const Icon(Icons.close_rounded, size: 18),
-                          onDeleted: _removeSymbolFilter,
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor: DopamineTheme.neonGreen.withValues(
-                            alpha: 0.12,
+                  if (_symbolFilterActive || _bodySearchTerms.isNotEmpty) ...[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (_symbolFilterActive && _symbolFilterSymbol != null)
+                          InputChip(
+                            label: Text(_symbolFilterSymbol!),
+                            deleteIcon: const Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                            ),
+                            onDeleted: _removeSymbolFilter,
+                            visualDensity: VisualDensity.compact,
+                            backgroundColor: DopamineTheme.neonGreen.withValues(
+                              alpha: 0.12,
+                            ),
+                            side: BorderSide.none,
+                            labelStyle: theme.textTheme.labelLarge?.copyWith(
+                              color: DopamineTheme.neonGreen,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                          side: BorderSide.none,
-                          labelStyle: theme.textTheme.labelLarge?.copyWith(
-                            color: DopamineTheme.neonGreen,
-                            fontWeight: FontWeight.w800,
+                        for (final term in _bodySearchTerms)
+                          InputChip(
+                            label: Text(term),
+                            deleteIcon: const Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                            ),
+                            onDeleted: () => _removeBodyTerm(term),
+                            visualDensity: VisualDensity.compact,
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.08,
+                            ),
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.18),
+                            ),
+                            labelStyle: theme.textTheme.labelLarge?.copyWith(
+                              color: DopamineTheme.textPrimary,
+                            ),
                           ),
-                        ),
-                      for (final term in _bodySearchTerms)
-                        InputChip(
-                          label: Text(term),
-                          deleteIcon: const Icon(Icons.close_rounded, size: 18),
-                          onDeleted: () => _removeBodyTerm(term),
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor: Colors.white.withValues(alpha: 0.08),
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.18),
-                          ),
-                          labelStyle: theme.textTheme.labelLarge?.copyWith(
-                            color: DopamineTheme.textPrimary,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                TapRegion(
-                  groupId: 'community_search',
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.28),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.14),
-                      ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
-                      child: RawAutocomplete<RankedAsset>(
-                      textEditingController: _searchController,
-                      focusNode: _searchFocusNode,
-                      displayStringForOption: (RankedAsset a) => a.symbol,
-                      optionsBuilder: (TextEditingValue value) {
-                        final q = value.text;
-                        if (q.trim().isEmpty) {
-                          return const Iterable<RankedAsset>.empty();
-                        }
-                        return context
-                            .read<HomeAssetSuggestions>()
-                            .matchingAssets(q);
-                      },
-                      onSelected: (RankedAsset a) {
-                        final ac = a.assetClass?.trim();
-                        if (ac == null || ac.isEmpty) return;
-                        setState(() {
-                          _symbolFilterActive = true;
-                          _symbolFilterSymbol = a.symbol;
-                          _symbolFilterClass = ac;
-                          _searchController.clear();
-                        });
-                        _scheduleFetch();
-                      },
-                      fieldViewBuilder:
-                          (
-                            BuildContext context,
-                            TextEditingController controller,
-                            FocusNode focusNode,
-                            VoidCallback onFieldSubmitted,
-                          ) {
-                            return TextField(
-                              controller: controller,
-                              focusNode: focusNode,
-                              groupId: 'community_search',
-                              onTapOutside: (_) => focusNode.unfocus(),
-                              textInputAction: TextInputAction.search,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: DopamineTheme.textPrimary,
-                              ),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    Icons.search_rounded,
-                                    color: DopamineTheme.textSecondary
-                                        .withValues(alpha: 0.9),
-                                    size: 22,
-                                  ),
-                                  onPressed: () =>
-                                      _submitSearch(_searchController.text),
-                                ),
-                                suffixIconConstraints: const BoxConstraints(
-                                  minWidth: 44,
-                                  minHeight: 44,
-                                ),
-                              ),
-                              onSubmitted: (v) {
-                                onFieldSubmitted();
-                                _submitSearch(v);
-                              },
-                            );
-                          },
-                      optionsViewBuilder:
-                          (
-                            BuildContext context,
-                            void Function(RankedAsset) onSelected,
-                            Iterable<RankedAsset> options,
-                          ) {
-                            final list = options.toList();
-                            if (list.isEmpty) {
-                              return const SizedBox.shrink();
+                    const SizedBox(height: 10),
+                  ],
+                  TapRegion(
+                    groupId: 'community_search',
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.28),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
+                        child: RawAutocomplete<RankedAsset>(
+                          textEditingController: _searchController,
+                          focusNode: _searchFocusNode,
+                          displayStringForOption: (RankedAsset a) => a.symbol,
+                          optionsBuilder: (TextEditingValue value) {
+                            final q = value.text;
+                            if (q.trim().isEmpty) {
+                              return const Iterable<RankedAsset>.empty();
                             }
-                            return TapRegion(
-                              groupId: 'community_search',
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: Material(
-                                  elevation: 8,
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: const Color(0xFF1A1525),
-                                  child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    maxHeight: 240,
+                            return context
+                                .read<HomeAssetSuggestions>()
+                                .matchingAssets(q);
+                          },
+                          onSelected: (RankedAsset a) {
+                            final ac = a.assetClass?.trim();
+                            if (ac == null || ac.isEmpty) return;
+                            setState(() {
+                              _symbolFilterActive = true;
+                              _symbolFilterSymbol = a.symbol;
+                              _symbolFilterClass = ac;
+                              _searchController.clear();
+                            });
+                            _scheduleFetch();
+                          },
+                          fieldViewBuilder:
+                              (
+                                BuildContext context,
+                                TextEditingController controller,
+                                FocusNode focusNode,
+                                VoidCallback onFieldSubmitted,
+                              ) {
+                                return TextField(
+                                  controller: controller,
+                                  focusNode: focusNode,
+                                  groupId: 'community_search',
+                                  onTapOutside: (_) => focusNode.unfocus(),
+                                  textInputAction: TextInputAction.search,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: DopamineTheme.textPrimary,
                                   ),
-                                  child: ListView.separated(
-                                    shrinkWrap: true,
-                                    padding: EdgeInsets.zero,
-                                    itemCount: list.length,
-                                    separatorBuilder: (_, _) => Divider(
-                                      height: 1,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.08,
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 12,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        Icons.search_rounded,
+                                        color: DopamineTheme.textSecondary
+                                            .withValues(alpha: 0.9),
+                                        size: 22,
+                                      ),
+                                      onPressed: () =>
+                                          _submitSearch(_searchController.text),
+                                    ),
+                                    suffixIconConstraints: const BoxConstraints(
+                                      minWidth: 44,
+                                      minHeight: 44,
+                                    ),
+                                  ),
+                                  onSubmitted: (v) {
+                                    onFieldSubmitted();
+                                    _submitSearch(v);
+                                  },
+                                );
+                              },
+                          optionsViewBuilder:
+                              (
+                                BuildContext context,
+                                void Function(RankedAsset) onSelected,
+                                Iterable<RankedAsset> options,
+                              ) {
+                                final list = options.toList();
+                                if (list.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return TapRegion(
+                                  groupId: 'community_search',
+                                  child: Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Material(
+                                      elevation: 8,
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: const Color(0xFF1A1525),
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          maxHeight: 240,
+                                        ),
+                                        child: ListView.separated(
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.zero,
+                                          itemCount: list.length,
+                                          separatorBuilder: (_, _) => Divider(
+                                            height: 1,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.08,
+                                            ),
+                                          ),
+                                          itemBuilder: (context, i) {
+                                            final a = list[i];
+                                            final ac = a.assetClass;
+                                            return ListTile(
+                                              dense: true,
+                                              title: Text(
+                                                a.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: theme
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.copyWith(
+                                                      color: DopamineTheme
+                                                          .textPrimary,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                              subtitle: Text(
+                                                ac != null
+                                                    ? '${a.symbol} · ${_classBadge(ac, l10n)}'
+                                                    : a.symbol,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: theme
+                                                    .textTheme
+                                                    .labelSmall
+                                                    ?.copyWith(
+                                                      color: DopamineTheme
+                                                          .textSecondary,
+                                                    ),
+                                              ),
+                                              onTap: () => onSelected(a),
+                                            );
+                                          },
+                                        ),
                                       ),
                                     ),
-                                    itemBuilder: (context, i) {
-                                      final a = list[i];
-                                      final ac = a.assetClass;
-                                      return ListTile(
-                                        dense: true,
-                                        title: Text(
-                                          a.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                            color: DopamineTheme.textPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        subtitle: Text(
-                                          ac != null
-                                              ? '${a.symbol} · ${_classBadge(ac, l10n)}'
-                                              : a.symbol,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.textTheme.labelSmall
-                                              ?.copyWith(
-                                            color:
-                                                DopamineTheme.textSecondary,
-                                          ),
-                                        ),
-                                        onTap: () => onSelected(a),
-                                      );
-                                    },
                                   ),
+                                );
+                              },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IntrinsicWidth(
+                    child: SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      style: ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        foregroundColor: WidgetStateProperty.resolveWith((s) {
+                          if (s.contains(WidgetState.selected)) {
+                            return DopamineTheme.purpleBottom;
+                          }
+                          return DopamineTheme.textPrimary;
+                        }),
+                        backgroundColor: WidgetStateProperty.resolveWith((s) {
+                          if (s.contains(WidgetState.selected)) {
+                            return DopamineTheme.neonGreen;
+                          }
+                          return Colors.white.withValues(alpha: 0.08);
+                        }),
+                      ),
+                      segments: [
+                        ButtonSegment<String>(
+                          value: 'latest',
+                          label: Text(l10n.communitySortLatest),
+                        ),
+                        ButtonSegment<String>(
+                          value: 'popular',
+                          label: Text(l10n.communitySortPopular),
+                        ),
+                      ],
+                      selected: <String>{_sort},
+                      onSelectionChanged: (s) => _onSort(s.first),
+                    ),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: () => _openCompose(context),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: DopamineTheme.neonGreen,
+                      foregroundColor: const Color(0xFF0A0A0A),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                    ),
+                    icon: const Icon(Icons.edit_rounded, size: 20),
+                    label: Text(
+                      l10n.communityWrite,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                color: DopamineTheme.neonGreen,
+                onRefresh: _scheduleFetch,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final minScrollExtent = constraints.maxHeight > 0
+                        ? constraints.maxHeight
+                        : 400.0;
+                    if (_loading) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: minScrollExtent,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: DopamineTheme.neonGreen,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    if (_fetchError != null) {
+                      final err = _fetchError!;
+                      final msg = err is ApiException
+                          ? err.message
+                          : err.toString();
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: minScrollExtent,
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      msg,
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: DopamineTheme.accentRed,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    FilledButton(
+                                      onPressed: _scheduleFetch,
+                                      child: Text(l10n.retry),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            );
-                          },
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                IntrinsicWidth(
-                  child: SegmentedButton<String>(
-                    showSelectedIcon: false,
-                    style: ButtonStyle(
-                      visualDensity: VisualDensity.compact,
-                      foregroundColor: WidgetStateProperty.resolveWith((s) {
-                        if (s.contains(WidgetState.selected)) {
-                          return DopamineTheme.purpleBottom;
-                        }
-                        return DopamineTheme.textPrimary;
-                      }),
-                      backgroundColor: WidgetStateProperty.resolveWith((s) {
-                        if (s.contains(WidgetState.selected)) {
-                          return DopamineTheme.neonGreen;
-                        }
-                        return Colors.white.withValues(alpha: 0.08);
-                      }),
-                    ),
-                    segments: [
-                      ButtonSegment<String>(
-                        value: 'latest',
-                        label: Text(l10n.communitySortLatest),
-                      ),
-                      ButtonSegment<String>(
-                        value: 'popular',
-                        label: Text(l10n.communitySortPopular),
-                      ),
-                    ],
-                    selected: <String>{_sort},
-                    onSelectionChanged: (s) => _onSort(s.first),
-                  ),
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: () => _openCompose(context),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: DopamineTheme.neonGreen,
-                    foregroundColor: const Color(0xFF0A0A0A),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                  ),
-                  icon: const Icon(Icons.edit_rounded, size: 20),
-                  label: Text(
-                    l10n.communityWrite,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: RefreshIndicator(
-              color: DopamineTheme.neonGreen,
-              onRefresh: _scheduleFetch,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final minScrollExtent = constraints.maxHeight > 0
-                      ? constraints.maxHeight
-                      : 400.0;
-                  if (_loading) {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: minScrollExtent,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: DopamineTheme.neonGreen,
-                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  }
-                  if (_fetchError != null) {
-                    final err = _fetchError!;
-                    final msg = err is ApiException
-                        ? err.message
-                        : err.toString();
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: minScrollExtent,
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    msg,
-                                    textAlign: TextAlign.center,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: DopamineTheme.accentRed,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  FilledButton(
-                                    onPressed: _scheduleFetch,
-                                    child: Text(l10n.retry),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  final items = _posts;
-                  if (items.isEmpty) {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: minScrollExtent,
-                          child: Center(
-                            child: Text(
-                              l10n.emptyState,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: DopamineTheme.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      16,
-                      0,
-                      16,
-                      24 + homeShellBottomInset(context),
-                    ),
-                    itemCount: items.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) {
-                      final p = items[i];
-                      return CommunityPostCard(
-                        post: p,
-                        locale: locale,
-                        myUid: myUid,
-                        followingByUid: _followingByUid,
-                        onOpenAuthorProfile: _openAuthorProfile,
-                        onToggleFollow: _toggleFollow,
-                        onToggleLike: (post) => _toggleLike(i, post),
-                        onOpenPostDetail: _openPostDetail,
-                        onEditOwnPost: _openEditCompose,
-                        onDeleteOwnPost: _deleteCommunityPost,
-                        onReportPost: _reportCommunityPost,
-                        onBlockAuthor: _blockAuthorFromPost,
+                        ],
                       );
-                    },
-                  );
-                },
+                    }
+                    final items = _posts;
+                    if (items.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: minScrollExtent,
+                            child: Center(
+                              child: Text(
+                                l10n.emptyState,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: DopamineTheme.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        0,
+                        16,
+                        24 + homeShellBottomInset(context),
+                      ),
+                      itemCount: items.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        final p = items[i];
+                        return CommunityPostCard(
+                          post: p,
+                          locale: locale,
+                          myUid: myUid,
+                          onOpenAuthorProfile: _openAuthorProfile,
+                          onToggleLike: (post) => _toggleLike(i, post),
+                          onOpenPostDetail: _openPostDetail,
+                          onEditOwnPost: _openEditCompose,
+                          onDeleteOwnPost: _deleteCommunityPost,
+                          onReportPost: _reportCommunityPost,
+                          onBlockAuthor: _blockAuthorFromPost,
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );

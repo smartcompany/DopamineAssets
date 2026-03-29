@@ -100,17 +100,25 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       final profile = results[0] as Map<String, dynamic>;
       final items = results[1] as List<CommunityPost>;
       if (!mounted) return;
+      final resolvedName = (profile['displayName'] as String?)?.trim().isNotEmpty == true
+          ? (profile['displayName'] as String).trim()
+          : widget.authorName.trim();
+      final uid = widget.authorUid;
+      final postsAligned = items.map((p) {
+        if (p.authorUid != uid) return p;
+        final dn = resolvedName.trim();
+        if (dn.isEmpty) return p;
+        return p.copyWith(authorDisplayName: dn);
+      }).toList();
       setState(() {
-        _displayName = (profile['displayName'] as String?)?.trim().isNotEmpty == true
-            ? (profile['displayName'] as String).trim()
-            : widget.authorName;
+        _displayName = resolvedName;
         _photoUrl = (profile['photoUrl'] as String?)?.trim();
         _postsCount = (profile['postsCount'] as num?)?.toInt() ?? 0;
         _followersCount = (profile['followersCount'] as num?)?.toInt() ?? 0;
         _followingCount = (profile['followingCount'] as num?)?.toInt() ?? 0;
         _isFollowing = profile['isFollowing'] as bool? ?? false;
         _blockedByMe = profile['blockedByMe'] as bool? ?? false;
-        _posts = items;
+        _posts = postsAligned;
         _loading = false;
       });
     } catch (e) {
@@ -154,8 +162,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       post: p,
       locale: locale,
       myUid: myUid,
-      followingByUid: null,
-      onToggleFollow: null,
       onPostUpdated: (_) {
         if (mounted) {
           _loadData();
@@ -303,6 +309,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final isOwnProfile =
+        myUid != null && myUid.isNotEmpty && myUid == widget.authorUid;
 
     return Scaffold(
       appBar: AppBar(
@@ -348,54 +357,56 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _isFollowing
-                          ? OutlinedButton(
-                              onPressed:
-                                  (_working || _blockedByMe) ? null : _toggleFollow,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: DopamineTheme.neonGreen,
-                                side: BorderSide(
-                                  color: DopamineTheme.neonGreen.withValues(
-                                    alpha: 0.85,
+                if (!isOwnProfile) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _isFollowing
+                            ? OutlinedButton(
+                                onPressed:
+                                    (_working || _blockedByMe) ? null : _toggleFollow,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: DopamineTheme.neonGreen,
+                                  side: BorderSide(
+                                    color: DopamineTheme.neonGreen.withValues(
+                                      alpha: 0.85,
+                                    ),
                                   ),
                                 ),
+                                child: Text(l10n.communityUnfollow),
+                              )
+                            : FilledButton(
+                                onPressed:
+                                    (_working || _blockedByMe) ? null : _toggleFollow,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: DopamineTheme.neonGreen,
+                                  foregroundColor: const Color(0xFF0A0A0A),
+                                ),
+                                child: Text(l10n.communityFollow),
                               ),
-                              child: Text(l10n.communityUnfollow),
-                            )
-                          : FilledButton(
-                              onPressed:
-                                  (_working || _blockedByMe) ? null : _toggleFollow,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: DopamineTheme.neonGreen,
-                                foregroundColor: const Color(0xFF0A0A0A),
-                              ),
-                              child: Text(l10n.communityFollow),
-                            ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _working ? null : _toggleBlock,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _blockedByMe
-                              ? DopamineTheme.textSecondary
-                              : DopamineTheme.accentRed,
-                          side: BorderSide(
-                            color: (_blockedByMe
-                                    ? DopamineTheme.textSecondary
-                                    : DopamineTheme.accentRed)
-                                .withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Text(_blockedByMe ? '차단 해제' : '차단'),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _working ? null : _toggleBlock,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _blockedByMe
+                                ? DopamineTheme.textSecondary
+                                : DopamineTheme.accentRed,
+                            side: BorderSide(
+                              color: (_blockedByMe
+                                      ? DopamineTheme.textSecondary
+                                      : DopamineTheme.accentRed)
+                                  .withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Text(_blockedByMe ? '차단 해제' : '차단'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -455,7 +466,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       post: _posts[index],
                       locale: locale,
                       myUid: myUid,
-                      showFollowButton: false,
                       onToggleLike: _togglePostLike,
                       onOpenPostDetail: _openPostDetail,
                       onReportPost:

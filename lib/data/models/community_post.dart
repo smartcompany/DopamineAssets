@@ -37,6 +37,7 @@ final class CommunityPost {
   final bool moderationHiddenFromPublic;
 
   CommunityPost copyWith({
+    String? authorDisplayName,
     int? likeCount,
     bool? likedByMe,
     bool? moderationHiddenFromPublic,
@@ -47,7 +48,7 @@ final class CommunityPost {
       title: title,
       imageUrls: imageUrls,
       authorUid: authorUid,
-      authorDisplayName: authorDisplayName,
+      authorDisplayName: authorDisplayName ?? this.authorDisplayName,
       authorPhotoUrl: authorPhotoUrl,
       createdAt: createdAt,
       assetSymbol: assetSymbol,

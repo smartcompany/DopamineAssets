@@ -185,6 +185,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityMoreMenu => '더보기';
 
   @override
+  String get communityPostSeeMore => '더보기 >';
+
+  @override
   String get communityReportPost => '신고';
 
   @override

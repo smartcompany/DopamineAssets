@@ -446,6 +446,12 @@ abstract class AppLocalizations {
   /// **'더보기'**
   String get communityMoreMenu;
 
+  /// No description provided for @communityPostSeeMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'더보기 >'**
+  String get communityPostSeeMore;
+
   /// No description provided for @communityReportPost.
   ///
   /// In ko, this message translates to:

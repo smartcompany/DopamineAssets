@@ -136,7 +136,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             title: rootRow.title,
             imageUrls: rootRow.imageUrls,
             authorUid: _post.authorUid,
-            authorDisplayName: _post.authorDisplayName,
+            authorDisplayName: rootRow.authorDisplayName,
             authorPhotoUrl: _post.authorPhotoUrl,
             createdAt: _post.createdAt,
             assetSymbol: _post.assetSymbol,

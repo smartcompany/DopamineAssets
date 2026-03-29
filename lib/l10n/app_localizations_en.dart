@@ -187,6 +187,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityMoreMenu => 'More';
 
   @override
+  String get communityPostSeeMore => 'See more >';
+
+  @override
   String get communityReportPost => 'Report';
 
   @override

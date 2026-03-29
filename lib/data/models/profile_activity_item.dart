@@ -5,6 +5,7 @@ final class ProfileActivityItem {
     required this.kind,
     required this.at,
     required this.commentId,
+    this.threadRootCommentId,
     required this.bodyPreview,
     required this.assetSymbol,
     required this.assetClass,
@@ -28,6 +29,8 @@ final class ProfileActivityItem {
   final String kind;
   final DateTime at;
   final String commentId;
+  /// 스레드 루트 글 id — like_received / reply_on_my_post 에서 본문 화면 이동용
+  final String? threadRootCommentId;
   final String bodyPreview;
   final String assetSymbol;
   final String assetClass;
@@ -54,10 +57,12 @@ final class ProfileActivityItem {
     final urls = rawUrls is List<dynamic>
         ? rawUrls.map((e) => e as String).toList()
         : null;
+    final tr = json['threadRootCommentId'];
     return ProfileActivityItem(
       kind: json['kind'] as String,
       at: DateTime.parse(json['at'] as String),
       commentId: json['commentId'] as String,
+      threadRootCommentId: tr is String && tr.trim().isNotEmpty ? tr.trim() : null,
       bodyPreview: json['bodyPreview'] as String? ?? '',
       assetSymbol: json['assetSymbol'] as String,
       assetClass: json['assetClass'] as String,

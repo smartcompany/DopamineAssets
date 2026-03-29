@@ -34,6 +34,9 @@ class _MarketSummaryScreenState extends State<MarketSummaryScreen> {
             context: context,
             snapshot: snapshot,
             onData: (context, summary) {
+              final lang = Localizations.localeOf(context).languageCode;
+              final body = summary.bodyForLanguageCode(lang);
+              final note = summary.attributionForLanguageCode(lang);
               return ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
@@ -42,71 +45,27 @@ class _MarketSummaryScreenState extends State<MarketSummaryScreen> {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
-                  _SummaryRow(
-                    label: l10n.kimchiPremiumLabel,
-                    value: summary.kimchiPremiumPct == null
-                        ? l10n.notAvailable
-                        : '${summary.kimchiPremiumPct!.toStringAsFixed(2)}%',
-                  ),
-                  _SummaryRow(
-                    label: l10n.exchangeRateLabel,
-                    value: summary.usdKrw == null
-                        ? l10n.notAvailable
-                        : summary.usdKrw!.toStringAsFixed(2),
-                  ),
-                  const SizedBox(height: 12),
                   Text(
-                    l10n.marketStatusLabel,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    body.isNotEmpty ? body : l10n.notAvailable,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      height: 1.5,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    summary.marketStatus ?? l10n.notAvailable,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
+                  if (note != null && note.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      note,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
                 ],
               );
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: theme.textTheme.bodyLarge,
-            ),
-          ),
-        ],
       ),
     );
   }

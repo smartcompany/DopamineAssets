@@ -426,14 +426,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                    child: Text(
-                      l10n.sectionThemes,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: DopamineTheme.textPrimary,
-                        letterSpacing: -0.4,
-                      ),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: _SectionTitle(
+                      icon: Icons.hub_rounded,
+                      iconColor: DopamineTheme.purpleTop,
+                      title: l10n.sectionThemes,
                     ),
                   ),
                 ),
@@ -1411,101 +1408,30 @@ class _MarketSummaryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lang = Localizations.localeOf(context).languageCode;
+    final body = summary.bodyForLanguageCode(lang);
+    final note = summary.attributionForLanguageCode(lang);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _StatTile(
-                label: l10n.kimchiPremiumLabel,
-                value: summary.kimchiPremiumPct == null
-                    ? l10n.notAvailable
-                    : '${summary.kimchiPremiumPct!.toStringAsFixed(2)}%',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatTile(
-                label: l10n.exchangeRateLabel,
-                value: summary.usdKrw == null
-                    ? l10n.notAvailable
-                    : summary.usdKrw!.toStringAsFixed(2),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.marketStatusLabel,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: DopamineTheme.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                summary.marketStatus ?? l10n.notAvailable,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  height: 1.45,
-                  color: DopamineTheme.textPrimary,
-                ),
-              ),
-            ],
+        Text(
+          body.isNotEmpty ? body : l10n.notAvailable,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            height: 1.5,
+            color: DopamineTheme.textPrimary,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        if (note != null && note.isNotEmpty) ...[
+          const SizedBox(height: 12),
           Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
+            note,
+            style: theme.textTheme.labelSmall?.copyWith(
+              height: 1.4,
               color: DopamineTheme.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-              color: DopamineTheme.neonGreen,
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 }

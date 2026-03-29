@@ -469,6 +469,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// like_received / reply_on_my_post → 커뮤니티 게시글 본문(스레드 루트)
+  Future<void> _openActivityThreadPost(
+    BuildContext context,
+    ProfileActivityItem item,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final token = await fb.getIdToken();
+    if (token == null || token.isEmpty || !mounted) return;
+
+    var rootId = item.threadRootCommentId?.trim();
+    if (rootId == null || rootId.isEmpty) {
+      rootId = await _resolveThreadRootCommentIdViaApi(
+        commentId: item.commentId,
+        idToken: token,
+      );
+    }
+    if (rootId == null || rootId.isEmpty || !context.mounted) return;
+
+    try {
+      final root = await DopamineApi.fetchAssetCommentById(
+        id: rootId,
+        idToken: token,
+      );
+      if (!context.mounted) return;
+      final post = CommunityPost(
+        id: root.id,
+        body: root.body,
+        title: root.title,
+        imageUrls: root.imageUrls,
+        authorUid: root.authorUid,
+        authorDisplayName: root.authorDisplayName,
+        authorPhotoUrl: null,
+        createdAt: root.createdAt,
+        assetSymbol: root.assetSymbol ?? item.assetSymbol,
+        assetClass: root.assetClass ?? item.assetClass,
+        assetDisplayName: root.assetDisplayName ?? item.assetDisplayName,
+        replyCount: 0,
+        likeCount: root.likeCount,
+        likedByMe: root.likedByMe,
+        moderationHiddenFromPublic: root.moderationHiddenFromPublic,
+      );
+      await _openActivityPostDetail(post);
+    } catch (e) {
+      if (!context.mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  Future<String?> _resolveThreadRootCommentIdViaApi({
+    required String commentId,
+    required String idToken,
+  }) async {
+    var cur = commentId;
+    for (var i = 0; i < 50; i++) {
+      final c = await DopamineApi.fetchAssetCommentById(
+        id: cur,
+        idToken: idToken,
+      );
+      final p = c.parentId?.trim();
+      if (p == null || p.isEmpty) return c.id;
+      cur = p;
+    }
+    return cur;
+  }
+
   Future<void> _editOwnActivity(
     BuildContext context,
     ProfileActivityItem item,
@@ -506,8 +577,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       post: p,
       locale: locale,
       myUid: fb.uid,
-      followingByUid: null,
-      onToggleFollow: null,
       onPostUpdated: (_) {
         if (mounted) {
           _loadData();
@@ -695,7 +764,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: cardShape,
       margin: EdgeInsets.zero,
       child: InkWell(
-        onTap: () => _openActivityItem(context, item),
+        onTap: () {
+          if (item.kind == 'like_received' || item.kind == 'reply_on_my_post') {
+            _openActivityThreadPost(context, item);
+          } else {
+            _openActivityItem(context, item);
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -801,6 +876,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Expanded(
                           child: TextField(
                             controller: _nameController,
+                            onTapOutside: (_) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            },
                             maxLength: 80,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: DopamineTheme.textPrimary,
@@ -1023,9 +1101,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 locale: locale,
                 myUid: fb.uid,
-                showFollowButton: false,
-                followingByUid: null,
-                onToggleFollow: null,
                 onToggleLike: _toggleActivityLike,
                 onOpenPostDetail: _openActivityPostDetail,
                 onEditOwnPost: (p) {
