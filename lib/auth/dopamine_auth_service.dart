@@ -37,15 +37,14 @@ final class DopamineAuthService implements AuthServiceInterface {
     }
     final uid = profile['uid'] as String?;
     final displayName = profile['displayName'] as String?;
-    if (uid == null || uid.isEmpty || displayName == null || displayName.isEmpty) {
+    if (uid == null ||
+        uid.isEmpty ||
+        displayName == null ||
+        displayName.isEmpty) {
       return null;
     }
     final photoUrl = profile['photoUrl'] as String?;
-    return DopamineUser(
-      uid: uid,
-      displayName: displayName,
-      photoUrl: photoUrl,
-    );
+    return DopamineUser(uid: uid, displayName: displayName, photoUrl: photoUrl);
   }
 
   @override

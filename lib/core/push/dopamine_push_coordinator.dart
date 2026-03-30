@@ -37,48 +37,72 @@ abstract final class DopaminePushCoordinator {
       debugPrint('[DopaminePush] requestPermission: $e');
     }
 
-    /// iOS는 APNs 토큰이 잡힌 뒤에야 FCM 토큰이 안정적으로 나옵니다. 시뮬레이터는 APNs가
-    /// 영원히 null인 경우가 많아 FCM 등록이 되지 않을 수 있습니다.
+    /// iOS는 APNs 토큰이 잡힌 뒤에야 FCM 토큰이 안정적으로 나옵니다.
     Future<String?> resolveFcmToken() async {
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        for (var i = 0; i < 20; i++) {
-          final apns = await messaging.getAPNSToken();
-          if (apns != null && apns.isNotEmpty) {
-            break;
+        for (var i = 0; i < 40; i++) {
+          try {
+            final apns = await messaging.getAPNSToken();
+            if (apns != null && apns.isNotEmpty) {
+              break;
+            }
+          } catch (e) {
+            debugPrint('[DopaminePush] getAPNSToken (wait $i): $e');
           }
-          await Future<void>.delayed(const Duration(milliseconds: 300));
+          await Future<void>.delayed(const Duration(milliseconds: 250));
         }
-        final stillNull = (await messaging.getAPNSToken()) == null;
-        if (stillNull) {
-          debugPrint(
-            '[DopaminePush] APNS token unavailable. On iOS Simulator this is '
-            'common — use a physical iPhone to register FCM, or ensure '
-            'Xcode 14+ / iOS 16+ sim and Push capability + APNs key in Firebase.',
-          );
-        }
+        try {
+          if ((await messaging.getAPNSToken()) == null) {
+            debugPrint(
+              '[DopaminePush] APNS still null after wait. Simulator: often '
+              'unsupported. Device: check Push capability + APNs key in Firebase.',
+            );
+          }
+        } catch (_) {}
       }
-      return messaging.getToken();
+      try {
+        return await messaging.getToken();
+      } catch (e) {
+        debugPrint('[DopaminePush] getToken: $e');
+        return null;
+      }
     }
 
     Future<void> registerForUser(User user) async {
-      try {
-        final fcm = await resolveFcmToken();
-        if (fcm == null || fcm.isEmpty) {
+      const maxAttempts = 10;
+      const gap = Duration(seconds: 2);
+      for (var attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          final fcm = await resolveFcmToken();
+          if (fcm == null || fcm.isEmpty) {
+            debugPrint(
+              '[DopaminePush] no FCM token yet (attempt ${attempt + 1}/$maxAttempts)',
+            );
+          } else {
+            final idToken = await user.getIdToken();
+            if (idToken == null || idToken.isEmpty) {
+              debugPrint('[DopaminePush] no idToken — skip push-token API');
+              return;
+            }
+            await DopamineApi.registerPushToken(
+              idToken: idToken,
+              fcmToken: fcm,
+              platform: dopaminePushPlatformLabel(),
+            );
+            debugPrint('[DopaminePush] server push-token OK');
+            return;
+          }
+        } catch (e) {
           debugPrint(
-            '[DopaminePush] getToken() empty — not calling /api/profile/push-token.',
+            '[DopaminePush] register attempt ${attempt + 1}/$maxAttempts: $e',
           );
-          return;
         }
-        final idToken = await user.getIdToken();
-        if (idToken == null || idToken.isEmpty) return;
-        await DopamineApi.registerPushToken(
-          idToken: idToken,
-          fcmToken: fcm,
-          platform: dopaminePushPlatformLabel(),
-        );
-      } catch (e) {
-        debugPrint('[DopaminePush] register: $e');
+        await Future<void>.delayed(gap);
       }
+      debugPrint(
+        '[DopaminePush] gave up after $maxAttempts attempts — check Vercel '
+        'logs / Supabase dopamine_device_push_tokens / prod env.',
+      );
     }
 
     messaging.onTokenRefresh.listen((fcm) async {

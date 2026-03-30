@@ -39,6 +39,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   StreamSubscription<User?>? _authSub;
   HomeShellNavigation? _shellNav;
+  AuthProvider<DopamineUser>? _authProvider;
+
   /// 홈(0) · 커뮤니티(1) · 프로필(2) — 프로필 탭으로 **들어올 때만** 갱신
   int _prevShellTabIndex = -1;
 
@@ -92,6 +94,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _authProvider = context.read<AuthProvider<DopamineUser>>();
+    _authProvider!.addListener(_handleAuthProviderUpdate);
     _authSub = FirebaseAuth.instance.authStateChanges().listen((u) async {
       if (!mounted) return;
       final auth = context.read<AuthProvider<DopamineUser>>();
@@ -144,8 +148,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _shellNav?.removeListener(_handleShellNav);
     _authSub?.cancel();
+    _authProvider?.removeListener(_handleAuthProviderUpdate);
     _nameController.dispose();
     super.dispose();
+  }
+
+  void _handleAuthProviderUpdate() {
+    if (!mounted) return;
+    if (_savingName) return; // 사용자가 입력 중일 때는 덮어쓰지 않습니다.
+
+    final dn = _authProvider?.userProfile?.displayName;
+    if (dn == null) return;
+
+    final normalized = dn.trim();
+    if (normalized.isEmpty) return;
+
+    // 재로그인 시점에 auth.userProfile이 늦게 들어오면,
+    // 기존 authStateChanges 콜백에서 동기화가 먼저 끝나서 이름이 안 보일 수 있습니다.
+    // provider 업데이트를 감지해서 컨트롤러를 다시 채웁니다.
+    if (_nameController.text.trim() != normalized) {
+      _syncNameField(dn);
+    }
   }
 
   void _syncNameField(String? displayName) {
@@ -304,9 +327,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final bad = UgcBannedWords.firstMatch(text);
     if (bad != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))));
       return;
     }
 
@@ -817,213 +840,213 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String locale,
   ) {
     return NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.profileSignedInSection,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: DopamineTheme.neonGreen,
-                            ),
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.profileSignedInSection,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: DopamineTheme.neonGreen,
                           ),
                         ),
-                        IconButton(
-                          tooltip: l10n.profileAccountRefreshTooltip,
-                          onPressed: _loading ? null : () => _loadData(),
-                          icon: Icon(
-                            Icons.refresh_rounded,
-                            color: _loading
-                                ? DopamineTheme.textSecondary.withValues(
-                                    alpha: 0.35,
-                                  )
-                                : DopamineTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _AccountProfilePhotoCard(
-                      theme: theme,
-                      l10n: l10n,
-                      photoUrl: profilePhotoUrl,
-                      profileSaved: profileSaved,
-                      uploadingPhoto: _uploadingPhoto,
-                      onPickPhoto: () => _pickProfilePhoto(l10n),
-                      onRemovePhoto: () => _removeProfilePhoto(l10n),
-                    ),
-                    const SizedBox(height: 22),
-                    Text(
-                      l10n.profileDisplayName,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: DopamineTheme.textSecondary,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _nameController,
-                            onTapOutside: (_) {
-                              FocusManager.instance.primaryFocus?.unfocus();
-                            },
-                            maxLength: 80,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: DopamineTheme.textPrimary,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: l10n.profileDisplayNameHint,
-                              hintStyle: TextStyle(
-                                color: DopamineTheme.textSecondary.withValues(
-                                  alpha: 0.85,
-                                ),
-                              ),
-                              filled: true,
-                              fillColor: Colors.black.withValues(alpha: 0.22),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.12),
-                                ),
-                              ),
-                              counterText: '',
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
+                      IconButton(
+                        tooltip: l10n.profileAccountRefreshTooltip,
+                        onPressed: _loading ? null : () => _loadData(),
+                        icon: Icon(
+                          Icons.refresh_rounded,
+                          color: _loading
+                              ? DopamineTheme.textSecondary.withValues(
+                                  alpha: 0.35,
+                                )
+                              : DopamineTheme.textSecondary,
                         ),
-                        const SizedBox(width: 10),
-                        FilledButton(
-                          onPressed: _savingName
-                              ? null
-                              : () => _saveDisplayName(l10n),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: DopamineTheme.neonGreen,
-                            foregroundColor: const Color(0xFF0A0A0A),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _AccountProfilePhotoCard(
+                    theme: theme,
+                    l10n: l10n,
+                    photoUrl: profilePhotoUrl,
+                    profileSaved: profileSaved,
+                    uploadingPhoto: _uploadingPhoto,
+                    onPickPhoto: () => _pickProfilePhoto(l10n),
+                    onRemovePhoto: () => _removeProfilePhoto(l10n),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    l10n.profileDisplayName,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: DopamineTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _nameController,
+                          onTapOutside: (_) {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                          },
+                          maxLength: 80,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: DopamineTheme.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: l10n.profileDisplayNameHint,
+                            hintStyle: TextStyle(
+                              color: DopamineTheme.textSecondary.withValues(
+                                alpha: 0.85,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: Colors.black.withValues(alpha: 0.22),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            counterText: '',
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
                               vertical: 14,
                             ),
                           ),
-                          child: _savingName
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(0xFF0A0A0A),
-                                  ),
-                                )
-                              : Text(l10n.profileSaveDisplayName),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (ProfileStatsStore.instance.stats == null && _loading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: DopamineTheme.neonGreen,
-                            ),
+                      ),
+                      const SizedBox(width: 10),
+                      FilledButton(
+                        onPressed: _savingName
+                            ? null
+                            : () => _saveDisplayName(l10n),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: DopamineTheme.neonGreen,
+                          foregroundColor: const Color(0xFF0A0A0A),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
                           ),
                         ),
-                      )
-                    else if (ProfileStatsStore.instance.stats == null &&
-                        _loadError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          _loadError is ApiException
-                              ? (_loadError as ApiException).message
-                              : l10n.errorLoadFailed,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: DopamineTheme.accentRed,
+                        child: _savingName
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF0A0A0A),
+                                ),
+                              )
+                            : Text(l10n.profileSaveDisplayName),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (ProfileStatsStore.instance.stats == null && _loading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: DopamineTheme.neonGreen,
                           ),
                         ),
-                      )
-                    else if (ProfileStatsStore.instance.stats != null)
-                      _StatsRow(
-                        stats: ProfileStatsStore.instance.stats!,
-                        l10n: l10n,
                       ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () => _logout(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: DopamineTheme.textPrimary,
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.35),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                    )
+                  else if (ProfileStatsStore.instance.stats == null &&
+                      _loadError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        _loadError is ApiException
+                            ? (_loadError as ApiException).message
+                            : l10n.errorLoadFailed,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: DopamineTheme.accentRed,
                         ),
-                        child: Text(l10n.profileLogout),
                       ),
+                    )
+                  else if (ProfileStatsStore.instance.stats != null)
+                    _StatsRow(
+                      stats: ProfileStatsStore.instance.stats!,
+                      l10n: l10n,
                     ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: () => _confirmDelete(context),
-                        style: TextButton.styleFrom(
-                          foregroundColor: DopamineTheme.accentRed,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => _logout(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: DopamineTheme.textPrimary,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.35),
                         ),
-                        child: Text(l10n.profileDeleteAccount),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
+                      child: Text(l10n.profileLogout),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () => _confirmDelete(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: DopamineTheme.accentRed,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text(l10n.profileDeleteAccount),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _ProfileStickyHeaderDelegate(
-                child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    l10n.profileActivityTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: DopamineTheme.neonGreen,
-                    ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _ProfileStickyHeaderDelegate(
+              child: Container(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  l10n.profileActivityTitle,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: DopamineTheme.neonGreen,
                   ),
                 ),
               ),
             ),
-          ];
-        },
-        body: _buildActivityList(
-          context,
-          theme,
-          l10n,
-          fb,
-          profilePhotoUrl,
-          locale,
-        ),
+          ),
+        ];
+      },
+      body: _buildActivityList(
+        context,
+        theme,
+        l10n,
+        fb,
+        profilePhotoUrl,
+        locale,
+      ),
     );
   }
 
@@ -1426,10 +1449,7 @@ class _ProfilePhotoIconAction extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({
-    required this.stats,
-    required this.l10n,
-  });
+  const _StatsRow({required this.stats, required this.l10n});
 
   final ProfileStats stats;
   final AppLocalizations l10n;
@@ -1472,9 +1492,8 @@ class _StatsRow extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const FollowListScreen(
-                    kind: FollowListKind.followers,
-                  ),
+                  builder: (_) =>
+                      const FollowListScreen(kind: FollowListKind.followers),
                 ),
               );
             },
@@ -1487,9 +1506,8 @@ class _StatsRow extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => BlockedUsersScreen(
-                    onListChanged: refreshCounts,
-                  ),
+                  builder: (_) =>
+                      BlockedUsersScreen(onListChanged: refreshCounts),
                 ),
               );
             },
