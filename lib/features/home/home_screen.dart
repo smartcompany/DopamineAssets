@@ -30,6 +30,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const int _rankingTopN = 10;
   static const Duration _rankingPollInterval = Duration(seconds: 5);
+  static const Duration _filterApplyDebounce = Duration(milliseconds: 600);
 
   Set<String>? _rankingClasses;
   /// 화면에서 토글 중인 필터(저장·API 반영은 리로드 버튼).
@@ -41,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Object? _rankingsError;
   Timer? _rankingPollTimer;
   int _rankingRequestId = 0;
+  Timer? _filterApplyTimer;
 
   late Future<List<ThemeItem>> _hotThemesFuture;
   late Future<List<ThemeItem>> _crashedThemesFuture;
@@ -113,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     _rankingPollTimer?.cancel();
+    _filterApplyTimer?.cancel();
     super.dispose();
   }
 
@@ -216,24 +219,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _togglePendingFilter(String key) {
-    setState(() {
-      final next = Set<String>.from(_pendingFilter);
-      if (next.contains(key)) {
-        if (next.length <= 1) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            final l10n = AppLocalizations.of(context)!;
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(l10n.rankingFilterNeedOne)));
-          });
-          return;
-        }
-        next.remove(key);
-      } else {
-        next.add(key);
+    final next = Set<String>.from(_pendingFilter);
+    if (next.contains(key)) {
+      if (next.length <= 1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.rankingFilterNeedOne)));
+        });
+        return;
       }
+      next.remove(key);
+    } else {
+      next.add(key);
+    }
+    setState(() {
       _pendingFilter = next;
+    });
+
+    // 연속 토글 시 디바운싱해서 API 호출을 줄입니다.
+    _filterApplyTimer?.cancel();
+    _filterApplyTimer = Timer(_filterApplyDebounce, () {
+      if (!mounted) return;
+      _applyPendingFilter();
     });
   }
 
@@ -384,35 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                              SizedBox(
-                                width: 48,
-                                height: 48,
-                                child: IgnorePointer(
-                                  ignoring: !_filtersDirty,
-                                  child: Opacity(
-                                    opacity: _filtersDirty ? 1 : 0,
-                                    child: IconButton(
-                                      tooltip:
-                                          l10n.homeRankingApplyFiltersTooltip,
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(
-                                        minWidth: 48,
-                                        minHeight: 48,
-                                      ),
-                                      icon: Icon(
-                                        Icons.refresh_rounded,
-                                        color: _rankingsLoading
-                                            ? DopamineTheme.textSecondary
-                                                  .withValues(alpha: 0.38)
-                                            : DopamineTheme.neonGreen,
-                                      ),
-                                      onPressed: _rankingsLoading
-                                          ? null
-                                          : _applyPendingFilter,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                              const SizedBox(width: 48),
                             ],
                           ),
                           const SizedBox(height: 12),
