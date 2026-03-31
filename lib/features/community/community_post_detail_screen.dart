@@ -10,6 +10,7 @@ import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/profile/profile_stats_store.dart';
 import '../../core/text/ugc_banned_words.dart';
+import '../../core/time/relative_time_format.dart';
 import '../../data/models/asset_comment.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
@@ -76,7 +77,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   bool _threadDirty = false;
 
   final _composer = TextEditingController();
+  final _composerFocusNode = FocusNode();
   bool _sending = false;
+  bool _deleting = false;
 
   String? _replyParentId;
   String? _replyParentName;
@@ -102,6 +105,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   @override
   void dispose() {
+    _composerFocusNode.dispose();
     _composer.dispose();
     super.dispose();
   }
@@ -299,6 +303,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final token = await fb.getIdToken();
     if (token == null) return;
     try {
+      if (mounted) setState(() => _deleting = true);
       await DopamineApi.deleteAssetComment(id: _post.id, idToken: token);
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -309,6 +314,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           ? e.message
           : AppLocalizations.of(context)!.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
     }
   }
 
@@ -446,6 +453,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final token = await fb.getIdToken();
     if (token == null) return;
     try {
+      if (mounted) setState(() => _deleting = true);
       await DopamineApi.deleteAssetComment(id: c.id, idToken: token);
       if (!mounted) return;
       _threadDirty = true;
@@ -455,6 +463,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
     }
   }
 
@@ -622,6 +632,15 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     );
   }
 
+  void _openCommentAuthorProfile(AssetComment c) {
+    PublicProfileScreen.open(
+      context,
+      authorUid: c.authorUid,
+      authorName: c.authorDisplayName,
+      authorPhotoUrl: c.authorPhotoUrl,
+    );
+  }
+
   String _classBadge(String assetClass, AppLocalizations l10n) {
     switch (assetClass) {
       case 'us_stock':
@@ -646,13 +665,14 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     AppLocalizations l10n,
     ThemeData theme,
   ) {
-    final timeStr = DateFormat.yMMMd(
-      widget.locale,
-    ).add_jm().format(c.createdAt.toLocal());
     final children = byParent[c.id] ?? const <AssetComment>[];
     final myUid = _effectiveMyUid;
     final showOwnMenu = myUid != null && c.authorUid == myUid;
     final showOtherMenu = myUid != null && c.authorUid != myUid;
+    final relativeTime = formatRelativeCommentTime(
+      c.createdAt,
+      widget.locale,
+    );
 
     return Padding(
       padding: EdgeInsets.only(left: depth * 12.0, bottom: 12),
@@ -673,20 +693,47 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _openCommentAuthorProfile(c),
+                      borderRadius: BorderRadius.circular(20),
+                      child: _CommentAvatar(
+                        url: c.authorPhotoUrl,
+                        name: c.authorDisplayName,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: Text(
-                                c.authorDisplayName,
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _openCommentAuthorProfile(c),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 2,
+                                      bottom: 2,
+                                    ),
+                                    child: Text(
+                                      c.authorDisplayName,
+                                      style: theme.textTheme.labelLarge
+                                          ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             if (showOwnMenu || showOtherMenu)
@@ -767,23 +814,22 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                               ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        Text(
+                          relativeTime,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: DopamineTheme.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Text(
                           c.body,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             height: 1.35,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
-                            Text(
-                              timeStr,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: DopamineTheme.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
                             TextButton(
                               onPressed: () => setState(() {
                                 _replyParentId = c.id;
@@ -855,15 +901,17 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         widget.myUid != null &&
         _post.authorUid != widget.myUid;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.of(context).pop(_threadDirty),
-        ),
-        title: Text(l10n.communityPostDetailTitle),
-      ),
-      body: Column(
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => Navigator.of(context).pop(_threadDirty),
+            ),
+            title: Text(l10n.communityPostDetailTitle),
+          ),
+          body: Column(
         children: [
           Expanded(
             child: _loading && _thread == null
@@ -895,60 +943,102 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                       ),
                     ),
                   )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    children: [
-                      _buildPostHeader(
-                        theme,
-                        l10n,
-                        assetName,
-                        timeStr,
-                        showFollow,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        l10n.communityCommentsTitle,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: DopamineTheme.neonGreen,
-                        ),
-                      ),
-                      if (_thread != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          l10n.communityCommentCount(
-                            _totalReplyCount(_thread!),
+                : Listener(
+                    behavior: HitTestBehavior.translucent,
+                    onPointerDown: (_) {
+                      if (_composerFocusNode.hasFocus) {
+                        _composerFocusNode.unfocus();
+                      }
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.10),
+                            ),
                           ),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: DopamineTheme.textSecondary,
+                          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                          child: _buildPostHeader(
+                            theme,
+                            l10n,
+                            assetName,
+                            timeStr,
+                            showFollow,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.03),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.09),
+                            ),
+                          ),
+                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: [
+                                    Text(
+                                      l10n.communityCommentsTitle,
+                                      style: theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        color: DopamineTheme.neonGreen,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      l10n.communityCommentCount(
+                                        _thread != null
+                                            ? _totalReplyCount(_thread!)
+                                            : _post.replyCount,
+                                      ),
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: DopamineTheme.textSecondary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (_thread != null)
+                                Builder(
+                                  builder: (context) {
+                                    final byParent = _groupByParent(_thread!);
+                                    final direct =
+                                        byParent[_post.id] ?? const <AssetComment>[];
+                                    if (direct.isEmpty) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        for (final c in direct)
+                                          _commentNode(c, 0, byParent, l10n, theme),
+                                      ],
+                                    );
+                                  },
+                                ),
+                            ],
                           ),
                         ),
                       ],
-                      const SizedBox(height: 12),
-                      if (_thread != null)
-                        Builder(
-                          builder: (context) {
-                            final byParent = _groupByParent(_thread!);
-                            final direct =
-                                byParent[_post.id] ?? const <AssetComment>[];
-                            if (direct.isEmpty) {
-                              return Text(
-                                l10n.emptyState,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: DopamineTheme.textSecondary,
-                                ),
-                              );
-                            }
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                for (final c in direct)
-                                  _commentNode(c, 0, byParent, l10n, theme),
-                              ],
-                            );
-                          },
-                        ),
-                    ],
+                    ),
                   ),
           ),
           Material(
@@ -993,10 +1083,16 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                         Expanded(
                           child: TextField(
                             controller: _composer,
+                            focusNode: _composerFocusNode,
                             minLines: 1,
                             maxLines: 4,
+                            onTapOutside: (_) {
+                              _composerFocusNode.unfocus();
+                            },
                             decoration: InputDecoration(
-                              hintText: l10n.assetPostsPlaceholder,
+                              hintText: _replyParentId != null
+                                  ? l10n.assetPostsReplyPlaceholder
+                                  : l10n.assetPostsPlaceholder,
                               filled: true,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -1031,6 +1127,24 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           ),
         ],
       ),
+        ),
+        if (_deleting)
+          Positioned.fill(
+            child: AbsorbPointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.42),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: DopamineTheme.neonGreen,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1294,31 +1408,59 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                 ),
               ),
             ),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _toggleRootLike,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _post.likedByMe
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    size: 22,
-                    color: _post.likedByMe
-                        ? DopamineTheme.accentRed
-                        : DopamineTheme.textSecondary,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _toggleRootLike,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _post.likedByMe
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        size: 22,
+                        color: _post.likedByMe
+                            ? DopamineTheme.accentRed
+                            : DopamineTheme.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        l10n.communityLikeCount(_post.likeCount),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: DopamineTheme.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    l10n.communityLikeCount(_post.likeCount),
-                    style: theme.textTheme.labelSmall?.copyWith(
+                ),
+                const SizedBox(width: 14),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 22,
                       color: DopamineTheme.textSecondary,
-                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.communityCommentCount(
+                        _thread != null
+                            ? _totalReplyCount(_thread!)
+                            : _post.replyCount,
+                      ),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: DopamineTheme.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),
@@ -1342,73 +1484,146 @@ class _PostImagesViewer extends StatefulWidget {
 
 class _PostImagesViewerState extends State<_PostImagesViewer> {
   late final PageController _controller;
+  late final List<TransformationController> _transforms;
+
+  /// 아래로 드래그해 닫기 (1배 줌일 때만; 확대 시에는 InteractiveViewer 패닝)
+  double _dismissDragY = 0;
+
+  static const double _kDismissDistance = 110;
+  static const double _kDismissVelocity = 550;
+  static const double _kZoomPanThreshold = 1.02;
 
   @override
   void initState() {
     super.initState();
     _controller = PageController(initialPage: widget.initialIndex);
+    _transforms = List.generate(widget.imageUrls.length, (i) {
+      final c = TransformationController();
+      c.addListener(() {
+        if (mounted) setState(() {});
+      });
+      return c;
+    });
+    _controller.addListener(_onPageChanged);
+  }
+
+  void _onPageChanged() {
+    if (_dismissDragY != 0) {
+      setState(() => _dismissDragY = 0);
+    }
+  }
+
+  int get _pageIndex {
+    final p = _controller.page;
+    if (p == null) return widget.initialIndex;
+    return p.round().clamp(0, widget.imageUrls.length - 1);
+  }
+
+  bool _isZoomed(int index) =>
+      _transforms[index].value.getMaxScaleOnAxis() > _kZoomPanThreshold;
+
+  bool get _canDragToDismiss {
+    if (widget.imageUrls.isEmpty) return true;
+    return !_isZoomed(_pageIndex);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onPageChanged);
     _controller.dispose();
+    for (final c in _transforms) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final dragFraction = (_dismissDragY / 420).clamp(0.0, 0.5);
+    final bg = Color.lerp(
+      Colors.black,
+      Colors.transparent,
+      dragFraction,
+    )!;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: bg,
       body: SafeArea(
-        child: Stack(
-          children: [
-            PageView.builder(
-              controller: _controller,
-              itemCount: widget.imageUrls.length,
-              itemBuilder: (ctx, i) {
-                final url = widget.imageUrls[i];
-                return Center(
-                  child: InteractiveViewer(
-                    panEnabled: true,
-                    scaleEnabled: true,
-                    minScale: 1.0,
-                    maxScale: 4.0,
-                    child: Image.network(
-                      url,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (ctx, child, progress) {
-                        if (progress == null) return child;
-                        return SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: CircularProgressIndicator(
-                            value: progress.expectedTotalBytes != null
-                                ? progress.cumulativeBytesLoaded /
-                                      progress.expectedTotalBytes!
-                                : null,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragUpdate: (details) {
+            if (!_canDragToDismiss) return;
+            final dy = details.delta.dy;
+            if (dy > 0) {
+              setState(() => _dismissDragY += dy);
+            } else if (dy < 0 && _dismissDragY > 0) {
+              setState(() => _dismissDragY = (_dismissDragY + dy).clamp(0, double.infinity));
+            }
+          },
+          onVerticalDragEnd: (details) {
+            if (!_canDragToDismiss) return;
+            final v = details.primaryVelocity ?? 0;
+            if (_dismissDragY > _kDismissDistance || v > _kDismissVelocity) {
+              Navigator.of(context).pop();
+            } else if (_dismissDragY > 0) {
+              setState(() => _dismissDragY = 0);
+            }
+          },
+          child: Transform.translate(
+            offset: Offset(0, _dismissDragY),
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: _controller,
+                  itemCount: widget.imageUrls.length,
+                  itemBuilder: (ctx, i) {
+                    final url = widget.imageUrls[i];
+                    return Center(
+                      child: InteractiveViewer(
+                        transformationController: _transforms[i],
+                        panEnabled: _isZoomed(i),
+                        scaleEnabled: true,
+                        minScale: 1.0,
+                        maxScale: 4.0,
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (ctx, child, progress) {
+                            if (progress == null) return child;
+                            return SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: CircularProgressIndicator(
+                                value: progress.expectedTotalBytes != null
+                                    ? progress.cumulativeBytesLoaded /
+                                          progress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.white70,
+                            size: 48,
                           ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.broken_image_outlined,
-                        color: Colors.white70,
-                        size: 48,
+                        ),
                       ),
-                    ),
+                    );
+                  },
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                    color: Colors.white,
                   ),
-                );
-              },
+                ),
+              ],
             ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close),
-                color: Colors.white,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1447,6 +1662,48 @@ class _ModerationHiddenNotice extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommentAvatar extends StatelessWidget {
+  const _CommentAvatar({required this.url, required this.name});
+
+  final String? url;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = url?.trim();
+    if (u != null && u.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          u,
+          width: 36,
+          height: 36,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _placeholder(context),
+        ),
+      );
+    }
+    return _placeholder(context);
+  }
+
+  Widget _placeholder(BuildContext context) {
+    final theme = Theme.of(context);
+    final t = name.trim();
+    final letter =
+        t.isEmpty ? '?' : String.fromCharCode(t.runes.first).toUpperCase();
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: Colors.white.withValues(alpha: 0.1),
+      child: Text(
+        letter,
+        style: theme.textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: DopamineTheme.textSecondary,
         ),
       ),
     );

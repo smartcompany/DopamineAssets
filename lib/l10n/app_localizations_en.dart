@@ -554,7 +554,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetPostsEmpty => 'Be the first to post.';
 
   @override
-  String get assetPostsPlaceholder => 'Leave a comment below.';
+  String get assetPostsPlaceholder => 'Leave a comment.';
+
+  @override
+  String get assetPostsReplyPlaceholder => 'Write a reply.';
 
   @override
   String get assetPostsPublish => 'Post';

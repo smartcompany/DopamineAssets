@@ -149,7 +149,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileDisplayName.
   ///
   /// In ko, this message translates to:
-  /// **'표시 이름'**
+  /// **'닉네임'**
   String get profileDisplayName;
 
   /// No description provided for @profilePhotoTitle.
@@ -401,7 +401,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileDisplayNameSaved.
   ///
   /// In ko, this message translates to:
-  /// **'표시 이름을 저장했습니다.'**
+  /// **'닉네임을 저장했습니다.'**
   String get profileDisplayNameSaved;
 
   /// No description provided for @profileFollowUnfollow.
@@ -1145,8 +1145,14 @@ abstract class AppLocalizations {
   /// No description provided for @assetPostsPlaceholder.
   ///
   /// In ko, this message translates to:
-  /// **'댓글을 남기는 곳입니다. 댓글을 남겨 보세요.'**
+  /// **'댓글을 남겨 주세요.'**
   String get assetPostsPlaceholder;
+
+  /// No description provided for @assetPostsReplyPlaceholder.
+  ///
+  /// In ko, this message translates to:
+  /// **'답글을 남겨 주세요.'**
+  String get assetPostsReplyPlaceholder;
 
   /// No description provided for @assetPostsPublish.
   ///

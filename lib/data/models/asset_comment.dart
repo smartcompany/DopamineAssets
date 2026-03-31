@@ -7,6 +7,7 @@ final class AssetComment {
     this.imageUrls = const [],
     required this.authorUid,
     required this.authorDisplayName,
+    this.authorPhotoUrl,
     required this.createdAt,
     this.likeCount = 0,
     this.likedByMe = false,
@@ -23,6 +24,7 @@ final class AssetComment {
   final List<String> imageUrls;
   final String authorUid;
   final String authorDisplayName;
+  final String? authorPhotoUrl;
   final DateTime createdAt;
   final int likeCount;
   final bool likedByMe;
@@ -36,6 +38,7 @@ final class AssetComment {
     int? likeCount,
     bool? likedByMe,
     bool? moderationHiddenFromPublic,
+    String? authorPhotoUrl,
   }) {
     return AssetComment(
       id: id,
@@ -45,6 +48,7 @@ final class AssetComment {
       imageUrls: imageUrls,
       authorUid: authorUid,
       authorDisplayName: authorDisplayName,
+      authorPhotoUrl: authorPhotoUrl ?? this.authorPhotoUrl,
       createdAt: createdAt,
       likeCount: likeCount ?? this.likeCount,
       likedByMe: likedByMe ?? this.likedByMe,
@@ -66,6 +70,10 @@ final class AssetComment {
     final rawSym = json['asset_symbol'];
     final rawCls = json['asset_class'];
     final rawAdn = json['asset_display_name'];
+    final rawPhoto = json['author_photo_url'];
+    final authorPhotoUrl = rawPhoto is String && rawPhoto.trim().isNotEmpty
+        ? rawPhoto.trim()
+        : null;
     return AssetComment(
       id: json['id'] as String,
       parentId: json['parent_id'] as String?,
@@ -74,6 +82,7 @@ final class AssetComment {
       imageUrls: urls,
       authorUid: json['author_uid'] as String,
       authorDisplayName: name,
+      authorPhotoUrl: authorPhotoUrl,
       createdAt: DateTime.parse(json['created_at'] as String),
       likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
       likedByMe: json['liked_by_me'] as bool? ?? false,

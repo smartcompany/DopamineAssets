@@ -33,7 +33,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileAccountRefreshTooltip => '프로필·활동 새로고침';
 
   @override
-  String get profileDisplayName => '표시 이름';
+  String get profileDisplayName => '닉네임';
 
   @override
   String get profilePhotoTitle => '프로필 사진';
@@ -161,7 +161,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileFollowListEmpty => '아직 없습니다.';
 
   @override
-  String get profileDisplayNameSaved => '표시 이름을 저장했습니다.';
+  String get profileDisplayNameSaved => '닉네임을 저장했습니다.';
 
   @override
   String get profileFollowUnfollow => '언팔로우';
@@ -550,7 +550,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetPostsEmpty => '첫 게시글을 남겨보세요.';
 
   @override
-  String get assetPostsPlaceholder => '댓글을 남기는 곳입니다. 댓글을 남겨 보세요.';
+  String get assetPostsPlaceholder => '댓글을 남겨 주세요.';
+
+  @override
+  String get assetPostsReplyPlaceholder => '답글을 남겨 주세요.';
 
   @override
   String get assetPostsPublish => '등록';
