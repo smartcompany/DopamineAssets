@@ -570,12 +570,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
-    final done = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute<Object?>(
         builder: (_) => CommunityComposeScreen(editCommentId: item.commentId),
       ),
     );
-    if (done == true && mounted) {
+    if ((result == true || result is CommunityPost) && mounted) {
       await _loadData();
       if (!context.mounted) return;
       ScaffoldMessenger.of(

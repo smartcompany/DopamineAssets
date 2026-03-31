@@ -13,10 +13,62 @@ import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/storage/community_post_image_upload.dart';
 import '../../core/text/ugc_banned_words.dart';
+import '../../data/models/asset_comment.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../theme/dopamine_theme.dart';
+
+// 글쓰기 본문 에디터 — 글자 크기·줄간격은 여기만 조정하면 됩니다.
+abstract final class _CommunityComposeBodyFieldText {
+  static const double fontSize = 16.0;
+  static const double lineHeight = 1.4;
+  static const double hintLineHeight = 1.35;
+  static const double hintAlpha = 0.75;
+}
+
+/// [patch] 응답으로 목록·상세에 넘길 [CommunityPost]를 만듭니다.
+CommunityPost _communityPostAfterPatch(
+  AssetComment updated, {
+  CommunityPost? base,
+}) {
+  if (base != null) {
+    return CommunityPost(
+      id: base.id,
+      body: updated.body,
+      title: updated.title,
+      imageUrls: updated.imageUrls,
+      authorUid: base.authorUid,
+      authorDisplayName: updated.authorDisplayName,
+      authorPhotoUrl: base.authorPhotoUrl,
+      createdAt: base.createdAt,
+      assetSymbol: base.assetSymbol,
+      assetClass: base.assetClass,
+      assetDisplayName: updated.assetDisplayName ?? base.assetDisplayName,
+      replyCount: base.replyCount,
+      likeCount: updated.likeCount,
+      likedByMe: updated.likedByMe,
+      moderationHiddenFromPublic: updated.moderationHiddenFromPublic,
+    );
+  }
+  return CommunityPost(
+    id: updated.id,
+    body: updated.body,
+    title: updated.title,
+    imageUrls: updated.imageUrls,
+    authorUid: updated.authorUid,
+    authorDisplayName: updated.authorDisplayName,
+    authorPhotoUrl: null,
+    createdAt: updated.createdAt,
+    assetSymbol: updated.assetSymbol ?? '',
+    assetClass: updated.assetClass ?? 'us_stock',
+    assetDisplayName: updated.assetDisplayName,
+    replyCount: 0,
+    likeCount: updated.likeCount,
+    likedByMe: updated.likedByMe,
+    moderationHiddenFromPublic: updated.moderationHiddenFromPublic,
+  );
+}
 
 class CommunityComposeScreen extends StatefulWidget {
   const CommunityComposeScreen({
@@ -176,7 +228,8 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         _themeCatalog = merged;
         _themeCatalogLoading = false;
       });
-      final editing = widget.editPrefill != null || widget.editCommentId != null;
+      final editing =
+          widget.editPrefill != null || widget.editCommentId != null;
       if (_assetClass == 'theme' && !editing) {
         _applyInitialThemeSelection();
       }
@@ -494,7 +547,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       if (editId != null) {
         final newUrls = await uploadNewPicks();
         final allUrls = [..._existingImageUrls, ...newUrls];
-        await DopamineApi.patchAssetComment(
+        final updated = await DopamineApi.patchAssetComment(
           id: editId,
           body: body,
           title: _isReplyEdit ? null : (titleText.isEmpty ? null : titleText),
@@ -502,7 +555,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
           idToken: token,
         );
         if (!mounted) return;
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop(
+          _communityPostAfterPatch(updated, base: widget.editPrefill),
+        );
         return;
       }
 
@@ -746,9 +801,13 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       );
     }
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
+    return PopScope(
+      canPop: !_submitting,
+      child: Stack(
+        children: [
+          Scaffold(
+            resizeToAvoidBottomInset: true,
+            appBar: AppBar(
         title: Text(
           _isEditMode
               ? l10n.communityComposeEditTitle
@@ -885,112 +944,110 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                             ),
                           )
                         : _themeCatalogLoading && _themeCatalog == null
-                            ? const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: DopamineTheme.neonGreen,
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: DopamineTheme.neonGreen,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Builder(
+                            builder: (ctx) {
+                              final rows = _themeRowsForDropdown();
+                              if (rows.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Text(
+                                    l10n.emptyState,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: DopamineTheme.textSecondary,
+                                    ),
+                                  ),
+                                );
+                              }
+                              final selName =
+                                  _selectedAsset?.assetClass == 'theme' &&
+                                      (_selectedAsset?.symbol ?? '')
+                                          .trim()
+                                          .isNotEmpty
+                                  ? _selectedAsset!.symbol.trim()
+                                  : null;
+                              final names = rows.map((e) => e.name).toSet();
+                              final value =
+                                  selName != null && names.contains(selName)
+                                  ? selName
+                                  : null;
+                              return InputDecorator(
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding: _composeFieldContentPadding,
+                                  filled: true,
+                                  fillColor: Colors.black.withValues(
+                                    alpha: 0.22,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.12,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              )
-                            : Builder(
-                                builder: (ctx) {
-                                  final rows = _themeRowsForDropdown();
-                                  if (rows.isEmpty) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: Text(
-                                        l10n.emptyState,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                          color: DopamineTheme.textSecondary,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  final selName = _selectedAsset?.assetClass ==
-                                              'theme' &&
-                                          (_selectedAsset?.symbol ?? '')
-                                              .trim()
-                                              .isNotEmpty
-                                      ? _selectedAsset!.symbol.trim()
-                                      : null;
-                                  final names = rows.map((e) => e.name).toSet();
-                                  final value = selName != null && names.contains(selName)
-                                      ? selName
-                                      : null;
-                                  return InputDecorator(
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      contentPadding:
-                                          _composeFieldContentPadding,
-                                      filled: true,
-                                      fillColor: Colors.black.withValues(
-                                        alpha: 0.22,
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.12,
-                                          ),
-                                        ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    key: ValueKey<String>(
+                                      rows.map((e) => e.id).join(','),
+                                    ),
+                                    isDense: true,
+                                    isExpanded: true,
+                                    value: value,
+                                    hint: Text(
+                                      l10n.communityComposePickTheme,
+                                      style: TextStyle(
+                                        color: DopamineTheme.textSecondary
+                                            .withValues(alpha: 0.85),
                                       ),
                                     ),
-                                    child: DropdownButtonHideUnderline(
-                                      child: DropdownButton<String>(
-                                        key: ValueKey<String>(
-                                          rows.map((e) => e.id).join(','),
-                                        ),
-                                        isDense: true,
-                                        isExpanded: true,
-                                        value: value,
-                                        hint: Text(
-                                          l10n.communityComposePickTheme,
-                                          style: TextStyle(
-                                            color: DopamineTheme.textSecondary
-                                                .withValues(alpha: 0.85),
+                                    dropdownColor: const Color(0xFF1E1A28),
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: DopamineTheme.textPrimary,
+                                    ),
+                                    items: [
+                                      for (final t in rows)
+                                        DropdownMenuItem<String>(
+                                          value: t.name,
+                                          child: Text(
+                                            t.name,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        dropdownColor: const Color(0xFF1E1A28),
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
-                                          color: DopamineTheme.textPrimary,
-                                        ),
-                                        items: [
-                                          for (final t in rows)
-                                            DropdownMenuItem<String>(
-                                              value: t.name,
-                                              child: Text(
-                                                t.name,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                        ],
-                                        onChanged: _lockAssetPick
-                                            ? null
-                                            : (String? v) {
-                                                if (v == null) return;
-                                                setState(() {
-                                                  _selectedAsset =
-                                                      RankedAsset.communityShell(
+                                    ],
+                                    onChanged: _lockAssetPick
+                                        ? null
+                                        : (String? v) {
+                                            if (v == null) return;
+                                            setState(() {
+                                              _selectedAsset =
+                                                  RankedAsset.communityShell(
                                                     symbol: v,
                                                     assetClass: 'theme',
                                                     displayName: v,
                                                   );
-                                                });
-                                              },
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
+                                            });
+                                          },
+                                  ),
+                                ),
+                              );
+                            },
+                          )
                   else if (symbols.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -1124,17 +1181,19 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                         maxLines: 14,
                         maxLength: 2000,
                         style: theme.textTheme.bodyMedium?.copyWith(
+                          fontSize: _CommunityComposeBodyFieldText.fontSize,
                           color: DopamineTheme.textPrimary,
-                          height: 1.4,
+                          height: _CommunityComposeBodyFieldText.lineHeight,
                         ),
                         decoration: InputDecoration(
                           alignLabelWithHint: true,
                           hintText: l10n.communityComposeBodyHint,
                           hintStyle: TextStyle(
+                            fontSize: _CommunityComposeBodyFieldText.fontSize,
                             color: DopamineTheme.textSecondary.withValues(
-                              alpha: 0.75,
+                              alpha: _CommunityComposeBodyFieldText.hintAlpha,
                             ),
-                            height: 1.35,
+                            height: _CommunityComposeBodyFieldText.hintLineHeight,
                           ),
                           filled: false,
                           border: InputBorder.none,
@@ -1161,6 +1220,28 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
           ),
           if (!kIsWeb && _bodyFocusNode.hasFocus)
             _mobilePhotoChrome(l10n, theme),
+        ],
+      ),
+    ),
+          if (_submitting)
+            Positioned.fill(
+              child: AbsorbPointer(
+                absorbing: true,
+                child: ColoredBox(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: DopamineTheme.neonGreen,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

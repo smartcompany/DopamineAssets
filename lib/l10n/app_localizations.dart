@@ -1145,7 +1145,7 @@ abstract class AppLocalizations {
   /// No description provided for @assetPostsPlaceholder.
   ///
   /// In ko, this message translates to:
-  /// **'이 자산에 대한 생각을 남겨보세요…'**
+  /// **'댓글을 남기는 곳입니다. 댓글을 남겨 보세요.'**
   String get assetPostsPlaceholder;
 
   /// No description provided for @assetPostsPublish.

@@ -58,9 +58,9 @@ class CommunityPostCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final assetName = post.assetDisplayName?.trim();
-    final timeStr = DateFormat.yMMMd(locale)
-        .add_jm()
-        .format(post.createdAt.toLocal());
+    final timeStr = DateFormat.yMMMd(
+      locale,
+    ).add_jm().format(post.createdAt.toLocal());
     final showOwnMenu =
         myUid != null &&
         post.authorUid == myUid &&
@@ -83,340 +83,351 @@ class CommunityPostCard extends StatelessWidget {
               if (post.moderationHiddenFromPublic &&
                   myUid != null &&
                   post.authorUid == myUid) ...[
-                _ModerationHiddenBanner(text: l10n.communityPostHiddenByReportNotice),
+                _ModerationHiddenBanner(
+                  text: l10n.communityPostHiddenByReportNotice,
+                ),
                 const SizedBox(height: 10),
               ],
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (assetName != null && assetName.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            assetName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: DopamineTheme.textPrimary,
-                            ),
-                          ),
-                        ),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: DopamineTheme.neonGreen.withValues(
-                                alpha: 0.15,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: DopamineTheme.neonGreen.withValues(
-                                  alpha: 0.35,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              post.assetSymbol,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: DopamineTheme.neonGreen,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _classBadge(post.assetClass, l10n),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: DopamineTheme.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  tooltip: l10n.communityOpenAssetDetail,
-                  icon: Icon(
-                    Icons.info_outline_rounded,
-                    color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
-                    size: 30,
-                  ),
-                  onPressed: () {
-                    AssetDetailScreen.open(
-                      context,
-                      RankedAsset.communityShell(
-                        symbol: post.assetSymbol,
-                        assetClass: post.assetClass,
-                        displayName: (assetName != null && assetName.isNotEmpty)
-                            ? assetName
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-                if (showOverflowMenu)
-                  PopupMenuButton<String>(
-                    icon: Icon(
-                      Icons.more_horiz_rounded,
-                      color: DopamineTheme.textSecondary.withValues(alpha: 0.95),
-                      size: 26,
-                    ),
-                    tooltip: l10n.communityMoreMenu,
-                    onSelected: (v) async {
-                      if (v == 'edit') {
-                        onEditOwnPost?.call(post);
-                      } else if (v == 'delete') {
-                        onDeleteOwnPost?.call(post);
-                      } else if (v == 'report') {
-                        await onReportPost?.call(post);
-                      } else if (v == 'block') {
-                        await onBlockAuthor?.call(post);
-                      }
-                    },
-                    itemBuilder: (ctx) {
-                      if (showOwnMenu) {
-                        return [
-                          if (onEditOwnPost != null)
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Text(l10n.profileActivityEditPost),
-                            ),
-                          if (onDeleteOwnPost != null)
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text(
-                                l10n.profileActivityDeletePost,
-                                style: TextStyle(
-                                  color: Theme.of(ctx).colorScheme.error,
-                                ),
-                              ),
-                            ),
-                        ];
-                      }
-                      return [
-                        if (onReportPost != null)
-                          PopupMenuItem(
-                            value: 'report',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.flag_outlined,
-                                  size: 20,
-                                  color: DopamineTheme.textSecondary,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(l10n.communityReportPostShort),
-                              ],
-                            ),
-                          ),
-                        if (onBlockAuthor != null)
-                          PopupMenuItem(
-                            value: 'block',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.person_off_outlined,
-                                  size: 20,
-                                  color: Theme.of(ctx).colorScheme.error,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  l10n.communityBlockAuthorShort,
-                                  style: TextStyle(
-                                    color: Theme.of(ctx).colorScheme.error,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ];
-                    },
-                  ),
-              ],
-            ),
-            if (post.title != null && post.title!.trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                post.title!.trim(),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: DopamineTheme.textPrimary,
-                ),
-              ),
-            ],
-            if (post.imageUrls.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              SizedBox(
-                height: 72,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: post.imageUrls.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (ctx, imgIdx) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        post.imageUrls[imgIdx],
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Container(
-                          width: 72,
-                          height: 72,
-                          color: Colors.white.withValues(alpha: 0.06),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-            const SizedBox(height: 8),
-            _PostBodySnippet(
-              body: post.body,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: DopamineTheme.textPrimary,
-                height: 1.32,
-              ),
-              maxLines: 4,
-              seeMoreLabel: l10n.communityPostSeeMore,
-              onSeeMore: onOpenPostDetail != null
-                  ? () => onOpenPostDetail!(post)
-                  : null,
-            ),
-            const SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: onOpenAuthorProfile != null
-                        ? () => onOpenAuthorProfile!(post)
-                        : null,
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          post.authorDisplayName,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: DopamineTheme.textSecondary,
-                            fontWeight: FontWeight.w600,
+                        if (assetName != null && assetName.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              assetName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: DopamineTheme.textPrimary,
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        _AuthorAvatar(
-                          photoUrl: post.authorPhotoUrl,
-                          name: post.authorDisplayName,
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: DopamineTheme.neonGreen.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: DopamineTheme.neonGreen.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                post.assetSymbol,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: DopamineTheme.neonGreen,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _classBadge(post.assetClass, l10n),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: DopamineTheme.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if ((showLikeButton && onToggleLike != null) ||
-                        onOpenPostDetail != null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (showLikeButton && onToggleLike != null)
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => onToggleLike!(post),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    post.likedByMe
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    size: 20,
-                                    color: post.likedByMe
-                                        ? DopamineTheme.accentRed
-                                        : DopamineTheme.textSecondary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    l10n.communityLikeCount(post.likeCount),
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: DopamineTheme.textSecondary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    tooltip: l10n.communityOpenAssetDetail,
+                    icon: Icon(
+                      Icons.info_outline_rounded,
+                      color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      AssetDetailScreen.open(
+                        context,
+                        RankedAsset.communityShell(
+                          symbol: post.assetSymbol,
+                          assetClass: post.assetClass,
+                          displayName:
+                              (assetName != null && assetName.isNotEmpty)
+                              ? assetName
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
+                  if (showOverflowMenu)
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_horiz_rounded,
+                        color: DopamineTheme.textSecondary.withValues(
+                          alpha: 0.95,
+                        ),
+                        size: 26,
+                      ),
+                      tooltip: l10n.communityMoreMenu,
+                      onSelected: (v) async {
+                        if (v == 'edit') {
+                          onEditOwnPost?.call(post);
+                        } else if (v == 'delete') {
+                          onDeleteOwnPost?.call(post);
+                        } else if (v == 'report') {
+                          await onReportPost?.call(post);
+                        } else if (v == 'block') {
+                          await onBlockAuthor?.call(post);
+                        }
+                      },
+                      itemBuilder: (ctx) {
+                        if (showOwnMenu) {
+                          return [
+                            if (onEditOwnPost != null)
+                              PopupMenuItem(
+                                value: 'edit',
+                                child: Text(l10n.profileActivityEditPost),
                               ),
-                            ),
-                          if (onOpenPostDetail != null) ...[
-                            if (showLikeButton && onToggleLike != null)
-                              const SizedBox(width: 14),
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => onOpenPostDetail!(post),
+                            if (onDeleteOwnPost != null)
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text(
+                                  l10n.profileActivityDeletePost,
+                                  style: TextStyle(
+                                    color: Theme.of(ctx).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                          ];
+                        }
+                        return [
+                          if (onReportPost != null)
+                            PopupMenuItem(
+                              value: 'report',
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.chat_bubble_outline_rounded,
+                                    Icons.flag_outlined,
                                     size: 20,
                                     color: DopamineTheme.textSecondary,
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 10),
+                                  Text(l10n.communityReportPostShort),
+                                ],
+                              ),
+                            ),
+                          if (onBlockAuthor != null)
+                            PopupMenuItem(
+                              value: 'block',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.person_off_outlined,
+                                    size: 20,
+                                    color: Theme.of(ctx).colorScheme.error,
+                                  ),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    l10n.communityCommentCount(post.replyCount),
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: DopamineTheme.textSecondary,
-                                      fontWeight: FontWeight.w600,
+                                    l10n.communityBlockAuthorShort,
+                                    style: TextStyle(
+                                      color: Theme.of(ctx).colorScheme.error,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
-                        ],
-                      ),
-                    if ((showLikeButton && onToggleLike != null) ||
-                        onOpenPostDetail != null)
-                      const SizedBox(height: 3),
-                    Text(
-                      timeStr,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: DopamineTheme.textSecondary.withValues(alpha: 0.88),
-                        fontSize: 11.5,
-                        height: 1.2,
-                      ),
+                        ];
+                      },
                     ),
-                  ],
+                ],
+              ),
+              if (post.title != null && post.title!.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  post.title!.trim(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: DopamineTheme.textPrimary,
+                  ),
                 ),
               ],
-            ),
-          ],
-        ),
+              if (post.imageUrls.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 72,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: post.imageUrls.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (ctx, imgIdx) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          post.imageUrls[imgIdx],
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                width: 72,
+                                height: 72,
+                                color: Colors.white.withValues(alpha: 0.06),
+                              ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              _PostBodySnippet(
+                body: post.body,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: DopamineTheme.textPrimary,
+                  height: 1.32,
+                ),
+                maxLines: 4,
+                seeMoreLabel: l10n.communityPostSeeMore,
+                onSeeMore: onOpenPostDetail != null
+                    ? () => onOpenPostDetail!(post)
+                    : null,
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: onOpenAuthorProfile != null
+                          ? () => onOpenAuthorProfile!(post)
+                          : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            post.authorDisplayName,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: DopamineTheme.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          _AuthorAvatar(
+                            photoUrl: post.authorPhotoUrl,
+                            name: post.authorDisplayName,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if ((showLikeButton && onToggleLike != null) ||
+                          onOpenPostDetail != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (showLikeButton && onToggleLike != null)
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => onToggleLike!(post),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      post.likedByMe
+                                          ? Icons.favorite_rounded
+                                          : Icons.favorite_border_rounded,
+                                      size: 20,
+                                      color: post.likedByMe
+                                          ? DopamineTheme.accentRed
+                                          : DopamineTheme.textSecondary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      l10n.communityLikeCount(post.likeCount),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: DopamineTheme.textSecondary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (onOpenPostDetail != null) ...[
+                              if (showLikeButton && onToggleLike != null)
+                                const SizedBox(width: 14),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => onOpenPostDetail!(post),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 20,
+                                      color: DopamineTheme.textSecondary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      l10n.communityCommentCount(
+                                        post.replyCount,
+                                      ),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: DopamineTheme.textSecondary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      if ((showLikeButton && onToggleLike != null) ||
+                          onOpenPostDetail != null)
+                        const SizedBox(height: 3),
+                      Text(
+                        timeStr,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: DopamineTheme.textSecondary.withValues(
+                            alpha: 0.88,
+                          ),
+                          fontSize: 11.5,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -446,11 +457,11 @@ class _PostBodySnippet extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final textStyle = style ??
-            DefaultTextStyle.of(context).style.copyWith(
-                  color: DopamineTheme.textPrimary,
-                  height: 1.32,
-                );
+        final textStyle =
+            style ??
+            DefaultTextStyle.of(
+              context,
+            ).style.copyWith(color: DopamineTheme.textPrimary, height: 1.32);
         final painter = TextPainter(
           text: TextSpan(text: body, style: textStyle),
           textDirection: Directionality.of(context),
@@ -531,10 +542,7 @@ class _ModerationHiddenBanner extends StatelessWidget {
 }
 
 class _AuthorAvatar extends StatelessWidget {
-  const _AuthorAvatar({
-    required this.photoUrl,
-    required this.name,
-  });
+  const _AuthorAvatar({required this.photoUrl, required this.name});
 
   final String? photoUrl;
   final String name;
@@ -567,9 +575,7 @@ class _AuthorAvatarPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final t = name.trim();
-    final letter = t.isEmpty
-        ? '?'
-        : String.fromCharCode(t.runes.first);
+    final letter = t.isEmpty ? '?' : String.fromCharCode(t.runes.first);
     return CircleAvatar(
       radius: 18,
       backgroundColor: Colors.white.withValues(alpha: 0.1),

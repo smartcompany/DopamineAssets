@@ -196,15 +196,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
       await presentDopamineAuthScreen(context);
       return;
     }
-    final done = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute<Object?>(
         builder: (ctx) => CommunityComposeScreen(
           initialSymbol: _symbolFilterActive ? _symbolFilterSymbol : null,
           initialAssetClass: _symbolFilterActive ? _symbolFilterClass : null,
         ),
       ),
     );
-    if (done == true && mounted) {
+    if ((result == true || result is CommunityPost) && mounted) {
       _scheduleFetch();
     }
   }
@@ -215,12 +215,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
       await presentDopamineAuthScreen(context);
       return;
     }
-    final done = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute<Object?>(
         builder: (_) => CommunityComposeScreen(editPrefill: p),
       ),
     );
-    if (done == true && mounted) {
+    if ((result == true || result is CommunityPost) && mounted) {
       _scheduleFetch();
     }
   }

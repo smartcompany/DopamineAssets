@@ -106,6 +106,18 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _openPostImages(int initialIndex) async {
+    final urls = _post.imageUrls;
+    if (urls.isEmpty) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) =>
+          _PostImagesViewer(imageUrls: urls, initialIndex: initialIndex),
+    );
+  }
+
   Future<void> _loadThread() async {
     setState(() {
       _loading = true;
@@ -178,9 +190,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.communityLikeLogin)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityLikeLogin)));
       await presentDopamineAuthScreen(context);
       return;
     }
@@ -198,9 +210,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       widget.onPostUpdated?.call(_post);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.errorLoadFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
     }
   }
 
@@ -208,9 +220,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.communityLikeLogin)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityLikeLogin)));
       await presentDopamineAuthScreen(context);
       return;
     }
@@ -233,9 +245,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       });
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.errorLoadFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
     }
   }
 
@@ -246,12 +258,14 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       return;
     }
     if (!mounted) return;
-    final done = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute<Object?>(
         builder: (_) => CommunityComposeScreen(editPrefill: _post),
       ),
     );
-    if (done == true && mounted) {
+    if (!mounted) return;
+    if (result is CommunityPost) {
+      setState(() => _post = result);
       _threadDirty = true;
       await _loadThread();
       widget.onPostUpdated?.call(_post);
@@ -316,9 +330,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         reason: reasonText,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.communityReportSubmitted)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityReportSubmitted)));
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
@@ -346,8 +360,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             Text(
               l10n.communityBlockAuthorHint,
               style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: DopamineTheme.textSecondary,
-                  ),
+                color: DopamineTheme.textSecondary,
+              ),
             ),
           ],
         ),
@@ -370,17 +384,161 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final token = await fb.getIdToken();
     if (token == null) return;
     try {
-      await DopamineApi.blockUser(
-        idToken: token,
-        targetUid: _post.authorUid,
-      );
+      await DopamineApi.blockUser(idToken: token, targetUid: _post.authorUid);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.communityUserBlocked)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.communityUserBlocked)));
         ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
         Navigator.of(context).pop(true);
       }
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  Future<void> _openEditComment(AssetComment c) async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    if (!mounted) return;
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute<Object?>(
+        builder: (_) => CommunityComposeScreen(editCommentId: c.id),
+      ),
+    );
+    if (!mounted) return;
+    if (result == true || result is CommunityPost) {
+      _threadDirty = true;
+      await _loadThread();
+      widget.onPostUpdated?.call(_post);
+    }
+  }
+
+  Future<void> _deleteOwnComment(AssetComment c) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.profileActivityDeleteDialogTitle),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.profileDeleteCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              l10n.profileActivityDeletePost,
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final token = await fb.getIdToken();
+    if (token == null) return;
+    try {
+      await DopamineApi.deleteAssetComment(id: c.id, idToken: token);
+      if (!mounted) return;
+      _threadDirty = true;
+      await _loadThread();
+      widget.onPostUpdated?.call(_post);
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  Future<void> _reportComment(AssetComment c) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final reasonText = await showCommunityReportSheet(context);
+    if (reasonText == null || !mounted) return;
+    final token = await fb.getIdToken();
+    if (token == null) return;
+    try {
+      await DopamineApi.reportAssetComment(
+        commentId: c.id,
+        idToken: token,
+        reason: reasonText,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityReportSubmitted)));
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
+  Future<void> _blockCommentAuthor(AssetComment c) async {
+    final l10n = AppLocalizations.of(context)!;
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) {
+      await presentDopamineAuthScreen(context);
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.communityBlockAuthorTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.communityBlockAuthorMessage(c.authorDisplayName)),
+            const SizedBox(height: 10),
+            Text(
+              l10n.communityBlockAuthorHint,
+              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                color: DopamineTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.profileDeleteCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              l10n.communityBlockAuthorShort,
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final token = await fb.getIdToken();
+    if (token == null) return;
+    try {
+      await DopamineApi.blockUser(idToken: token, targetUid: c.authorUid);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.communityUserBlocked)));
+      ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
+      _threadDirty = true;
+      await _loadThread();
+      widget.onPostUpdated?.call(_post);
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
@@ -394,9 +552,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     if (text.isEmpty || text.length > 2000) return;
     final bad = UgcBannedWords.firstMatch(text);
     if (bad != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))));
       return;
     }
     final fb = FirebaseAuth.instance.currentUser;
@@ -447,7 +605,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.errorLoadFailed)),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.errorLoadFailed),
+          ),
         );
       }
     }
@@ -486,10 +646,13 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     AppLocalizations l10n,
     ThemeData theme,
   ) {
-    final timeStr = DateFormat.yMMMd(widget.locale)
-        .add_jm()
-        .format(c.createdAt.toLocal());
+    final timeStr = DateFormat.yMMMd(
+      widget.locale,
+    ).add_jm().format(c.createdAt.toLocal());
     final children = byParent[c.id] ?? const <AssetComment>[];
+    final myUid = _effectiveMyUid;
+    final showOwnMenu = myUid != null && c.authorUid == myUid;
+    final showOtherMenu = myUid != null && c.authorUid != myUid;
 
     return Padding(
       padding: EdgeInsets.only(left: depth * 12.0, bottom: 12),
@@ -514,11 +677,95 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          c.authorDisplayName,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                c.authorDisplayName,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (showOwnMenu || showOtherMenu)
+                              PopupMenuButton<String>(
+                                tooltip: l10n.communityMoreMenu,
+                                icon: Icon(
+                                  Icons.more_horiz_rounded,
+                                  color: DopamineTheme.textSecondary.withValues(
+                                    alpha: 0.95,
+                                  ),
+                                  size: 22,
+                                ),
+                                onSelected: (v) async {
+                                  if (v == 'edit') {
+                                    await _openEditComment(c);
+                                  } else if (v == 'delete') {
+                                    await _deleteOwnComment(c);
+                                  } else if (v == 'report') {
+                                    await _reportComment(c);
+                                  } else if (v == 'block') {
+                                    await _blockCommentAuthor(c);
+                                  }
+                                },
+                                itemBuilder: (ctx) {
+                                  if (showOwnMenu) {
+                                    return [
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text(l10n.profileActivityEditPost),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text(
+                                          l10n.profileActivityDeletePost,
+                                          style: TextStyle(
+                                            color: Theme.of(ctx).colorScheme.error,
+                                          ),
+                                        ),
+                                      ),
+                                    ];
+                                  }
+                                  return [
+                                    PopupMenuItem(
+                                      value: 'report',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.flag_outlined,
+                                            size: 20,
+                                            color: DopamineTheme.textSecondary,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(l10n.communityReportPostShort),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'block',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.person_off_outlined,
+                                            size: 20,
+                                            color: Theme.of(ctx).colorScheme.error,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            l10n.communityBlockAuthorShort,
+                                            style: TextStyle(
+                                              color: Theme.of(ctx).colorScheme.error,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ];
+                                },
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -599,11 +846,12 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final timeStr = DateFormat.yMMMd(widget.locale)
-        .add_jm()
-        .format(_post.createdAt.toLocal());
+    final timeStr = DateFormat.yMMMd(
+      widget.locale,
+    ).add_jm().format(_post.createdAt.toLocal());
     final assetName = _post.assetDisplayName?.trim();
-    final showFollow = widget.onToggleFollow != null &&
+    final showFollow =
+        widget.onToggleFollow != null &&
         widget.myUid != null &&
         _post.authorUid != widget.myUid;
 
@@ -626,88 +874,82 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                     ),
                   )
                 : _loadError != null && _thread == null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _loadError is ApiException
-                                    ? (_loadError as ApiException).message
-                                    : l10n.errorLoadFailed,
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              FilledButton(
-                                onPressed: _loadThread,
-                                child: Text(l10n.retry),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildPostHeader(
-                            theme,
-                            l10n,
-                            assetName,
-                            timeStr,
-                            showFollow,
-                          ),
-                          const SizedBox(height: 20),
                           Text(
-                            l10n.communityCommentsTitle,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: DopamineTheme.neonGreen,
-                            ),
+                            _loadError is ApiException
+                                ? (_loadError as ApiException).message
+                                : l10n.errorLoadFailed,
+                            textAlign: TextAlign.center,
                           ),
-                          if (_thread != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              l10n.communityCommentCount(
-                                _totalReplyCount(_thread!),
-                              ),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: DopamineTheme.textSecondary,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 12),
-                          if (_thread != null)
-                            Builder(
-                              builder: (context) {
-                                final byParent = _groupByParent(_thread!);
-                                final direct =
-                                    byParent[_post.id] ?? const <AssetComment>[];
-                                if (direct.isEmpty) {
-                                  return Text(
-                                    l10n.emptyState,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: DopamineTheme.textSecondary,
-                                    ),
-                                  );
-                                }
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    for (final c in direct)
-                                      _commentNode(
-                                        c,
-                                        0,
-                                        byParent,
-                                        l10n,
-                                        theme,
-                                      ),
-                                  ],
-                                );
-                              },
-                            ),
+                          const SizedBox(height: 16),
+                          FilledButton(
+                            onPressed: _loadThread,
+                            child: Text(l10n.retry),
+                          ),
                         ],
                       ),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    children: [
+                      _buildPostHeader(
+                        theme,
+                        l10n,
+                        assetName,
+                        timeStr,
+                        showFollow,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        l10n.communityCommentsTitle,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: DopamineTheme.neonGreen,
+                        ),
+                      ),
+                      if (_thread != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.communityCommentCount(
+                            _totalReplyCount(_thread!),
+                          ),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: DopamineTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      if (_thread != null)
+                        Builder(
+                          builder: (context) {
+                            final byParent = _groupByParent(_thread!);
+                            final direct =
+                                byParent[_post.id] ?? const <AssetComment>[];
+                            if (direct.isEmpty) {
+                              return Text(
+                                l10n.emptyState,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: DopamineTheme.textSecondary,
+                                ),
+                              );
+                            }
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (final c in direct)
+                                  _commentNode(c, 0, byParent, l10n, theme),
+                              ],
+                            );
+                          },
+                        ),
+                    ],
+                  ),
           ),
           Material(
             elevation: 8,
@@ -957,17 +1199,21 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
               itemCount: _post.imageUrls.length,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (ctx, i) {
-                return ClipRRect(
+                return InkWell(
+                  onTap: () => _openPostImages(i),
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    _post.imageUrls[i],
-                    width: 88,
-                    height: 88,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      _post.imageUrls[i],
                       width: 88,
                       height: 88,
-                      color: Colors.white.withValues(alpha: 0.06),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        width: 88,
+                        height: 88,
+                        color: Colors.white.withValues(alpha: 0.06),
+                      ),
                     ),
                   ),
                 );
@@ -978,9 +1224,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         const SizedBox(height: 10),
         Text(
           _post.body,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            height: 1.35,
-          ),
+          style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
         ),
         const SizedBox(height: 14),
         Row(
@@ -1083,6 +1327,94 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 }
 
+class _PostImagesViewer extends StatefulWidget {
+  const _PostImagesViewer({
+    required this.imageUrls,
+    required this.initialIndex,
+  });
+
+  final List<String> imageUrls;
+  final int initialIndex;
+
+  @override
+  State<_PostImagesViewer> createState() => _PostImagesViewerState();
+}
+
+class _PostImagesViewerState extends State<_PostImagesViewer> {
+  late final PageController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _controller,
+              itemCount: widget.imageUrls.length,
+              itemBuilder: (ctx, i) {
+                final url = widget.imageUrls[i];
+                return Center(
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    minScale: 1.0,
+                    maxScale: 4.0,
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (ctx, child, progress) {
+                        if (progress == null) return child;
+                        return SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            value: progress.expectedTotalBytes != null
+                                ? progress.cumulativeBytesLoaded /
+                                      progress.expectedTotalBytes!
+                                : null,
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.white70,
+                        size: 48,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ModerationHiddenNotice extends StatelessWidget {
   const _ModerationHiddenNotice({required this.l10n});
 
@@ -1147,8 +1479,9 @@ class _DetailAvatar extends StatelessWidget {
   Widget _placeholder(BuildContext context) {
     final theme = Theme.of(context);
     final t = name.trim();
-    final letter =
-        t.isEmpty ? '?' : String.fromCharCode(t.runes.first).toUpperCase();
+    final letter = t.isEmpty
+        ? '?'
+        : String.fromCharCode(t.runes.first).toUpperCase();
     return CircleAvatar(
       radius: 20,
       backgroundColor: Colors.white.withValues(alpha: 0.1),

@@ -550,7 +550,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetPostsEmpty => '첫 게시글을 남겨보세요.';
 
   @override
-  String get assetPostsPlaceholder => '이 자산에 대한 생각을 남겨보세요…';
+  String get assetPostsPlaceholder => '댓글을 남기는 곳입니다. 댓글을 남겨 보세요.';
 
   @override
   String get assetPostsPublish => '등록';
