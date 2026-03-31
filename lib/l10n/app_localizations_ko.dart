@@ -93,6 +93,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileDisplayNameHint => '게시글에 표시되는 이름';
 
   @override
+  String get profilePushTitle => '푸시 알림';
+
+  @override
+  String get profileSettingsTitle => '설정';
+
+  @override
+  String get profileSettingsMoreSoon => '추가 설정은 곧 제공됩니다.';
+
+  @override
+  String get profilePushMaster => '전체 알림';
+
+  @override
+  String get profilePushSocialReply => '내 글/댓글에 답글';
+
+  @override
+  String get profilePushSocialLike => '내 댓글에 좋아요';
+
+  @override
+  String get profilePushMarketDaily => '일일 마켓 브리프';
+
+  @override
   String get profileStatPosts => '게시글';
 
   @override

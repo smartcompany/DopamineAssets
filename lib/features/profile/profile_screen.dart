@@ -15,6 +15,7 @@ import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/profile/profile_stats_store.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/push/push_prefs_keys.dart';
 import '../../core/text/ugc_banned_words.dart';
 import '../../core/storage/community_post_image_upload.dart';
 import '../../data/models/community_post.dart';
@@ -51,6 +52,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _savingName = false;
   bool _uploadingPhoto = false;
   bool _hydratingProfile = false;
+  bool _pushPrefsLoading = false;
+  bool _pushMasterEnabled = true;
+  bool _pushSocialReply = true;
+  bool _pushSocialLike = true;
+  bool _pushMarketDaily = true;
 
   bool _isAppSignedIn(AuthProvider<DopamineUser> auth) {
     return auth.isLoggedIn();
@@ -314,12 +320,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
     try {
-      final stats = await DopamineApi.fetchProfileStats(idToken: token);
-      final act = await DopamineApi.fetchProfileActivity(idToken: token);
+      final results = await Future.wait<dynamic>([
+        DopamineApi.fetchProfileStats(idToken: token),
+        DopamineApi.fetchProfileActivity(idToken: token),
+        DopamineApi.fetchPushPrefs(idToken: token),
+      ]);
+      final stats = results[0] as ProfileStats;
+      final act = results[1] as List<ProfileActivityItem>;
+      final push = results[2] as Map<String, dynamic>;
       if (!mounted) return;
       ProfileStatsStore.instance.apply(stats);
       setState(() {
         _activity = act;
+        _pushMasterEnabled = _pushPrefBool(push, 'master_enabled');
+        _pushSocialReply = _pushPrefBool(push, 'social_reply');
+        _pushSocialLike = _pushPrefBool(push, 'social_like');
+        _pushMarketDaily = _pushPrefBool(push, 'market_daily_brief');
         _loading = false;
       });
     } catch (e) {
@@ -328,6 +344,92 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _loadError = e;
         _loading = false;
       });
+    }
+  }
+
+  bool _pushPrefBool(Map<String, dynamic> prefs, String key) {
+    final v = prefs[key];
+    return v is bool ? v : true;
+  }
+
+  Map<String, bool> _pushSnapshot({
+    bool? master,
+    bool? reply,
+    bool? like,
+    bool? daily,
+  }) {
+    return <String, bool>{
+      PushPrefsKeys.masterEnabled: master ?? _pushMasterEnabled,
+      PushPrefsKeys.socialReply: reply ?? _pushSocialReply,
+      PushPrefsKeys.socialLike: like ?? _pushSocialLike,
+      PushPrefsKeys.marketDailyBrief: daily ?? _pushMarketDaily,
+    };
+  }
+
+  Future<void> _togglePushPref(String key, bool value) async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final token = await fb.getIdToken();
+    if (token == null || token.isEmpty) return;
+    if (!mounted) return;
+
+    // 토글 적용 후의 전체 상태 스냅샷을 서버에 한 번에 보냅니다.
+    var master = _pushMasterEnabled;
+    var reply = _pushSocialReply;
+    var like = _pushSocialLike;
+    var daily = _pushMarketDaily;
+    switch (key) {
+      case PushPrefsKeys.masterEnabled:
+        master = value;
+        break;
+      case PushPrefsKeys.socialReply:
+        reply = value;
+        break;
+      case PushPrefsKeys.socialLike:
+        like = value;
+        break;
+      case PushPrefsKeys.marketDailyBrief:
+        daily = value;
+        break;
+    }
+    debugPrint(
+      '[PushPrefs][UI] toggle key=$key value=$value'
+      ' current=${_pushSnapshot()} next=${_pushSnapshot(master: master, reply: reply, like: like, daily: daily)}',
+    );
+
+    setState(() => _pushPrefsLoading = true);
+    try {
+      final payload = <String, dynamic>{
+        PushPrefsKeys.masterEnabled: master,
+        PushPrefsKeys.socialReply: reply,
+        PushPrefsKeys.socialLike: like,
+        PushPrefsKeys.marketDailyBrief: daily,
+      };
+      debugPrint('[PushPrefs][UI] PATCH payload=$payload');
+      final updated = await DopamineApi.patchPushPrefs(
+        idToken: token,
+        patch: payload,
+      );
+      debugPrint('[PushPrefs][UI] PATCH response=$updated');
+      if (!mounted) return;
+      setState(() {
+        _pushMasterEnabled =
+            _pushPrefBool(updated, PushPrefsKeys.masterEnabled);
+        _pushSocialReply =
+            _pushPrefBool(updated, PushPrefsKeys.socialReply);
+        _pushSocialLike = _pushPrefBool(updated, PushPrefsKeys.socialLike);
+        _pushMarketDaily =
+            _pushPrefBool(updated, PushPrefsKeys.marketDailyBrief);
+      });
+      debugPrint('[PushPrefs][UI] state updated=${_pushSnapshot()}');
+    } catch (e) {
+      debugPrint('[PushPrefs][UI] PATCH failed: $e');
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } finally {
+      if (mounted) setState(() => _pushPrefsLoading = false);
     }
   }
 
@@ -898,9 +1000,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               : DopamineTheme.textSecondary,
                         ),
                       ),
+                      IconButton(
+                        tooltip: l10n.profileSettingsTitle,
+                        onPressed: _openSettingsScreen,
+                        icon: const Icon(
+                          Icons.settings_outlined,
+                          color: DopamineTheme.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   _AccountProfilePhotoCard(
                     theme: theme,
                     l10n: l10n,
@@ -1072,6 +1182,164 @@ class _ProfileScreenState extends State<ProfileScreen> {
         fb,
         profilePhotoUrl,
         locale,
+      ),
+    );
+  }
+
+  Widget _pushToggleRow({
+    required BuildContext context,
+    required String label,
+    required bool value,
+    required Future<void> Function(bool value) onChanged,
+    bool enabled = true,
+  }) {
+    final active = enabled && !_pushPrefsLoading;
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: DopamineTheme.textPrimary,
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: active ? onChanged : null,
+            activeThumbColor: DopamineTheme.neonGreen,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openSettingsScreen() async {
+    final l10n = AppLocalizations.of(context)!;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (ctx) {
+          var master = _pushMasterEnabled;
+          var reply = _pushSocialReply;
+          var like = _pushSocialLike;
+          var daily = _pushMarketDaily;
+          final theme = Theme.of(ctx);
+          return Scaffold(
+            appBar: AppBar(title: Text(l10n.profileSettingsTitle)),
+            body: SafeArea(
+              child: StatefulBuilder(
+                builder: (context, setSheetState) {
+                  Future<void> toggle(String key, bool next) async {
+                    setSheetState(() {
+                      switch (key) {
+                        case 'master_enabled':
+                          master = next;
+                          break;
+                        case 'social_reply':
+                          reply = next;
+                          break;
+                        case 'social_like':
+                          like = next;
+                          break;
+                        case 'market_daily_brief':
+                          daily = next;
+                          break;
+                      }
+                    });
+                    await _togglePushPref(key, next);
+                    setSheetState(() {
+                      master = _pushMasterEnabled;
+                      reply = _pushSocialReply;
+                      like = _pushSocialLike;
+                      daily = _pushMarketDaily;
+                    });
+                  }
+
+                  return ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.24),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.profilePushTitle,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: DopamineTheme.neonGreen,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            _pushToggleRow(
+                              context: ctx,
+                              label: l10n.profilePushMaster,
+                              value: master,
+                              onChanged: (v) =>
+                                  toggle(PushPrefsKeys.masterEnabled, v),
+                            ),
+                            _pushToggleRow(
+                              context: ctx,
+                              label: l10n.profilePushSocialReply,
+                              value: reply,
+                              enabled: master,
+                              onChanged: (v) =>
+                                  toggle(PushPrefsKeys.socialReply, v),
+                            ),
+                            _pushToggleRow(
+                              context: ctx,
+                              label: l10n.profilePushSocialLike,
+                              value: like,
+                              enabled: master,
+                              onChanged: (v) =>
+                                  toggle(PushPrefsKeys.socialLike, v),
+                            ),
+                            _pushToggleRow(
+                              context: ctx,
+                              label: l10n.profilePushMarketDaily,
+                              value: daily,
+                              enabled: master,
+                              onChanged: (v) =>
+                                  toggle(PushPrefsKeys.marketDailyBrief, v),
+                            ),
+                            if (_pushPrefsLoading)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 6),
+                                child: SizedBox(
+                                  height: 2,
+                                  child: LinearProgressIndicator(
+                                    color: DopamineTheme.neonGreen,
+                                    backgroundColor: Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.profileSettingsMoreSoon,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: DopamineTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -95,6 +95,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameHint => 'How your name appears on posts';
 
   @override
+  String get profilePushTitle => 'Push notifications';
+
+  @override
+  String get profileSettingsTitle => 'Settings';
+
+  @override
+  String get profileSettingsMoreSoon => 'More settings coming soon.';
+
+  @override
+  String get profilePushMaster => 'All notifications';
+
+  @override
+  String get profilePushSocialReply => 'Replies to my posts/comments';
+
+  @override
+  String get profilePushSocialLike => 'Likes on my comments';
+
+  @override
+  String get profilePushMarketDaily => 'Daily market brief';
+
+  @override
   String get profileStatPosts => 'Posts';
 
   @override

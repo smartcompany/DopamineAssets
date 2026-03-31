@@ -659,6 +659,7 @@ class _HomeFilterScrollStrip extends StatefulWidget {
 
 class _HomeFilterScrollStripState extends State<_HomeFilterScrollStrip> {
   final ScrollController _controller = ScrollController();
+  bool _canScroll = false;
   bool _leftFade = false;
   bool _rightFade = false;
 
@@ -693,8 +694,9 @@ class _HomeFilterScrollStripState extends State<_HomeFilterScrollStrip> {
     final canScroll = max > 2;
     final left = canScroll && px > 2;
     final right = canScroll && px < max - 2;
-    if (left != _leftFade || right != _rightFade) {
+    if (canScroll != _canScroll || left != _leftFade || right != _rightFade) {
       setState(() {
+        _canScroll = canScroll;
         _leftFade = left;
         _rightFade = right;
       });
@@ -704,36 +706,44 @@ class _HomeFilterScrollStripState extends State<_HomeFilterScrollStrip> {
   @override
   Widget build(BuildContext context) {
     return ClipRect(
-      child: ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (Rect bounds) {
-          return LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              _leftFade ? const Color(0x00000000) : const Color(0xFFFFFFFF),
-              _leftFade ? const Color(0x99FFFFFF) : const Color(0xFFFFFFFF),
-              const Color(0xFFFFFFFF),
-              const Color(0xFFFFFFFF),
-              _rightFade ? const Color(0x99FFFFFF) : const Color(0xFFFFFFFF),
-              _rightFade ? const Color(0x00000000) : const Color(0xFFFFFFFF),
-            ],
-            stops: const [0.0, 0.045, 0.09, 0.91, 0.955, 1.0],
-          ).createShader(bounds);
-        },
-        child: SingleChildScrollView(
-          controller: _controller,
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          child: Row(
-            children: [
-              for (var i = 0; i < widget.itemCount; i++) ...[
-                if (i > 0) widget.separatorBuilder(context, i - 1),
-                widget.itemBuilder(context, i),
+      child: LayoutBuilder(
+        builder: (context, constraints) => ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (Rect bounds) {
+            return LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                _leftFade ? const Color(0x00000000) : const Color(0xFFFFFFFF),
+                _leftFade ? const Color(0x99FFFFFF) : const Color(0xFFFFFFFF),
+                const Color(0xFFFFFFFF),
+                const Color(0xFFFFFFFF),
+                _rightFade ? const Color(0x99FFFFFF) : const Color(0xFFFFFFFF),
+                _rightFade ? const Color(0x00000000) : const Color(0xFFFFFFFF),
               ],
-            ],
+              stops: const [0.0, 0.045, 0.09, 0.91, 0.955, 1.0],
+            ).createShader(bounds);
+          },
+          child: SingleChildScrollView(
+            controller: _controller,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Row(
+                mainAxisAlignment: _canScroll
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < widget.itemCount; i++) ...[
+                    if (i > 0) widget.separatorBuilder(context, i - 1),
+                    widget.itemBuilder(context, i),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),

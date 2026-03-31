@@ -14,6 +14,7 @@ import '../../data/models/market_summary.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../data/models/profile_activity_item.dart';
+import '../push/push_prefs_keys.dart';
 
 abstract final class DopamineApi {
   DopamineApi._();
@@ -760,6 +761,95 @@ abstract final class DopamineApi {
       body: jsonEncode({'fcmToken': fcmToken}),
     );
     _ensureOk(response);
+  }
+
+  static Future<Map<String, dynamic>> fetchPushPrefs({
+    required String idToken,
+  }) async {
+    if (kDebugMode) {
+      debugPrint(
+        '[DopamineApi][push-prefs] GET ${_uri('/api/profile/push-prefs')}',
+      );
+    }
+    final response = await _client.get(
+      _uri('/api/profile/push-prefs'),
+      headers: _bearerHeaders(idToken),
+    );
+    if (kDebugMode) {
+      debugPrint(
+        '[DopamineApi][push-prefs] status=${response.statusCode} body=${response.body}',
+      );
+    }
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['prefs'] is! Map) {
+      throw ApiException('Invalid push prefs payload');
+    }
+    final prefs = decoded['prefs'] as Map<String, dynamic>;
+    return <String, dynamic>{
+      PushPrefsKeys.masterEnabled: prefs['masterEnabled'],
+      PushPrefsKeys.socialReply: prefs['socialReply'],
+      PushPrefsKeys.socialLike: prefs['socialLike'],
+      PushPrefsKeys.followedNewPost: prefs['followedNewPost'],
+      PushPrefsKeys.moderationNotice: prefs['moderationNotice'],
+      PushPrefsKeys.marketDailyBrief: prefs['marketDailyBrief'],
+      PushPrefsKeys.marketWatchlist: prefs['marketWatchlist'],
+      PushPrefsKeys.marketTheme: prefs['marketTheme'],
+    };
+  }
+
+  static Future<Map<String, dynamic>> patchPushPrefs({
+    required String idToken,
+    required Map<String, dynamic> patch,
+  }) async {
+    // snake_case → camelCase 변환
+    final body = <String, dynamic>{};
+    void mapKey(String snake, String camel) {
+      if (patch.containsKey(snake)) {
+        body[camel] = patch[snake];
+      }
+    }
+    mapKey(PushPrefsKeys.masterEnabled, 'masterEnabled');
+    mapKey(PushPrefsKeys.socialReply, 'socialReply');
+    mapKey(PushPrefsKeys.socialLike, 'socialLike');
+    mapKey(PushPrefsKeys.followedNewPost, 'followedNewPost');
+    mapKey(PushPrefsKeys.moderationNotice, 'moderationNotice');
+    mapKey(PushPrefsKeys.marketDailyBrief, 'marketDailyBrief');
+    mapKey(PushPrefsKeys.marketWatchlist, 'marketWatchlist');
+    mapKey(PushPrefsKeys.marketTheme, 'marketTheme');
+
+    if (kDebugMode) {
+      debugPrint(
+        '[DopamineApi][push-prefs] PATCH ${_uri('/api/profile/push-prefs')}',
+      );
+      debugPrint('[DopamineApi][push-prefs] payload=$body');
+    }
+    final response = await _client.patch(
+      _uri('/api/profile/push-prefs'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode(body),
+    );
+    if (kDebugMode) {
+      debugPrint(
+        '[DopamineApi][push-prefs] status=${response.statusCode} body=${response.body}',
+      );
+    }
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['prefs'] is! Map) {
+      throw ApiException('Invalid patch push prefs payload');
+    }
+    final prefs = decoded['prefs'] as Map<String, dynamic>;
+    return <String, dynamic>{
+      PushPrefsKeys.masterEnabled: prefs['masterEnabled'],
+      PushPrefsKeys.socialReply: prefs['socialReply'],
+      PushPrefsKeys.socialLike: prefs['socialLike'],
+      PushPrefsKeys.followedNewPost: prefs['followedNewPost'],
+      PushPrefsKeys.moderationNotice: prefs['moderationNotice'],
+      PushPrefsKeys.marketDailyBrief: prefs['marketDailyBrief'],
+      PushPrefsKeys.marketWatchlist: prefs['marketWatchlist'],
+      PushPrefsKeys.marketTheme: prefs['marketTheme'],
+    };
   }
 
   static Future<void> followUser({

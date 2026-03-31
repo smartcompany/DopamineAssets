@@ -33,6 +33,12 @@ abstract final class DopaminePushCoordinator {
         badge: true,
         sound: true,
       );
+      // iOS: 포그라운드에서도 시스템 배너/사운드/뱃지를 표시.
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
     } catch (e) {
       debugPrint('[DopaminePush] requestPermission: $e');
     }
@@ -150,6 +156,17 @@ abstract final class DopaminePushCoordinator {
       }
     }
 
+    void handleForeground(RemoteMessage m) {
+      final data = m.data;
+      final type = data['type'] ?? '';
+      final title = m.notification?.title ?? 'Notification';
+      final body = m.notification?.body ?? '';
+      debugPrint(
+        '[DopaminePush][foreground] type=$type title="$title" body="$body" data=$data',
+      );
+    }
+
+    FirebaseMessaging.onMessage.listen(handleForeground);
     FirebaseMessaging.onMessageOpenedApp.listen(handleOpen);
     final initial = await messaging.getInitialMessage();
     if (initial != null) {

@@ -266,6 +266,48 @@ abstract class AppLocalizations {
   /// **'게시글에 표시되는 이름'**
   String get profileDisplayNameHint;
 
+  /// No description provided for @profilePushTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'푸시 알림'**
+  String get profilePushTitle;
+
+  /// No description provided for @profileSettingsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정'**
+  String get profileSettingsTitle;
+
+  /// No description provided for @profileSettingsMoreSoon.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가 설정은 곧 제공됩니다.'**
+  String get profileSettingsMoreSoon;
+
+  /// No description provided for @profilePushMaster.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 알림'**
+  String get profilePushMaster;
+
+  /// No description provided for @profilePushSocialReply.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 글/댓글에 답글'**
+  String get profilePushSocialReply;
+
+  /// No description provided for @profilePushSocialLike.
+  ///
+  /// In ko, this message translates to:
+  /// **'내 댓글에 좋아요'**
+  String get profilePushSocialLike;
+
+  /// No description provided for @profilePushMarketDaily.
+  ///
+  /// In ko, this message translates to:
+  /// **'일일 마켓 브리프'**
+  String get profilePushMarketDaily;
+
   /// No description provided for @profileStatPosts.
   ///
   /// In ko, this message translates to:
