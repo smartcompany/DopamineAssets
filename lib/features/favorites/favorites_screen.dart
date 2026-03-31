@@ -127,8 +127,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       borderRadius: BorderRadius.circular(16),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          AssetDetailScreen.open(
+                        onTap: () async {
+                          await AssetDetailScreen.open(
                             context,
                             RankedAsset.communityShell(
                               symbol: item.symbol,
@@ -136,6 +136,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               displayName: item.name,
                             ),
                           );
+                          if (!mounted) return;
+                          _reload();
                         },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
