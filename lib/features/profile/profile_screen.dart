@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final nav = _shellNav;
     if (nav == null || !mounted) return;
     final t = nav.tabIndex;
-    if (t == 2 && _prevShellTabIndex != 2) {
+    if (t == 3 && _prevShellTabIndex != 3) {
       final auth = context.read<AuthProvider<DopamineUser>>();
       if (_isAppSignedIn(auth) && FirebaseAuth.instance.currentUser != null) {
         // 프로필 탭 진입 시에는 활동 내역만 조용히 갱신합니다.

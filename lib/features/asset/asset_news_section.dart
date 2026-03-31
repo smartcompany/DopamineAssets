@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:share_lib/share_lib.dart';
 
+import '../../core/config/api_config.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../data/models/asset_news.dart';
@@ -49,6 +52,8 @@ class AssetNewsSection extends StatefulWidget {
 class _AssetNewsSectionState extends State<AssetNewsSection> {
   late Future<AssetNewsFeed> _future = _load();
   var _newsExpanded = false;
+  String? _summarizingUrl;
+  bool _adSettingsLoaded = false;
 
   Future<AssetNewsFeed> _load() async {
     final tickers = widget.themeSymbols
@@ -86,6 +91,120 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
       _newsExpanded = false;
       _future = _load();
     });
+  }
+
+  Future<void> _ensureAdSettings() async {
+    if (_adSettingsLoaded) return;
+    AdService.shared.setBaseUrl(ApiConfig.baseUrl);
+    await AdService.shared.loadSettings();
+    _adSettingsLoaded = true;
+  }
+
+  Future<void> _showAiSummaryDialog(NewsAiSummary summary) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          backgroundColor: const Color(0xFF221039),
+          title: const Text('AI 요약'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  summary.summary.isEmpty ? '요약 결과가 비어 있습니다.' : summary.summary,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                if (summary.impact.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    '영향 포인트',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: DopamineTheme.neonGreen,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ...summary.impact.map((e) => Text('• $e')),
+                ],
+                if (summary.risk.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    '리스크',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: DopamineTheme.accentRed,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ...summary.risk.map((e) => Text('• $e')),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('닫기'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _summarizeNewsWithAd(
+    AssetNewsItem item,
+    List<AssetNewsItem> sourceItems,
+  ) async {
+    if (_summarizingUrl != null) return;
+    setState(() {
+      _summarizingUrl = item.url;
+    });
+    try {
+      await _ensureAdSettings();
+      final adDone = Completer<void>();
+      await AdService.shared.showAd(
+        onAdDismissed: () {
+          if (!adDone.isCompleted) adDone.complete();
+        },
+        onAdFailedToShow: () {
+          debugPrint('[NewsAI] ad failed to show, continue summary');
+          if (!adDone.isCompleted) adDone.complete();
+        },
+      );
+      if (!adDone.isCompleted) {
+        adDone.complete();
+      }
+      await adDone.future;
+      final urls = sourceItems
+          .map((e) => e.url.trim())
+          .where((e) => e.isNotEmpty)
+          .take(5)
+          .toList();
+      final result = await DopamineApi.fetchNewsAiSummary(
+        urls: urls.isEmpty ? [item.url] : urls,
+        symbol: widget.symbol,
+        assetClass: widget.assetClass,
+        assetName: widget.name,
+        locale: widget.uiLocaleName,
+      );
+      await _showAiSummaryDialog(result);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('AI 요약 실패: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _summarizingUrl = null;
+        });
+      }
+    }
   }
 
   List<Widget> _newsBodyWidgets(
@@ -138,6 +257,8 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
       ...visibleItems.map(
         (item) => _NewsTile(
           item: item,
+          summarizing: _summarizingUrl == item.url,
+          onTapAiSummary: () => _summarizeNewsWithAd(item, items),
           onOpenFailed: () {
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
@@ -270,10 +391,14 @@ class _NewsTile extends StatelessWidget {
   const _NewsTile({
     required this.item,
     required this.onOpenFailed,
+    required this.onTapAiSummary,
+    required this.summarizing,
   });
 
   final AssetNewsItem item;
   final VoidCallback onOpenFailed;
+  final VoidCallback onTapAiSummary;
+  final bool summarizing;
 
   @override
   Widget build(BuildContext context) {
@@ -341,6 +466,39 @@ class _NewsTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
+                InkWell(
+                  onTap: summarizing ? null : onTapAiSummary,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: DopamineTheme.neonGreen.withValues(alpha: 0.5),
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: summarizing
+                        ? SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.8,
+                              color: DopamineTheme.neonGreen,
+                            ),
+                          )
+                        : Text(
+                            'AI',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: DopamineTheme.neonGreen,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 4),
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 22,

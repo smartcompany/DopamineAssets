@@ -10,6 +10,7 @@ import '../../core/formatting/percent_format.dart';
 import '../../core/navigation/asset_chart_url.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../data/favorite_assets_prefs.dart';
 import '../../data/models/asset_detail.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
@@ -47,6 +48,8 @@ class AssetDetailScreen extends StatefulWidget {
 
 class _AssetDetailScreenState extends State<AssetDetailScreen> {
   late Future<AssetDetail> _future = _load();
+  bool _favoriteLoading = false;
+  bool _isFavorite = false;
 
   Future<AssetDetail> _load() {
     return DopamineApi.fetchAssetDetail(asset: widget.rankedAsset);
@@ -56,6 +59,47 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     setState(() {
       _future = _load();
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _syncFavoriteState();
+  }
+
+  Future<void> _syncFavoriteState() async {
+    final ac = widget.rankedAsset.assetClass;
+    if (ac == null || ac.isEmpty || ac == 'theme') return;
+    final v = await FavoriteAssetsPrefs.contains(
+      symbol: widget.rankedAsset.symbol,
+      assetClass: ac,
+    );
+    if (!mounted) return;
+    setState(() {
+      _isFavorite = v;
+    });
+  }
+
+  Future<void> _toggleFavorite(AssetDetail d) async {
+    if (_favoriteLoading) return;
+    final ac = d.assetClass.trim();
+    if (ac.isEmpty || ac == 'theme') return;
+    setState(() => _favoriteLoading = true);
+    try {
+      final next = await FavoriteAssetsPrefs.toggle(
+        FavoriteAssetItem(
+          symbol: d.symbol,
+          assetClass: ac,
+          name: d.name,
+        ),
+      );
+      if (!mounted) return;
+      setState(() => _isFavorite = next);
+    } finally {
+      if (mounted) {
+        setState(() => _favoriteLoading = false);
+      }
+    }
   }
 
   @override
@@ -249,6 +293,43 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                 ),
                             ],
                           ),
+                          if (d.assetClass != 'theme')
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                tooltip: _isFavorite ? '관심 자산 해제' : '관심 자산 추가',
+                                style: IconButton.styleFrom(
+                                  foregroundColor: _isFavorite
+                                      ? DopamineTheme.neonGreen
+                                      : DopamineTheme.textSecondary,
+                                  side: BorderSide(
+                                    color: (_isFavorite
+                                            ? DopamineTheme.neonGreen
+                                            : DopamineTheme.textSecondary)
+                                        .withValues(alpha: 0.5),
+                                    width: 1.25,
+                                  ),
+                                  shape: const CircleBorder(),
+                                  padding: const EdgeInsets.all(10),
+                                ),
+                                onPressed: _favoriteLoading
+                                    ? null
+                                    : () => _toggleFavorite(d),
+                                icon: _favoriteLoading
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Icon(
+                                        _isFavorite
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_border_rounded,
+                                      ),
+                              ),
+                            ),
                           if (!isTheme) ...[
                             const SizedBox(height: 6),
                             Text(

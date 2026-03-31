@@ -27,7 +27,7 @@ class HomeShellNavigation extends ChangeNotifier {
       assetClass: assetClass,
       displayName: displayName,
     );
-    tabIndex = 1;
+    tabIndex = 2;
     notifyListeners();
   }
 

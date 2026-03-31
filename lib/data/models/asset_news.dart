@@ -33,6 +33,39 @@ final class AssetNewsFeed {
   final bool loadFailed;
 }
 
+final class NewsAiSummary {
+  const NewsAiSummary({
+    required this.summary,
+    required this.impact,
+    required this.risk,
+    required this.sourceUrl,
+  });
+
+  final String summary;
+  final List<String> impact;
+  final List<String> risk;
+  final String sourceUrl;
+
+  factory NewsAiSummary.fromJson(Map<String, dynamic> json) {
+    List<String> parseList(dynamic raw, int maxLen) {
+      if (raw is! List<dynamic>) return const [];
+      return raw
+          .whereType<String>()
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .take(maxLen)
+          .toList();
+    }
+
+    return NewsAiSummary(
+      summary: (json['summary'] as String? ?? '').trim(),
+      impact: parseList(json['impact'], 3),
+      risk: parseList(json['risk'], 2),
+      sourceUrl: (json['sourceUrl'] as String? ?? '').trim(),
+    );
+  }
+}
+
 String _stripCompanyLegalSuffix(String name) {
   return name
       .trim()

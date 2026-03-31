@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/navigation/home_shell_navigation.dart';
 import '../community/community_screen.dart';
+import '../favorites/favorites_screen.dart';
 import '../profile/profile_screen.dart';
 import 'home_screen.dart';
 
@@ -28,6 +29,7 @@ class _HomeShellState extends State<HomeShell> {
         sizing: StackFit.expand,
         children: const [
           HomeScreen(),
+          FavoritesScreen(),
           CommunityScreen(),
           ProfileScreen(),
         ],
@@ -54,6 +56,13 @@ class _HomeShellState extends State<HomeShell> {
                   icon: const Icon(Icons.home_outlined),
                   selectedIcon: const Icon(Icons.home),
                   label: l10n.navHome,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.favorite_border_rounded),
+                  selectedIcon: const Icon(Icons.favorite_rounded),
+                  label: Localizations.localeOf(context).languageCode == 'ko'
+                      ? '관심'
+                      : 'Favorites',
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.forum_outlined),

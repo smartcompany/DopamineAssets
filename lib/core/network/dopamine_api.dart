@@ -286,6 +286,41 @@ abstract final class DopamineApi {
     }
   }
 
+  static Future<NewsAiSummary> fetchNewsAiSummary({
+    required List<String> urls,
+    required String symbol,
+    required String assetClass,
+    required String assetName,
+    required String locale,
+  }) async {
+    final cleanUrls = urls
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet()
+        .take(5)
+        .toList();
+    if (cleanUrls.isEmpty) {
+      throw ApiException('Missing news urls');
+    }
+    final response = await _client.post(
+      _uri('/api/feed/news-ai-summary'),
+      headers: _jsonHeaders,
+      body: jsonEncode({
+        'urls': cleanUrls,
+        'symbol': symbol,
+        'assetClass': assetClass,
+        'assetName': assetName,
+        'locale': locale,
+      }),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid news ai summary payload');
+    }
+    return NewsAiSummary.fromJson(decoded);
+  }
+
   static Future<MarketSummary> fetchMarketSummary() async {
     final response = await _client.get(
       _uri('/api/market-summary'),
