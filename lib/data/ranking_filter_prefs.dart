@@ -13,6 +13,14 @@ abstract final class RankingFilterPrefs {
     'commodity',
   };
 
+  /// UI 표시 순서 (`allKeys`에 항목을 추가할 때 여기에도 같은 키를 넣어 주세요).
+  static const List<String> orderedKeys = [
+    'us_stock',
+    'kr_stock',
+    'crypto',
+    'commodity',
+  ];
+
   /// 저장값이 없으면 네 가지 모두 선택(기본).
   static Future<Set<String>> load() async {
     final p = await SharedPreferences.getInstance();

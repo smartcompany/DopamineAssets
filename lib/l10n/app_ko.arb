@@ -148,7 +148,7 @@
   "navRankings": "랭킹",
   "navThemes": "테마",
   "navMarket": "시장",
-  "homeHeadline": "지금 시장에서 가장 자극적인 자산",
+  "homeRankingApplyFiltersTooltip": "선택한 필터를 랭킹에 반영합니다",
   "rankingsUpTab": "상승 🔥",
   "rankingsDownTab": "하락 💀",
   "rankingsUpTitle": "오늘 가장 미친 상승",

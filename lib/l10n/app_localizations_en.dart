@@ -364,8 +364,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMarket => 'Market';
 
   @override
-  String get homeHeadline =>
-      'The most stimulating assets in the market right now';
+  String get homeRankingApplyFiltersTooltip =>
+      'Apply selected filters to rankings';
 
   @override
   String get rankingsUpTab => 'Surging 🔥';

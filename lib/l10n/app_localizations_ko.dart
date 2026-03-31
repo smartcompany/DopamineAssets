@@ -362,7 +362,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navMarket => '시장';
 
   @override
-  String get homeHeadline => '지금 시장에서 가장 자극적인 자산';
+  String get homeRankingApplyFiltersTooltip => '선택한 필터를 랭킹에 반영합니다';
 
   @override
   String get rankingsUpTab => '상승 🔥';

@@ -122,14 +122,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (t == 2 && _prevShellTabIndex != 2) {
       final auth = context.read<AuthProvider<DopamineUser>>();
       if (_isAppSignedIn(auth) && FirebaseAuth.instance.currentUser != null) {
-        if (_activity.isEmpty) {
-          _loadData();
-        } else {
-          ProfileStatsStore.instance.refreshWithCurrentFirebaseUser();
-        }
+        // 프로필 탭 진입 시에는 활동 내역만 조용히 갱신합니다.
+        _reloadActivityOnly();
       }
     }
     _prevShellTabIndex = t;
+  }
+
+  Future<void> _reloadActivityOnly() async {
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+    final token = await fb.getIdToken();
+    if (token == null || token.isEmpty) return;
+    try {
+      final act = await DopamineApi.fetchProfileActivity(idToken: token);
+      if (!mounted) return;
+      setState(() {
+        _activity = act;
+      });
+    } catch (_) {
+      // 탭 진입 동기화는 조용히 처리합니다.
+    }
   }
 
   @override
@@ -283,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool showLoading = true}) async {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
 
@@ -294,10 +307,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = await fb.getIdToken();
     if (token == null || token.isEmpty) return;
 
-    setState(() {
-      _loading = true;
-      _loadError = null;
-    });
+    if (showLoading) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
     try {
       final stats = await DopamineApi.fetchProfileStats(idToken: token);
       final act = await DopamineApi.fetchProfileActivity(idToken: token);
@@ -602,7 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       myUid: fb.uid,
       onPostUpdated: (_) {
         if (mounted) {
-          _loadData();
+        _loadData(showLoading: false);
         }
       },
     );
@@ -673,6 +688,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
     } catch (e) {
       if (!context.mounted) return;
+      // 이미 다른 화면에서 지워진 항목이면 로컬 목록만 정리하고 성공으로 간주합니다.
+      if (e is ApiException && e.message.toLowerCase().contains('not found')) {
+        setState(() {
+          _activity = _activity.where((a) => a.commentId != item.commentId).toList();
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
+        unawaited(_loadData());
+        return;
+      }
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }

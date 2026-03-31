@@ -776,11 +776,11 @@ abstract class AppLocalizations {
   /// **'시장'**
   String get navMarket;
 
-  /// No description provided for @homeHeadline.
+  /// No description provided for @homeRankingApplyFiltersTooltip.
   ///
   /// In ko, this message translates to:
-  /// **'지금 시장에서 가장 자극적인 자산'**
-  String get homeHeadline;
+  /// **'선택한 필터를 랭킹에 반영합니다'**
+  String get homeRankingApplyFiltersTooltip;
 
   /// No description provided for @rankingsUpTab.
   ///
