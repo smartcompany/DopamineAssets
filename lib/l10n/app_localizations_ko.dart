@@ -617,6 +617,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetDetailNewsShowLess => '접기';
 
   @override
+  String get assetDetailNewsWatchAdAiAnalysis => '광고보고 AI 뉴스 분석';
+
+  @override
   String get assetDetailOpenCommunity => '커뮤니티';
 
   @override

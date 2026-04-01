@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_lib/share_lib.dart';
 
 import '../../core/config/api_config.dart';
+import '../../core/news_ai_digest.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../data/models/asset_news.dart';
@@ -212,18 +214,26 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
         adDone.complete();
       }
       await adDone.future;
-      final urls = sourceItems
-          .map((e) => e.url.trim())
-          .where((e) => e.isNotEmpty)
-          .take(5)
-          .toList();
+      final canonicalUrls = canonicalNewsUrlsForAi(sourceItems);
+      if (canonicalUrls.isEmpty) {
+        throw StateError('no news urls');
+      }
+      final titleDigest =
+          buildNewsTitleDigestForCanonicalUrls(sourceItems, canonicalUrls);
       final result = await DopamineApi.fetchNewsAiSummary(
-        urls: urls,
+        urls: canonicalUrls,
         symbol: widget.symbol,
         assetClass: widget.assetClass,
         assetName: widget.name,
         locale: widget.uiLocaleName,
+        titleDigest: titleDigest,
       );
+      if (kDebugMode) {
+        debugPrint(
+          '[NewsAI][UI] symbol=${widget.symbol} '
+          'cached=${result.cached} (true=DB캐시, false=OpenAI신규)',
+        );
+      }
       await _showAiSummaryDialog(result);
     } catch (e) {
       if (!mounted) return;
@@ -418,7 +428,7 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
                                 ),
                               )
                             : Text(
-                                '광고보고 AI 분석',
+                                l10n.assetDetailNewsWatchAdAiAnalysis,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: DopamineTheme.neonGreen,
                                   fontWeight: FontWeight.w800,

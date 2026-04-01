@@ -623,6 +623,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetDetailNewsShowLess => 'Show less';
 
   @override
+  String get assetDetailNewsWatchAdAiAnalysis => 'Watch ad · AI news analysis';
+
+  @override
   String get assetDetailOpenCommunity => 'Community';
 
   @override

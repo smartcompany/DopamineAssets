@@ -39,12 +39,15 @@ final class NewsAiSummary {
     required this.impact,
     required this.risk,
     required this.sourceUrl,
+    this.cached,
   });
 
   final String summary;
   final List<String> impact;
   final List<String> risk;
   final String sourceUrl;
+  /// 서버 캐시 히트 여부(null 이면 응답에 필드 없음).
+  final bool? cached;
 
   factory NewsAiSummary.fromJson(Map<String, dynamic> json) {
     List<String> parseList(dynamic raw, int maxLen) {
@@ -62,6 +65,7 @@ final class NewsAiSummary {
       impact: parseList(json['impact'], 3),
       risk: parseList(json['risk'], 2),
       sourceUrl: (json['sourceUrl'] as String? ?? '').trim(),
+      cached: json['cached'] == true ? true : json['cached'] == false ? false : null,
     );
   }
 }

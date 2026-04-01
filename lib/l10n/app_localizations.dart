@@ -1274,6 +1274,12 @@ abstract class AppLocalizations {
   /// **'접기'**
   String get assetDetailNewsShowLess;
 
+  /// No description provided for @assetDetailNewsWatchAdAiAnalysis.
+  ///
+  /// In ko, this message translates to:
+  /// **'광고보고 AI 뉴스 분석'**
+  String get assetDetailNewsWatchAdAiAnalysis;
+
   /// No description provided for @assetDetailOpenCommunity.
   ///
   /// In ko, this message translates to:

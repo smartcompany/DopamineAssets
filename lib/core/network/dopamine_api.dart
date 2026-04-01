@@ -292,12 +292,11 @@ abstract final class DopamineApi {
     required String assetClass,
     required String assetName,
     required String locale,
+    required String titleDigest,
   }) async {
     final cleanUrls = urls
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
-        .toSet()
-        .take(5)
         .toList();
     if (cleanUrls.isEmpty) {
       throw ApiException('Missing news urls');
@@ -311,12 +310,19 @@ abstract final class DopamineApi {
         'assetClass': assetClass,
         'assetName': assetName,
         'locale': locale,
+        'titleDigest': titleDigest,
       }),
     );
     _ensureOk(response);
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {
       throw ApiException('Invalid news ai summary payload');
+    }
+    if (kDebugMode) {
+      final hit = decoded['cached'] == true;
+      debugPrint(
+        '[DopamineApi][news-ai-summary] cached=$hit symbol=$symbol',
+      );
     }
     return NewsAiSummary.fromJson(decoded);
   }
