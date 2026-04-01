@@ -393,7 +393,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                         ),
                       ),
                     ],
-                    if (_hasAssetProfileData(d)) ...[
+                    if (_shouldShowAssetProfileSection(d)) ...[
                       const SizedBox(height: 14),
                       _GlassCard(
                         child: Column(
@@ -594,17 +594,10 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   }
 }
 
-bool _hasAssetProfileData(AssetDetail d) {
-  bool has(String? s) => s != null && s.trim().isNotEmpty;
-  if (has(d.marketCap)) return true;
-  if (has(d.sector)) return true;
-  if (has(d.industry)) return true;
-  if (has(d.exchange)) return true;
-  if (has(d.currency)) return true;
-  final b = d.baseCurrency?.trim() ?? '';
-  final q = d.quoteCurrency?.trim() ?? '';
-  if (b.isNotEmpty && q.isNotEmpty) return true;
-  return false;
+/// Profile block only when market cap is present (avoids “all dashes + pair” cards).
+bool _shouldShowAssetProfileSection(AssetDetail d) {
+  final mc = d.marketCap?.trim() ?? '';
+  return mc.isNotEmpty;
 }
 
 class _GlassCard extends StatelessWidget {
