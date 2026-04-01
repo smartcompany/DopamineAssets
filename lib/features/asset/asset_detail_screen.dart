@@ -430,56 +430,6 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                       assetClass: d.assetClass,
                       displayName: d.name,
                     ),
-                    if (!_isCryptoAssetDetail(d) &&
-                        d.website != null &&
-                        d.website!.trim().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 14),
-                        child: _GlassCard(
-                          child: InkWell(
-                            onTap: () => _openWebsite(d.website!),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.link_rounded,
-                                  color: DopamineTheme.neonGreen,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        l10n.assetDetailWebsite,
-                                        style: theme.textTheme.labelMedium
-                                            ?.copyWith(
-                                              color:
-                                                  DopamineTheme.textSecondary,
-                                            ),
-                                      ),
-                                      Text(
-                                        d.website!,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                              color: DopamineTheme.neonGreen,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.open_in_new_rounded,
-                                  size: 18,
-                                  color: DopamineTheme.textSecondary,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               );
@@ -496,7 +446,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     AssetDetail d,
   ) {
     final desc = d.description?.trim() ?? '';
+    final site = d.website?.trim() ?? '';
     final hasDesc = desc.isNotEmpty;
+    final hasExtra = hasDesc || site.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,7 +483,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
             l10n.assetDetailPair,
             '${d.baseCurrency} / ${d.quoteCurrency}',
           ),
-        if (hasDesc) ...[
+        if (hasExtra) ...[
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.only(top: 4),
@@ -574,46 +526,91 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
             ),
           ),
         ],
-        if (_stockProfileDescriptionExpanded && hasDesc) ...[
+        if (_stockProfileDescriptionExpanded && hasExtra) ...[
           const SizedBox(height: 8),
-          Text(
-            l10n.assetDetailAbout,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: DopamineTheme.textSecondary,
+          if (hasDesc) ...[
+            Text(
+              l10n.assetDetailAbout,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: DopamineTheme.textSecondary,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          FutureBuilder<String>(
-            key: ValueKey(
-              'about|${d.symbol}|${l10n.localeName}|${desc.hashCode}',
-            ),
-            future: translateTextForAppLocale(desc, l10n.localeName),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: DopamineTheme.neonGreen,
+            const SizedBox(height: 8),
+            FutureBuilder<String>(
+              key: ValueKey(
+                'about|${d.symbol}|${l10n.localeName}|${desc.hashCode}',
+              ),
+              future: translateTextForAppLocale(desc, l10n.localeName),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: DopamineTheme.neonGreen,
+                        ),
                       ),
                     ),
+                  );
+                }
+                final text = snapshot.data ?? desc;
+                return Text(
+                  text,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: DopamineTheme.textPrimary,
+                    height: 1.45,
                   ),
                 );
-              }
-              final text = snapshot.data ?? desc;
-              return Text(
-                text,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: DopamineTheme.textPrimary,
-                  height: 1.45,
+              },
+            ),
+            if (site.isNotEmpty) const SizedBox(height: 14),
+          ],
+          if (site.isNotEmpty)
+            InkWell(
+              onTap: () => _openWebsite(site),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.link_rounded,
+                      color: DopamineTheme.neonGreen,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.assetDetailWebsite,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: DopamineTheme.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            site,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: DopamineTheme.neonGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 18,
+                      color: DopamineTheme.textSecondary,
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            ),
         ],
       ],
     );
