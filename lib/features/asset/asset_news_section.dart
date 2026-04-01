@@ -201,19 +201,23 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
     try {
       await _ensureAdSettings();
       final adDone = Completer<void>();
-      await AdService.shared.showAd(
-        onAdDismissed: () {
-          if (!adDone.isCompleted) adDone.complete();
-        },
-        onAdFailedToShow: () {
-          debugPrint('[NewsAI] ad failed to show, continue summary');
-          if (!adDone.isCompleted) adDone.complete();
-        },
+      // showAd 의 Future 는 로드·show() 직후에 끝나며, 닫힘과 무관합니다.
+      // 닫힘은 onAdDismissed / onAdFailedToShow 에서만 completer 를 완료해야 합니다.
+      unawaited(
+        AdService.shared.showAd(
+          onAdDismissed: () {
+            if (!adDone.isCompleted) adDone.complete();
+          },
+          onAdFailedToShow: () {
+            debugPrint('[NewsAI] ad failed to show, continue summary');
+            if (!adDone.isCompleted) adDone.complete();
+          },
+        ),
       );
-      if (!adDone.isCompleted) {
-        adDone.complete();
-      }
       await adDone.future;
+      // 전면 전환 직후 바로 다이얼로그를 띄우면 광고가 겹쳐 보일 수 있어 한 프레임 넘깁니다.
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      if (!mounted) return;
       final canonicalUrls = canonicalNewsUrlsForAi(sourceItems);
       if (canonicalUrls.isEmpty) {
         throw StateError('no news urls');
