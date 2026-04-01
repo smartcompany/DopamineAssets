@@ -208,6 +208,26 @@
   "assetDetailMissingClass": "Missing asset class for this item.",
   "assetDetailSectionProfile": "Profile",
   "assetDetailMarketCap": "Market cap",
+  "assetDetailMarketCapKrwMillions": "{amount}M KRW",
+  "@assetDetailMarketCapKrwMillions": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetDetailMarketCapKrwWonFull": "{amount} KRW",
+  "@assetDetailMarketCapKrwWonFull": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetDetailMarketCapRank": "Market cap rank",
+  "assetDetailCurrentPrice": "Price (USD)",
+  "assetDetailCryptoProfileMore": "More",
+  "assetDetailCryptoProfileLess": "Less",
   "assetDetailSector": "Sector",
   "assetDetailIndustry": "Industry",
   "assetDetailExchange": "Exchange",

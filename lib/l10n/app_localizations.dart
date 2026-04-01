@@ -1094,6 +1094,42 @@ abstract class AppLocalizations {
   /// **'시가총액'**
   String get assetDetailMarketCap;
 
+  /// No description provided for @assetDetailMarketCapKrwMillions.
+  ///
+  /// In ko, this message translates to:
+  /// **'{amount}백만'**
+  String assetDetailMarketCapKrwMillions(String amount);
+
+  /// No description provided for @assetDetailMarketCapKrwWonFull.
+  ///
+  /// In ko, this message translates to:
+  /// **'{amount}원'**
+  String assetDetailMarketCapKrwWonFull(String amount);
+
+  /// No description provided for @assetDetailMarketCapRank.
+  ///
+  /// In ko, this message translates to:
+  /// **'시총 랭킹'**
+  String get assetDetailMarketCapRank;
+
+  /// No description provided for @assetDetailCurrentPrice.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 가격'**
+  String get assetDetailCurrentPrice;
+
+  /// No description provided for @assetDetailCryptoProfileMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'더보기'**
+  String get assetDetailCryptoProfileMore;
+
+  /// No description provided for @assetDetailCryptoProfileLess.
+  ///
+  /// In ko, this message translates to:
+  /// **'접기'**
+  String get assetDetailCryptoProfileLess;
+
   /// No description provided for @assetDetailSector.
   ///
   /// In ko, this message translates to:

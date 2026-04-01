@@ -208,6 +208,26 @@
   "assetDetailMissingClass": "자산 분류 정보가 없어 상세를 열 수 없습니다.",
   "assetDetailSectionProfile": "개요",
   "assetDetailMarketCap": "시가총액",
+  "assetDetailMarketCapKrwMillions": "{amount}백만",
+  "@assetDetailMarketCapKrwMillions": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetDetailMarketCapKrwWonFull": "{amount}원",
+  "@assetDetailMarketCapKrwWonFull": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetDetailMarketCapRank": "시총 랭킹",
+  "assetDetailCurrentPrice": "현재 가격",
+  "assetDetailCryptoProfileMore": "더보기",
+  "assetDetailCryptoProfileLess": "접기",
   "assetDetailSector": "섹터",
   "assetDetailIndustry": "산업",
   "assetDetailExchange": "거래소",

@@ -528,6 +528,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetDetailMarketCap => 'Market cap';
 
   @override
+  String assetDetailMarketCapKrwMillions(String amount) {
+    return '${amount}M KRW';
+  }
+
+  @override
+  String assetDetailMarketCapKrwWonFull(String amount) {
+    return '$amount KRW';
+  }
+
+  @override
+  String get assetDetailMarketCapRank => 'Market cap rank';
+
+  @override
+  String get assetDetailCurrentPrice => 'Price (USD)';
+
+  @override
+  String get assetDetailCryptoProfileMore => 'More';
+
+  @override
+  String get assetDetailCryptoProfileLess => 'Less';
+
+  @override
   String get assetDetailSector => 'Sector';
 
   @override

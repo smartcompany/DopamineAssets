@@ -14,7 +14,7 @@ Future<AssetNewsFeed> localizeNewsTitles(
     return feed;
   }
 
-  final target = _googleTranslateTarget(appLocaleName);
+  final target = googleTranslateTargetForUiLocale(appLocaleName);
   if (target == null) {
     return feed;
   }
@@ -46,8 +46,27 @@ Future<AssetNewsFeed> localizeNewsTitles(
   return AssetNewsFeed(items: items);
 }
 
+/// 긴 본문(예: 기업 소개)도 UI 로케일에 맞게 번역할 때 사용.
+Future<String> translateTextForAppLocale(
+  String text,
+  String appLocaleName,
+) async {
+  final t = text.trim();
+  if (t.isEmpty) return text;
+  final target = googleTranslateTargetForUiLocale(appLocaleName);
+  if (target == null) return text;
+  try {
+    final translator = GoogleTranslator();
+    final out = await translator.translate(t, from: 'auto', to: target);
+    final s = out.text.trim();
+    return s.isNotEmpty ? s : text;
+  } catch (_) {
+    return text;
+  }
+}
+
 /// `null` 이면 번역 생략(영어 UI 등).
-String? _googleTranslateTarget(String appLocaleName) {
+String? googleTranslateTargetForUiLocale(String appLocaleName) {
   final raw = appLocaleName.trim().toLowerCase();
   if (raw.isEmpty) return null;
   final primary = raw.split(RegExp('[-_]')).first;

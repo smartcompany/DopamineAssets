@@ -524,6 +524,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetDetailMarketCap => '시가총액';
 
   @override
+  String assetDetailMarketCapKrwMillions(String amount) {
+    return '$amount백만';
+  }
+
+  @override
+  String assetDetailMarketCapKrwWonFull(String amount) {
+    return '$amount원';
+  }
+
+  @override
+  String get assetDetailMarketCapRank => '시총 랭킹';
+
+  @override
+  String get assetDetailCurrentPrice => '현재 가격';
+
+  @override
+  String get assetDetailCryptoProfileMore => '더보기';
+
+  @override
+  String get assetDetailCryptoProfileLess => '접기';
+
+  @override
   String get assetDetailSector => '섹터';
 
   @override

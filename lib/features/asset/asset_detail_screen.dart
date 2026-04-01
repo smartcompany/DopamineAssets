@@ -5,7 +5,9 @@ import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/translation/news_title_translator.dart';
 import '../../core/navigation/home_shell_navigation.dart';
+import '../../core/formatting/market_cap_display.dart';
 import '../../core/formatting/percent_format.dart';
 import '../../core/navigation/asset_chart_url.dart';
 import '../../core/network/api_exception.dart';
@@ -50,6 +52,8 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   late Future<AssetDetail> _future = _load();
   bool _favoriteLoading = false;
   bool _isFavorite = false;
+  bool _cryptoProfileExpanded = false;
+  bool _stockProfileDescriptionExpanded = false;
 
   Future<AssetDetail> _load() {
     return DopamineApi.fetchAssetDetail(asset: widget.rankedAsset);
@@ -57,8 +61,19 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
 
   Future<void> _retry() async {
     setState(() {
+      _cryptoProfileExpanded = false;
+      _stockProfileDescriptionExpanded = false;
       _future = _load();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant AssetDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.rankedAsset.symbol != widget.rankedAsset.symbol) {
+      _cryptoProfileExpanded = false;
+      _stockProfileDescriptionExpanded = false;
+    }
   }
 
   @override
@@ -396,52 +411,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                     if (_shouldShowAssetProfileSection(d)) ...[
                       const SizedBox(height: 14),
                       _GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.assetDetailSectionProfile,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: DopamineTheme.neonGreen,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _kvRow(
-                              theme,
-                              l10n.assetDetailMarketCap,
-                              _orDash(d.marketCap, l10n),
-                            ),
-                            _kvRow(
-                              theme,
-                              l10n.assetDetailSector,
-                              _orDash(d.sector, l10n),
-                            ),
-                            _kvRow(
-                              theme,
-                              l10n.assetDetailIndustry,
-                              _orDash(d.industry, l10n),
-                            ),
-                            _kvRow(
-                              theme,
-                              l10n.assetDetailExchange,
-                              _orDash(d.exchange, l10n),
-                            ),
-                            _kvRow(
-                              theme,
-                              l10n.assetDetailCurrency,
-                              _orDash(d.currency, l10n),
-                            ),
-                            if (d.baseCurrency != null &&
-                                d.quoteCurrency != null) ...[
-                              _kvRow(
-                                theme,
-                                l10n.assetDetailPair,
-                                '${d.baseCurrency} / ${d.quoteCurrency}',
-                              ),
-                            ],
-                          ],
-                        ),
+                        child: _isCryptoAssetDetail(d)
+                            ? _buildCryptoProfileBody(theme, l10n, d)
+                            : _buildNonCryptoProfileBody(theme, l10n, d),
                       ),
                     ],
                     AssetNewsSection(
@@ -458,34 +430,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                       assetClass: d.assetClass,
                       displayName: d.name,
                     ),
-                    if (d.description != null &&
-                        d.description!.trim().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 14),
-                        child: _GlassCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.assetDetailAbout,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: DopamineTheme.neonGreen,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                d.description!,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: DopamineTheme.textPrimary,
-                                  height: 1.45,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (d.website != null && d.website!.trim().isNotEmpty)
+                    if (!_isCryptoAssetDetail(d) &&
+                        d.website != null &&
+                        d.website!.trim().isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 14),
                         child: _GlassCard(
@@ -543,12 +490,296 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     );
   }
 
+  Widget _buildNonCryptoProfileBody(
+    ThemeData theme,
+    AppLocalizations l10n,
+    AssetDetail d,
+  ) {
+    final desc = d.description?.trim() ?? '';
+    final hasDesc = desc.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.assetDetailSectionProfile,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: DopamineTheme.neonGreen,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _kvMarketCapRow(theme, l10n, d),
+        _kvRow(
+          theme,
+          l10n.assetDetailSector,
+          _orDash(d.sector, l10n),
+        ),
+        _kvRow(
+          theme,
+          l10n.assetDetailIndustry,
+          _orDash(d.industry, l10n),
+        ),
+        _kvRow(
+          theme,
+          l10n.assetDetailExchange,
+          _orDash(d.exchange, l10n),
+        ),
+        if (d.baseCurrency != null && d.quoteCurrency != null)
+          _kvRow(
+            theme,
+            l10n.assetDetailPair,
+            '${d.baseCurrency} / ${d.quoteCurrency}',
+          ),
+        if (hasDesc) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: InkWell(
+              onTap: () {
+                setState(
+                  () => _stockProfileDescriptionExpanded =
+                      !_stockProfileDescriptionExpanded,
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 4,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _stockProfileDescriptionExpanded
+                          ? l10n.assetDetailNewsShowLess
+                          : l10n.assetDetailNewsShowMore,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: DopamineTheme.neonGreen,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _stockProfileDescriptionExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: DopamineTheme.neonGreen,
+                      size: 26,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (_stockProfileDescriptionExpanded && hasDesc) ...[
+          const SizedBox(height: 8),
+          Text(
+            l10n.assetDetailAbout,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: DopamineTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<String>(
+            key: ValueKey(
+              'about|${d.symbol}|${l10n.localeName}|${desc.hashCode}',
+            ),
+            future: translateTextForAppLocale(desc, l10n.localeName),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: DopamineTheme.neonGreen,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              final text = snapshot.data ?? desc;
+              return Text(
+                text,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: DopamineTheme.textPrimary,
+                  height: 1.45,
+                ),
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCryptoProfileBody(
+    ThemeData theme,
+    AppLocalizations l10n,
+    AssetDetail d,
+  ) {
+    final desc = d.description?.trim() ?? '';
+    final site = d.website?.trim() ?? '';
+    final hasExtra = desc.isNotEmpty || site.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.assetDetailSectionProfile,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: DopamineTheme.neonGreen,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _kvMarketCapRow(theme, l10n, d),
+        _kvRow(
+          theme,
+          l10n.assetDetailMarketCapRank,
+          d.marketCapRank != null
+              ? '#${d.marketCapRank}'
+              : l10n.assetDetailNotAvailable,
+        ),
+        _kvRow(
+          theme,
+          l10n.assetDetailCurrentPrice,
+          _orDash(d.currentPrice, l10n),
+        ),
+        if (hasExtra) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: InkWell(
+              onTap: () {
+                setState(
+                  () => _cryptoProfileExpanded = !_cryptoProfileExpanded,
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 4,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _cryptoProfileExpanded
+                          ? l10n.assetDetailNewsShowLess
+                          : l10n.assetDetailNewsShowMore,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: DopamineTheme.neonGreen,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _cryptoProfileExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: DopamineTheme.neonGreen,
+                      size: 26,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (_cryptoProfileExpanded && hasExtra) ...[
+          const SizedBox(height: 8),
+          if (desc.isNotEmpty) ...[
+            Text(
+              l10n.assetDetailAbout,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: DopamineTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              desc,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: DopamineTheme.textPrimary,
+                height: 1.45,
+              ),
+            ),
+            if (site.isNotEmpty) const SizedBox(height: 14),
+          ],
+          if (site.isNotEmpty)
+            InkWell(
+              onTap: () => _openWebsite(site),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.link_rounded,
+                      color: DopamineTheme.neonGreen,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.assetDetailWebsite,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: DopamineTheme.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            site,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: DopamineTheme.neonGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.open_in_new_rounded,
+                      size: 18,
+                      color: DopamineTheme.textSecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
   String _orDash(String? v, AppLocalizations l10n) {
     if (v == null || v.trim().isEmpty) return l10n.assetDetailNotAvailable;
     return v;
   }
 
   Widget _kvRow(ThemeData theme, String label, String value) {
+    return _kvRowValue(
+      theme,
+      label,
+      Text(
+        value,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: DopamineTheme.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _kvRowValue(ThemeData theme, String label, Widget value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -563,16 +794,41 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: DopamineTheme.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          Expanded(child: value),
         ],
+      ),
+    );
+  }
+
+  Widget _kvMarketCapRow(
+    ThemeData theme,
+    AppLocalizations l10n,
+    AssetDetail d,
+  ) {
+    final mainStyle = theme.textTheme.bodyMedium?.copyWith(
+          color: DopamineTheme.textPrimary,
+          fontWeight: FontWeight.w700,
+        ) ??
+        const TextStyle();
+    final unitStyle = theme.textTheme.bodyMedium?.copyWith(
+          color: DopamineTheme.neonGreen.withValues(alpha: 0.82),
+          fontWeight: FontWeight.w600,
+        ) ??
+        const TextStyle();
+    return _kvRowValue(
+      theme,
+      l10n.assetDetailMarketCap,
+      Text.rich(
+        TextSpan(
+          children: marketCapValueSpans(
+            l10n,
+            mainStyle: mainStyle,
+            unitStyle: unitStyle,
+            marketCapFromApi: d.marketCap,
+            marketCapRaw: d.marketCapRaw,
+            currencyCode: d.currency,
+          ),
+        ),
       ),
     );
   }
@@ -594,10 +850,29 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   }
 }
 
-/// Profile block only when market cap is present (avoids “all dashes + pair” cards).
+/// CoinGecko 상세를 쓰는 암호화폐 — 하단 단독 소개/웹사이트 카드는 쓰지 않고 개요「더보기」만 사용.
+bool _isCryptoAssetDetail(AssetDetail d) {
+  if (d.assetClass.trim().toLowerCase() == 'crypto') return true;
+  for (final s in d.dataSources) {
+    if (s.startsWith('coingecko_coin:')) return true;
+  }
+  return false;
+}
+
+/// 주식·원자재: 시총 있을 때만. 암호화폐: 시총·시총랭킹·현재가 중 하나라도 있으면.
 bool _shouldShowAssetProfileSection(AssetDetail d) {
+  if (_isCryptoAssetDetail(d)) {
+    final mc = d.marketCap?.trim() ?? '';
+    if (mc.isNotEmpty) return true;
+    if (d.marketCapRank != null) return true;
+    final px = d.currentPrice?.trim() ?? '';
+    if (px.isNotEmpty) return true;
+    return false;
+  }
   final mc = d.marketCap?.trim() ?? '';
-  return mc.isNotEmpty;
+  if (mc.isNotEmpty) return true;
+  final raw = d.marketCapRaw;
+  return raw != null && raw > 0;
 }
 
 class _GlassCard extends StatelessWidget {
