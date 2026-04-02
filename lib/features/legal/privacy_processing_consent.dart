@@ -70,11 +70,18 @@ class _PrivacyProcessingConsentPageState
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        toolbarHeight: 80,
         leading: IconButton(
           icon: const Icon(Icons.close_rounded, size: 28),
           onPressed: () => Navigator.of(context).pop(false),
         ),
-        title: Text(l10n.privacyProcessingConsentTitle),
+        title: DefaultTextStyle.merge(
+          maxLines: 4,
+          softWrap: true,
+          overflow: TextOverflow.clip,
+          textAlign: TextAlign.center,
+          child: Text(l10n.privacyProcessingConsentTitle),
+        ),
       ),
       body: SafeArea(
         child: Padding(
