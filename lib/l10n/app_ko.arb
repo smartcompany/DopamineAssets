@@ -30,6 +30,11 @@
   "profileNotSignedIn": "로그인하면 계정 정보를 볼 수 있습니다.",
   "profileSaveDisplayName": "저장",
   "profileDisplayNameHint": "게시글에 표시되는 이름",
+  "profileDisplayNameInputPlaceholder": "닉네임을 입력해 주세요",
+  "profileCheckDisplayNameDuplicate": "중복 확인",
+  "profileDisplayNameEmpty": "닉네임을 입력해 주세요.",
+  "profileDisplayNameCheckFirst": "먼저 중복 확인을 해 주세요.",
+  "profileNicknameRequiredForCommunity": "프로필에서 닉네임을 설정해 주세요.",
   "profilePushTitle": "푸시 알림",
   "profileSettingsTitle": "설정",
   "profileSettingsMoreSoon": "추가 설정은 곧 제공됩니다.",
@@ -69,7 +74,7 @@
   "profileDisplayNameSaved": "닉네임을 저장했습니다.",
   "profileDisplayNameTaken": "이 닉네임은 이미 다른 사용자가 사용 중입니다.",
   "profileDisplayNameDuplicateFromSocialTitle": "닉네임 확인",
-  "profileDisplayNameDuplicateFromSocialMessage": "소셜 계정에서 가져온 이름 \"{name}\"은(는) 이미 사용 중입니다. 아래에서 새 닉네임을 입력한 뒤 저장해 주세요.",
+  "profileDisplayNameDuplicateFromSocialMessage": "소셜 계정에서 가져온 이름 \"{name}\"은(는) 이미 사용 중입니다. 아래에 새 닉네임을 입력한 뒤 중복 확인 후 저장해 주세요.",
   "@profileDisplayNameDuplicateFromSocialMessage": {
     "placeholders": {
       "name": {

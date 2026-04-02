@@ -6,6 +6,7 @@ import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../auth/dopamine_community_profile_gate.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/formatting/market_cap_display.dart';
@@ -284,7 +285,11 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                   shape: const CircleBorder(),
                                   padding: const EdgeInsets.all(10),
                                 ),
-                                onPressed: () {
+                                onPressed: () async {
+                                  if (!await ensureCommunityIdentity(context)) {
+                                    return;
+                                  }
+                                  if (!context.mounted) return;
                                   Navigator.of(context).push<void>(
                                     MaterialPageRoute<void>(
                                       builder: (_) => CommunityComposeScreen(

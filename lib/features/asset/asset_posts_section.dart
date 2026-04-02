@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
-import '../../auth/present_dopamine_auth_screen.dart';
+import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/network/dopamine_api.dart';
@@ -99,18 +99,13 @@ class _AssetPostsSectionState extends State<AssetPostsSection> {
     Navigator.of(context).pop();
   }
 
-  Future<void> _openAuth(BuildContext context) async {
-    await presentDopamineAuthScreen(context);
-    if (mounted) setState(() {});
-  }
-
   Future<void> _toggleLike(int index, AssetComment c) async {
     final l10n = AppLocalizations.of(context)!;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await _openAuth(context);
+    if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null || !mounted) return;
     final token = await fb.getIdToken();
     if (token == null || !mounted) return;
     try {

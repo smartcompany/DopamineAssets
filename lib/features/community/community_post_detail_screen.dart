@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
+import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/profile/profile_stats_store.dart';
@@ -192,14 +194,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   Future<void> _toggleRootLike() async {
     final l10n = AppLocalizations.of(context)!;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.communityLikeLogin)));
-      await presentDopamineAuthScreen(context);
+    if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null || !mounted) return;
     final token = await fb.getIdToken();
     if (token == null || !mounted) return;
     try {
@@ -222,14 +221,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   Future<void> _toggleCommentLike(AssetComment c) async {
     final l10n = AppLocalizations.of(context)!;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.communityLikeLogin)));
-      await presentDopamineAuthScreen(context);
+    if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null || !mounted) return;
     final token = await fb.getIdToken();
     if (token == null || !mounted) return;
     try {
@@ -256,12 +252,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 
   Future<void> _openEditFromDetail() async {
+    if (!await ensureCommunityIdentity(context)) return;
     final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
-    if (!mounted) return;
+    if (fb == null || !mounted) return;
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute<Object?>(
         builder: (_) => CommunityComposeScreen(editPrefill: _post),
@@ -298,14 +291,15 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       ),
     );
     if (ok != true || !mounted) return;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) return;
-    final token = await fb.getIdToken();
-    if (token == null) return;
+    setState(() => _deleting = true);
     try {
-      if (mounted) setState(() => _deleting = true);
+      final fb = FirebaseAuth.instance.currentUser;
+      if (fb == null) return;
+      final token = await fb.getIdToken();
+      if (token == null) return;
       await DopamineApi.deleteAssetComment(id: _post.id, idToken: token);
       if (mounted) {
+        context.read<HomeShellNavigation>().bumpCommunityFeedEpoch();
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -407,12 +401,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 
   Future<void> _openEditComment(AssetComment c) async {
+    if (!await ensureCommunityIdentity(context)) return;
     final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
-    if (!mounted) return;
+    if (fb == null || !mounted) return;
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute<Object?>(
         builder: (_) => CommunityComposeScreen(editCommentId: c.id),
@@ -448,12 +439,12 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       ),
     );
     if (ok != true || !mounted) return;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) return;
-    final token = await fb.getIdToken();
-    if (token == null) return;
+    setState(() => _deleting = true);
     try {
-      if (mounted) setState(() => _deleting = true);
+      final fb = FirebaseAuth.instance.currentUser;
+      if (fb == null) return;
+      final token = await fb.getIdToken();
+      if (token == null) return;
       await DopamineApi.deleteAssetComment(id: c.id, idToken: token);
       if (!mounted) return;
       _threadDirty = true;
@@ -567,11 +558,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       ).showSnackBar(SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))));
       return;
     }
+    if (!await ensureCommunityIdentity(context)) return;
     final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (fb == null || !mounted) return;
     final token = await fb.getIdToken();
     if (token == null || !mounted) return;
     setState(() => _sending = true);

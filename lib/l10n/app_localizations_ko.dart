@@ -99,6 +99,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileDisplayNameHint => '게시글에 표시되는 이름';
 
   @override
+  String get profileDisplayNameInputPlaceholder => '닉네임을 입력해 주세요';
+
+  @override
+  String get profileCheckDisplayNameDuplicate => '중복 확인';
+
+  @override
+  String get profileDisplayNameEmpty => '닉네임을 입력해 주세요.';
+
+  @override
+  String get profileDisplayNameCheckFirst => '먼저 중복 확인을 해 주세요.';
+
+  @override
+  String get profileNicknameRequiredForCommunity => '프로필에서 닉네임을 설정해 주세요.';
+
+  @override
   String get profilePushTitle => '푸시 알림';
 
   @override
@@ -198,7 +213,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String profileDisplayNameDuplicateFromSocialMessage(String name) {
-    return '소셜 계정에서 가져온 이름 \"$name\"은(는) 이미 사용 중입니다. 아래에서 새 닉네임을 입력한 뒤 저장해 주세요.';
+    return '소셜 계정에서 가져온 이름 \"$name\"은(는) 이미 사용 중입니다. 아래에 새 닉네임을 입력한 뒤 중복 확인 후 저장해 주세요.';
   }
 
   @override

@@ -278,6 +278,36 @@ abstract class AppLocalizations {
   /// **'게시글에 표시되는 이름'**
   String get profileDisplayNameHint;
 
+  /// No description provided for @profileDisplayNameInputPlaceholder.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임을 입력해 주세요'**
+  String get profileDisplayNameInputPlaceholder;
+
+  /// No description provided for @profileCheckDisplayNameDuplicate.
+  ///
+  /// In ko, this message translates to:
+  /// **'중복 확인'**
+  String get profileCheckDisplayNameDuplicate;
+
+  /// No description provided for @profileDisplayNameEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임을 입력해 주세요.'**
+  String get profileDisplayNameEmpty;
+
+  /// No description provided for @profileDisplayNameCheckFirst.
+  ///
+  /// In ko, this message translates to:
+  /// **'먼저 중복 확인을 해 주세요.'**
+  String get profileDisplayNameCheckFirst;
+
+  /// No description provided for @profileNicknameRequiredForCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필에서 닉네임을 설정해 주세요.'**
+  String get profileNicknameRequiredForCommunity;
+
   /// No description provided for @profilePushTitle.
   ///
   /// In ko, this message translates to:
@@ -473,7 +503,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileDisplayNameDuplicateFromSocialMessage.
   ///
   /// In ko, this message translates to:
-  /// **'소셜 계정에서 가져온 이름 \"{name}\"은(는) 이미 사용 중입니다. 아래에서 새 닉네임을 입력한 뒤 저장해 주세요.'**
+  /// **'소셜 계정에서 가져온 이름 \"{name}\"은(는) 이미 사용 중입니다. 아래에 새 닉네임을 입력한 뒤 중복 확인 후 저장해 주세요.'**
   String profileDisplayNameDuplicateFromSocialMessage(String name);
 
   /// No description provided for @profileDisplayNameDuplicateFromSocialOk.

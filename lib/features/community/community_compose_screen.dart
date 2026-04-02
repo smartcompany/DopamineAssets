@@ -1,13 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:share_lib/share_lib.dart';
 
-import '../../auth/present_dopamine_auth_screen.dart';
+import '../../auth/dopamine_community_profile_gate.dart';
+import '../../auth/dopamine_user.dart';
 import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
@@ -327,12 +328,12 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     setState(() => _editLoading = true);
     final l10n = AppLocalizations.of(context)!;
     try {
-      final fb = FirebaseAuth.instance.currentUser;
-      if (fb == null) {
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      if (!auth.isLoggedIn()) {
         if (mounted) Navigator.of(context).pop(false);
         return;
       }
-      final token = await fb.getIdToken();
+      final token = await auth.getIdToken();
       if (token == null || token.isEmpty) {
         if (mounted) Navigator.of(context).pop(false);
         return;
@@ -473,11 +474,10 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   }
 
   Future<void> _submit(AppLocalizations l10n) async {
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    if (!auth.isLoggedIn()) return;
 
     final body = _bodyController.text.trim();
     if (body.isEmpty) {
@@ -518,7 +518,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
     setState(() => _submitting = true);
     try {
-      final token = await fb.getIdToken();
+      final token = await auth.getIdToken();
       if (token == null || token.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(

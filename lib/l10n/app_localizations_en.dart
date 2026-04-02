@@ -102,6 +102,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameHint => 'How your name appears on posts';
 
   @override
+  String get profileDisplayNameInputPlaceholder => 'Enter a display name';
+
+  @override
+  String get profileCheckDisplayNameDuplicate => 'Check availability';
+
+  @override
+  String get profileDisplayNameEmpty => 'Please enter a display name.';
+
+  @override
+  String get profileDisplayNameCheckFirst =>
+      'Check availability before saving.';
+
+  @override
+  String get profileNicknameRequiredForCommunity =>
+      'Set your display name in Profile.';
+
+  @override
   String get profilePushTitle => 'Push notifications';
 
   @override
@@ -201,7 +218,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String profileDisplayNameDuplicateFromSocialMessage(String name) {
-    return 'The name from your sign-in provider, \"$name\", is already in use. Enter a different display name below and tap Save.';
+    return 'The name from your sign-in provider, \"$name\", is already in use. Enter a new name below, tap Check availability, then Save.';
   }
 
   @override

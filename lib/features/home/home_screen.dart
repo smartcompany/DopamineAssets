@@ -440,7 +440,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                if (_rankingsLoading && _upItems == null)
+                // 필터 적용·당겨서 새로고침 시에도 이전 랭킹이 남아 있으므로 `items == null` 조건은 쓰지 않음.
+                if (_rankingsLoading)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 10),
@@ -458,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                if (_rankingsLoading && _downItems == null)
+                if (_rankingsLoading)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 10),

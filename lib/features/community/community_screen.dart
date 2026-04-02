@@ -1,9 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/feed/home_asset_suggestions.dart';
@@ -15,6 +15,7 @@ import '../../core/profile/profile_stats_store.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
+import '../../widgets/run_with_fullscreen_loading.dart';
 import '../profile/public_profile_screen.dart';
 import 'community_compose_screen.dart';
 import 'community_post_card.dart';
@@ -38,6 +39,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   List<CommunityPost> _posts = const [];
 
   HomeShellNavigation? _nav;
+  int _lastCommunityFeedEpoch = 0;
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
 
@@ -50,7 +52,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   void initState() {
     super.initState();
-    _scheduleFetch();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scheduleFetch();
+    });
   }
 
   Future<void> _scheduleFetch() async {
@@ -60,9 +64,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _fetchError = null;
     });
     String? idToken;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb != null) {
-      idToken = await fb.getIdToken();
+    if (mounted) {
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      if (auth.isLoggedIn()) {
+        idToken = await auth.getIdToken();
+      }
     }
     try {
       final items = await DopamineApi.fetchCommunityPosts(
@@ -90,7 +96,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _openPostDetail(CommunityPost p) async {
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
     final changed = await CommunityPostDetailScreen.open(
       context,
       post: p,
@@ -110,16 +116,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _toggleLike(int index, CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.communityLikeLogin)));
-      await presentDopamineAuthScreen(context);
+    if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
-    final token = await fb.getIdToken();
-    if (token == null || !mounted) return;
+    if (!mounted) return;
+    final token = await context.read<AuthProvider<DopamineUser>>().getIdToken();
+    if (token == null || token.isEmpty || !mounted) return;
     try {
       final r = await DopamineApi.toggleCommentLike(
         idToken: token,
@@ -160,18 +162,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   void _handleNav() {
     final nav = _nav;
-    if (nav == null) return;
+    if (nav == null || !mounted) return;
+
     final f = nav.takePendingFilter();
-    if (f == null) return;
-    if (!mounted) return;
-    setState(() {
-      _symbolFilterActive = true;
-      _symbolFilterSymbol = f.symbol;
-      _symbolFilterClass = f.assetClass;
-      _bodySearchTerms.clear();
-      _searchController.clear();
-    });
-    _scheduleFetch();
+    if (f != null) {
+      setState(() {
+        _symbolFilterActive = true;
+        _symbolFilterSymbol = f.symbol;
+        _symbolFilterClass = f.assetClass;
+        _bodySearchTerms.clear();
+        _searchController.clear();
+      });
+      _scheduleFetch();
+    }
+
+    if (nav.communityFeedEpoch != _lastCommunityFeedEpoch) {
+      _lastCommunityFeedEpoch = nav.communityFeedEpoch;
+      _scheduleFetch();
+    }
   }
 
   void _removeSymbolFilter() {
@@ -191,11 +199,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _openCompose(BuildContext context) async {
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!context.mounted) return;
+    if (!context.read<AuthProvider<DopamineUser>>().isLoggedIn()) return;
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute<Object?>(
         builder: (ctx) => CommunityComposeScreen(
@@ -210,11 +216,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _openEditCompose(CommunityPost p) async {
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
+    if (!context.read<AuthProvider<DopamineUser>>().isLoggedIn()) return;
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute<Object?>(
         builder: (_) => CommunityComposeScreen(editPrefill: p),
@@ -227,15 +231,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _reportCommunityPost(CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    if (!auth.isLoggedIn()) {
       await presentDopamineAuthScreen(context);
       return;
     }
     final reasonText = await showCommunityReportSheet(context);
     if (reasonText == null || !mounted) return;
-    final token = await fb.getIdToken();
-    if (token == null) return;
+    final token = await auth.getIdToken();
+    if (token == null || token.isEmpty) return;
     try {
       await DopamineApi.reportAssetComment(
         commentId: p.id,
@@ -255,8 +259,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _blockAuthorFromPost(CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    if (!auth.isLoggedIn()) {
       await presentDopamineAuthScreen(context);
       return;
     }
@@ -294,8 +298,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
       ),
     );
     if (ok != true || !mounted) return;
-    final token = await fb.getIdToken();
-    if (token == null) return;
+    final token = await auth.getIdToken();
+    if (token == null || token.isEmpty) return;
     try {
       await DopamineApi.blockUser(idToken: token, targetUid: p.authorUid);
       if (!mounted) return;
@@ -337,17 +341,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
       },
     );
     if (ok != true || !mounted) return;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) return;
-    final token = await fb.getIdToken();
-    if (token == null || token.isEmpty) return;
     try {
-      await DopamineApi.deleteAssetComment(id: p.id, idToken: token);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
+      await runWithFullscreenLoading<void>(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
-      _scheduleFetch();
+        (() async {
+          final token =
+              await context.read<AuthProvider<DopamineUser>>().getIdToken();
+          if (token == null || token.isEmpty) return;
+          await DopamineApi.deleteAssetComment(id: p.id, idToken: token);
+          if (!mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
+          _scheduleFetch();
+        })(),
+      );
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
@@ -398,6 +406,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (!identical(_nav, nav)) {
       _nav?.removeListener(_handleNav);
       _nav = nav;
+      _lastCommunityFeedEpoch = nav.communityFeedEpoch;
       _nav!.addListener(_handleNav);
     }
   }
@@ -416,7 +425,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final auth = context.watch<AuthProvider<DopamineUser>>();
-    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final myUid = auth.currentUid();
     context.watch<HomeAssetSuggestions>();
 
     return Scaffold(

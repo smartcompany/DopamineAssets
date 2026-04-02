@@ -17,6 +17,14 @@ class HomeShellNavigation extends ChangeNotifier {
   int tabIndex = 0;
   CommunityNavFilter? _pendingFilter;
 
+  /// 프로필 등 다른 화면에서 글이 삭제되면 증가시키고, [CommunityScreen]이 목록을 다시 받아옵니다.
+  int communityFeedEpoch = 0;
+
+  void bumpCommunityFeedEpoch() {
+    communityFeedEpoch++;
+    notifyListeners();
+  }
+
   void openCommunityForAsset({
     required String symbol,
     required String assetClass,

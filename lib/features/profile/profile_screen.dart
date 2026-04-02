@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
@@ -23,6 +24,7 @@ import '../../data/models/community_post.dart';
 import '../../data/models/profile_activity_item.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
+import '../../widgets/run_with_fullscreen_loading.dart';
 import '../asset/asset_detail_screen.dart';
 import '../community/community_compose_screen.dart';
 import '../community/community_post_card.dart';
@@ -51,6 +53,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<ProfileActivityItem> _activity = const [];
 
   bool _savingName = false;
+
+  /// [TextEditingController.text] trim 값이 중복 확인을 통과한 경우에만 저장 허용.
+  String? _verifiedTrimmedName;
+  bool _checkingDisplayName = false;
   bool _uploadingPhoto = false;
   bool _syncingProfileFromServer = false;
   bool _pushPrefsLoading = false;
@@ -82,41 +88,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
+      // 서버에 프로필 행이 없으면 소셜 표시 이름으로 자동 등록하지 않고 빈 필드로 둡니다.
       final firebaseName = firebaseUser.displayName?.trim();
       if (firebaseName != null && firebaseName.isNotEmpty) {
-        var available = true;
+        var taken = false;
         try {
-          available = await DopamineApi.fetchDisplayNameAvailable(
+          taken = !await DopamineApi.fetchDisplayNameAvailable(
             idToken: token,
             displayName: firebaseName,
           );
         } catch (_) {
-          available = true;
+          taken = false;
         }
-        if (available) {
-          await DopamineApi.patchProfileDisplayName(
-            idToken: token,
-            displayName: firebaseName,
-          );
+        if (taken) {
           if (!mounted) return;
-          auth.setUserProfile(
-            DopamineUser(
-              uid: firebaseUser.uid,
-              displayName: firebaseName,
-              photoUrl: null,
-            ),
-          );
-          _syncNameField(firebaseName);
+          auth.setUserProfile(null);
+          _nameController.clear();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            unawaited(_showDuplicateSocialNameDialog(firebaseName));
+          });
           return;
         }
-        if (!mounted) return;
-        auth.setUserProfile(null);
-        _nameController.text = firebaseName;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          unawaited(_showDuplicateSocialNameDialog(firebaseName));
-        });
-        return;
       }
 
       if (!mounted) return;
@@ -129,9 +122,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _onNameDraftChanged() {
+    if (!mounted) return;
+    final t = _nameController.text.trim();
+    if (_verifiedTrimmedName != null && t != _verifiedTrimmedName) {
+      setState(() => _verifiedTrimmedName = null);
+    } else {
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _nameController.addListener(_onNameDraftChanged);
     _authProvider = context.read<AuthProvider<DopamineUser>>();
     _authProvider!.addListener(_handleAuthProviderUpdate);
     _authSub = FirebaseAuth.instance.authStateChanges().listen((u) async {
@@ -196,6 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _nameController.removeListener(_onNameDraftChanged);
     _shellNav?.removeListener(_handleShellNav);
     _authSub?.cancel();
     _authProvider?.removeListener(_handleAuthProviderUpdate);
@@ -215,12 +220,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // provider 업데이트를 감지해서 컨트롤러를 다시 채웁니다. (빈 닉네임도 반영)
     final normalized = p.displayName.trim();
     if (_nameController.text.trim() != normalized) {
-      _nameController.text = normalized;
+      setState(() {
+        _nameController.text = normalized;
+        _verifiedTrimmedName = null;
+      });
     }
   }
 
   void _syncNameField(String? displayName) {
     _nameController.text = (displayName ?? '').trim();
+    _verifiedTrimmedName = null;
   }
 
   String _extFromPath(String path) {
@@ -439,13 +448,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       debugPrint('[PushPrefs][UI] PATCH response=$updated');
       if (!mounted) return;
       setState(() {
-        _pushMasterEnabled =
-            _pushPrefBool(updated, PushPrefsKeys.masterEnabled);
-        _pushSocialReply =
-            _pushPrefBool(updated, PushPrefsKeys.socialReply);
+        _pushMasterEnabled = _pushPrefBool(
+          updated,
+          PushPrefsKeys.masterEnabled,
+        );
+        _pushSocialReply = _pushPrefBool(updated, PushPrefsKeys.socialReply);
         _pushSocialLike = _pushPrefBool(updated, PushPrefsKeys.socialLike);
-        _pushMarketDaily =
-            _pushPrefBool(updated, PushPrefsKeys.marketDailyBrief);
+        _pushMarketDaily = _pushPrefBool(
+          updated,
+          PushPrefsKeys.marketDailyBrief,
+        );
       });
       debugPrint('[PushPrefs][UI] state updated=${_pushSnapshot()}');
     } catch (e) {
@@ -476,9 +488,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _checkDisplayNameDuplicate(AppLocalizations l10n) async {
+    final text = _nameController.text.trim();
+    if (text.isEmpty || text.length > 80) return;
+
+    final bad = UgcBannedWords.firstMatch(text);
+    if (bad != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))));
+      return;
+    }
+
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    final committed = (auth.userProfile?.displayName ?? '').trim();
+    if (committed.isNotEmpty && text.toLowerCase() == committed.toLowerCase()) {
+      return;
+    }
+
+    setState(() => _checkingDisplayName = true);
+    try {
+      final token = await fb.getIdToken();
+      if (token == null || token.isEmpty) return;
+
+      try {
+        final ok = await DopamineApi.fetchDisplayNameAvailable(
+          idToken: token,
+          displayName: text,
+        );
+        if (!mounted) return;
+        if (!ok) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.profileDisplayNameTaken)));
+          return;
+        }
+        setState(() => _verifiedTrimmedName = text);
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+      }
+    } finally {
+      if (mounted) setState(() => _checkingDisplayName = false);
+    }
+  }
+
   Future<void> _saveDisplayName(AppLocalizations l10n) async {
     final text = _nameController.text.trim();
-    if (text.isEmpty || text.length > 80) {
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileDisplayNameEmpty)));
+      return;
+    }
+    if (text.length > 80) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
@@ -497,36 +565,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (fb == null) return;
 
     final auth = context.read<AuthProvider<DopamineUser>>();
-    final currentName = (auth.userProfile?.displayName ?? '').trim();
-    final nameChanged =
-        currentName.toLowerCase() != text.toLowerCase();
+    final committed = (auth.userProfile?.displayName ?? '').trim();
+    final unchanged =
+        committed.isNotEmpty && text.toLowerCase() == committed.toLowerCase();
+    if (unchanged) return;
+
+    if (_verifiedTrimmedName != text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profileDisplayNameCheckFirst)),
+      );
+      return;
+    }
 
     setState(() => _savingName = true);
     try {
       final token = await fb.getIdToken();
       if (token == null || token.isEmpty) return;
-
-      if (nameChanged || currentName.isEmpty) {
-        try {
-          final ok = await DopamineApi.fetchDisplayNameAvailable(
-            idToken: token,
-            displayName: text,
-          );
-          if (!ok) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.profileDisplayNameTaken)),
-            );
-            return;
-          }
-        } catch (_) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.errorLoadFailed)),
-          );
-          return;
-        }
-      }
 
       await DopamineApi.patchProfileDisplayName(
         idToken: token,
@@ -542,6 +596,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
       if (!mounted) return;
+      setState(() => _verifiedTrimmedName = null);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.profileDisplayNameSaved)));
@@ -763,6 +818,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ProfileActivityItem item,
   ) async {
     final l10n = AppLocalizations.of(context)!;
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!context.mounted) return;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
     final result = await Navigator.of(context).push<Object?>(
@@ -797,7 +854,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       myUid: fb.uid,
       onPostUpdated: (_) {
         if (mounted) {
-        _loadData(showLoading: false);
+          _loadData(showLoading: false);
         }
       },
     );
@@ -808,11 +865,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _toggleActivityLike(CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      await presentDopamineAuthScreen(context);
+    if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || !mounted) return;
     final token = await user.getIdToken();
     if (token == null || !mounted) return;
     try {
@@ -854,28 +911,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
     if (ok != true || !context.mounted) return;
-    final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) return;
-    final token = await fb.getIdToken();
-    if (token == null || token.isEmpty) return;
     try {
-      await DopamineApi.deleteAssetComment(id: item.commentId, idToken: token);
-      if (!context.mounted) return;
-      await _loadData();
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
+      await runWithFullscreenLoading<void>(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
+        (() async {
+          final fb = FirebaseAuth.instance.currentUser;
+          if (fb == null) return;
+          final token = await fb.getIdToken();
+          if (token == null || token.isEmpty) return;
+          await DopamineApi.deleteAssetComment(
+            id: item.commentId,
+            idToken: token,
+          );
+          if (!context.mounted) return;
+          context.read<HomeShellNavigation>().bumpCommunityFeedEpoch();
+          await _loadData();
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
+        })(),
+      );
     } catch (e) {
       if (!context.mounted) return;
       // 이미 다른 화면에서 지워진 항목이면 로컬 목록만 정리하고 성공으로 간주합니다.
       if (e is ApiException && e.message.toLowerCase().contains('not found')) {
+        context.read<HomeShellNavigation>().bumpCommunityFeedEpoch();
         setState(() {
-          _activity = _activity.where((a) => a.commentId != item.commentId).toList();
+          _activity = _activity
+              .where((a) => a.commentId != item.commentId)
+              .toList();
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.profileActivityPostDeleted)),
+        );
         unawaited(_loadData());
         return;
       }
@@ -1044,6 +1113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool profileSaved,
     String? profilePhotoUrl,
     String locale,
+    String committedDisplayNameTrimmed,
   ) {
     return NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -1107,68 +1177,96 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _nameController,
-                          onTapOutside: (_) {
-                            FocusManager.instance.primaryFocus?.unfocus();
-                          },
-                          maxLength: 80,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: DopamineTheme.textPrimary,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: l10n.profileDisplayNameHint,
-                            hintStyle: TextStyle(
-                              color: DopamineTheme.textSecondary.withValues(
-                                alpha: 0.85,
+                  Builder(
+                    builder: (context) {
+                      final committed = committedDisplayNameTrimmed;
+                      final draft = _nameController.text.trim();
+                      final draftValid = draft.isNotEmpty && draft.length <= 80;
+                      final nameUnchanged =
+                          committed.isNotEmpty &&
+                          draft.toLowerCase() == committed.toLowerCase();
+                      final verifiedForDraft =
+                          _verifiedTrimmedName != null &&
+                          _verifiedTrimmedName == draft;
+                      final busy = _savingName || _checkingDisplayName;
+                      final VoidCallback? nameAction = busy
+                          ? null
+                          : nameUnchanged
+                          ? null
+                          : verifiedForDraft
+                          ? () => _saveDisplayName(l10n)
+                          : draftValid
+                          ? () => _checkDisplayNameDuplicate(l10n)
+                          : null;
+                      final String nameActionLabel = nameUnchanged
+                          ? l10n.profileSaveDisplayName
+                          : verifiedForDraft
+                          ? l10n.profileSaveDisplayName
+                          : l10n.profileCheckDisplayNameDuplicate;
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _nameController,
+                              onTapOutside: (_) {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                              },
+                              maxLength: 80,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: DopamineTheme.textPrimary,
                               ),
-                            ),
-                            filled: true,
-                            fillColor: Colors.black.withValues(alpha: 0.22),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.12),
-                              ),
-                            ),
-                            counterText: '',
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      FilledButton(
-                        onPressed: _savingName
-                            ? null
-                            : () => _saveDisplayName(l10n),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: DopamineTheme.neonGreen,
-                          foregroundColor: const Color(0xFF0A0A0A),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                        ),
-                        child: _savingName
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color(0xFF0A0A0A),
+                              decoration: InputDecoration(
+                                hintText: committed.isEmpty
+                                    ? l10n.profileDisplayNameInputPlaceholder
+                                    : l10n.profileDisplayNameHint,
+                                hintStyle: TextStyle(
+                                  color: DopamineTheme.textSecondary.withValues(
+                                    alpha: 0.85,
+                                  ),
                                 ),
-                              )
-                            : Text(l10n.profileSaveDisplayName),
-                      ),
-                    ],
+                                filled: true,
+                                fillColor: Colors.black.withValues(alpha: 0.22),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                  ),
+                                ),
+                                counterText: '',
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          FilledButton(
+                            onPressed: nameAction,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: DopamineTheme.neonGreen,
+                              foregroundColor: const Color(0xFF0A0A0A),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 14,
+                              ),
+                            ),
+                            child: _savingName || _checkingDisplayName
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF0A0A0A),
+                                    ),
+                                  )
+                                : Text(nameActionLabel),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   if (ProfileStatsStore.instance.stats == null && _loading)
@@ -1533,6 +1631,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? ListenableBuilder(
                 listenable: ProfileStatsStore.instance,
                 builder: (context, _) {
+                  final committedName = (auth.userProfile?.displayName ?? '')
+                      .trim();
                   return _buildSignedInBody(
                     context,
                     theme,
@@ -1541,6 +1641,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     profileSaved,
                     profilePhotoUrl,
                     locale,
+                    committedName,
                   );
                 },
               )

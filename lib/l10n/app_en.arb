@@ -30,6 +30,11 @@
   "profileNotSignedIn": "Sign in to see your account.",
   "profileSaveDisplayName": "Save",
   "profileDisplayNameHint": "How your name appears on posts",
+  "profileDisplayNameInputPlaceholder": "Enter a display name",
+  "profileCheckDisplayNameDuplicate": "Check availability",
+  "profileDisplayNameEmpty": "Please enter a display name.",
+  "profileDisplayNameCheckFirst": "Check availability before saving.",
+  "profileNicknameRequiredForCommunity": "Set your display name in Profile.",
   "profilePushTitle": "Push notifications",
   "profileSettingsTitle": "Settings",
   "profileSettingsMoreSoon": "More settings coming soon.",
@@ -69,7 +74,7 @@
   "profileDisplayNameSaved": "Display name updated.",
   "profileDisplayNameTaken": "This display name is already taken.",
   "profileDisplayNameDuplicateFromSocialTitle": "Display name",
-  "profileDisplayNameDuplicateFromSocialMessage": "The name from your sign-in provider, \"{name}\", is already in use. Enter a different display name below and tap Save.",
+  "profileDisplayNameDuplicateFromSocialMessage": "The name from your sign-in provider, \"{name}\", is already in use. Enter a new name below, tap Check availability, then Save.",
   "@profileDisplayNameDuplicateFromSocialMessage": {
     "placeholders": {
       "name": {

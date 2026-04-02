@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 
+import '../../auth/dopamine_community_profile_gate.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
@@ -174,7 +175,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _togglePostLike(CommunityPost p) async {
-    final token = await _idTokenOrLogin();
+    if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
+      return;
+    }
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null || !mounted) return;
+    final token = await fb.getIdToken();
     if (token == null || !mounted) return;
     try {
       await DopamineApi.toggleCommentLike(idToken: token, commentId: p.id);
