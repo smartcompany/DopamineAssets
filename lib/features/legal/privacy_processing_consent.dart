@@ -68,7 +68,14 @@ class _PrivacyProcessingConsentPageState
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.privacyProcessingConsentTitle)),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded, size: 28),
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+        title: Text(l10n.privacyProcessingConsentTitle),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
