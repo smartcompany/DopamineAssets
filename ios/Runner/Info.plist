@@ -21,7 +21,7 @@
 		<key>CFBundleSignature</key>
 		<string>????</string>
 		<key>CFBundleVersion</key>
-		<string>4</string>
+		<string>5</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UIDeviceFamily</key>
@@ -69,6 +69,13 @@
 			</dict>
 		</array>
 		<key>UIStatusBarHidden</key>
+		<false/>
+
+		<!--
+		App Store Export Compliance 문서(암호/비암호 해당 여부) 판단용.
+		Fastfile의 export_compliance.uses_non_exempt_encryption 과 일치하도록 false로 설정.
+		-->
+		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
 	</dict>
 </plist>

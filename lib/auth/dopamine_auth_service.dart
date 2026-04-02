@@ -51,6 +51,32 @@ final class DopamineAuthService implements AuthServiceInterface {
 
   @override
   Future<Map<String, String>> loginWithKakao(String accessToken) async {
-    throw UnsupportedError('Kakao login is disabled in Dopamine Assets');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/auth/kakao/firebase');
+    final response = await http.post(
+      uri,
+      headers: const {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'access_token': accessToken}),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Kakao login failed (${response.statusCode})');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception('Kakao login failed (invalid response)');
+    }
+    final uid = (decoded['uid'] as String?)?.trim() ?? '';
+    final kakaoId = (decoded['kakao_id'] as String?)?.trim() ?? '';
+    final customToken = (decoded['custom_token'] as String?)?.trim() ?? '';
+    if (uid.isEmpty || kakaoId.isEmpty || customToken.isEmpty) {
+      throw Exception('Kakao login failed (missing token)');
+    }
+    return {
+      'uid': uid,
+      'kakao_id': kakaoId,
+      'custom_token': customToken,
+    };
   }
 }
