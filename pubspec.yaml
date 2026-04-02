@@ -30,6 +30,7 @@ dependencies:
   firebase_analytics: ^12.2.0
   firebase_crashlytics: ^5.1.0
   crypto: ^3.0.7
+  kakao_flutter_sdk_common: ^1.10.0
 
 dev_dependencies:
   flutter_test:

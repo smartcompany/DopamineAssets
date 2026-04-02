@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
@@ -92,6 +93,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _loading = false;
       });
     }
+  }
+
+  /// `RefreshIndicator` 위쪽 스피너는 `_scheduleFetch()` 완료까지 유지됩니다.
+  /// 그런데 커뮤니티는 `_loading` 상태에서 리스트 중앙 스피너가 이미 돌고 있어서
+  /// 위/아래 스피너가 동시에 보이는 게 자연스럽지 않습니다.
+  /// 그래서 여기서는 fetch를 시작만 하고 즉시 완료 처리하여 위쪽 스피너를 빨리 숨깁니다.
+  Future<void> _scheduleFetchForRefreshIndicator() {
+    if (_loading) return Future.value();
+    unawaited(_scheduleFetch());
+    return Future.value();
   }
 
   Future<void> _openPostDetail(CommunityPost p) async {
@@ -720,7 +731,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Expanded(
               child: RefreshIndicator(
                 color: DopamineTheme.neonGreen,
-                onRefresh: _scheduleFetch,
+                onRefresh: _scheduleFetchForRefreshIndicator,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final minScrollExtent = constraints.maxHeight > 0

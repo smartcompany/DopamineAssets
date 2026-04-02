@@ -107,6 +107,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// `RefreshIndicator` 위쪽 스피너는 `_pullRefreshHome()` 완료까지 유지됩니다.
+  /// 홈은 실제 로딩 상태(`_rankingsLoading`)를 하단/컨텐츠 영역에서 보여주기 때문에,
+  /// 여기서는 당기는 제스처가 끝날 때 위쪽 스피너가 빨리 사라지도록
+  /// fetch를 "시작만" 하고 즉시 완료 처리합니다.
+  Future<void> _pullRefreshHomeForRefreshIndicator() {
+    if (!mounted) return Future.value();
+    if (_rankingsLoading) return Future.value();
+    unawaited(_pullRefreshHome());
+    return Future.value();
+  }
+
   @override
   void dispose() {
     if (_rankingPollTimer != null) {
@@ -364,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Positioned.fill(
           child: RefreshIndicator(
             color: DopamineTheme.neonGreen,
-            onRefresh: _pullRefreshHome,
+            onRefresh: _pullRefreshHomeForRefreshIndicator,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(
                 parent: AlwaysScrollableScrollPhysics(),
