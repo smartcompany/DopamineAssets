@@ -33,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Duration _filterApplyDebounce = Duration(milliseconds: 600);
 
   Set<String>? _rankingClasses;
+
   /// 화면에서 토글 중인 필터(저장·API 반영은 리로드 버튼).
   late Set<String> _pendingFilter;
   List<RankedAsset>? _upItems;
@@ -176,14 +177,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       final locale = Localizations.localeOf(context).languageCode;
       final results = await Future.wait([
-        DopamineApi.fetchRankingsUp(
-          includeAssetClasses: c,
-          locale: locale,
-        ),
-        DopamineApi.fetchRankingsDown(
-          includeAssetClasses: c,
-          locale: locale,
-        ),
+        DopamineApi.fetchRankingsUp(includeAssetClasses: c, locale: locale),
+        DopamineApi.fetchRankingsDown(includeAssetClasses: c, locale: locale),
       ]);
       if (!mounted || id != _rankingRequestId) {
         _logRankings('request #$id dropped (stale or unmounted)');
@@ -312,7 +307,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 20),
+            padding: const EdgeInsets.fromLTRB(
+              _kHomeGutter,
+              0,
+              _kHomeGutter,
+              20,
+            ),
             child: _InlineError(_rankingsError.toString()),
           ),
         ),
@@ -323,7 +323,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 20),
+            padding: const EdgeInsets.fromLTRB(
+              _kHomeGutter,
+              0,
+              _kHomeGutter,
+              20,
+            ),
             child: Text(
               l10n.emptyState,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -416,20 +421,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 36,
                             width: double.infinity,
                             child: _HomeFilterScrollStrip(
-                              itemCount:
-                                  RankingFilterPrefs.orderedKeys.length,
+                              itemCount: RankingFilterPrefs.orderedKeys.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(width: 8),
                               itemBuilder: (context, index) {
                                 final key =
                                     RankingFilterPrefs.orderedKeys[index];
-                                final label = _assetClassBadgeLabel(
-                                      l10n,
-                                      key,
-                                    ) ??
-                                    key;
-                                final selected =
-                                    _pendingFilter.contains(key);
+                                final label =
+                                    _assetClassBadgeLabel(l10n, key) ?? key;
+                                final selected = _pendingFilter.contains(key);
                                 return _FilterToggleChip(
                                   label: label,
                                   selected: selected,
@@ -445,7 +445,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 8),
+                    padding: const EdgeInsets.fromLTRB(
+                      _kHomeGutter,
+                      0,
+                      _kHomeGutter,
+                      8,
+                    ),
                     child: _SectionTitle(
                       icon: Icons.trending_up_rounded,
                       iconColor: DopamineTheme.neonGreen,
@@ -458,14 +463,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (_rankingsLoading)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 10),
+                      padding: const EdgeInsets.fromLTRB(
+                        _kHomeGutter,
+                        0,
+                        _kHomeGutter,
+                        10,
+                      ),
                       child: const _HomeSectionProgressLine(),
                     ),
                   ),
                 ..._animatedRankingSlivers(up: true, l10n: l10n, theme: theme),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 8),
+                    padding: const EdgeInsets.fromLTRB(
+                      _kHomeGutter,
+                      0,
+                      _kHomeGutter,
+                      8,
+                    ),
                     child: _SectionTitle(
                       icon: Icons.trending_down_rounded,
                       iconColor: DopamineTheme.accentRed,
@@ -476,14 +491,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (_rankingsLoading)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 10),
+                      padding: const EdgeInsets.fromLTRB(
+                        _kHomeGutter,
+                        0,
+                        _kHomeGutter,
+                        10,
+                      ),
                       child: const _HomeSectionProgressLine(),
                     ),
                   ),
                 ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 8),
+                    padding: const EdgeInsets.fromLTRB(
+                      _kHomeGutter,
+                      0,
+                      _kHomeGutter,
+                      8,
+                    ),
                     child: _SectionTitle(
                       icon: Icons.hub_rounded,
                       iconColor: DopamineTheme.purpleTop,
@@ -499,14 +524,21 @@ class _HomeScreenState extends State<HomeScreen> {
                         future: _crashedThemesFuture,
                         builder: (context, crashSnap) {
                           final hotWait =
-                              hotSnap.connectionState == ConnectionState.waiting;
-                          final crashWait = crashSnap.connectionState ==
+                              hotSnap.connectionState ==
+                              ConnectionState.waiting;
+                          final crashWait =
+                              crashSnap.connectionState ==
                               ConnectionState.waiting;
                           if (!hotWait && !crashWait) {
                             return const SizedBox.shrink();
                           }
                           return Padding(
-                            padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 12),
+                            padding: const EdgeInsets.fromLTRB(
+                              _kHomeGutter,
+                              0,
+                              _kHomeGutter,
+                              12,
+                            ),
                             child: const _HomeSectionProgressLine(),
                           );
                         },
@@ -516,7 +548,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 20),
+                    padding: const EdgeInsets.fromLTRB(
+                      _kHomeGutter,
+                      0,
+                      _kHomeGutter,
+                      20,
+                    ),
                     child: _GlassPanel(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -551,7 +588,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 20),
+                    padding: const EdgeInsets.fromLTRB(
+                      _kHomeGutter,
+                      0,
+                      _kHomeGutter,
+                      20,
+                    ),
                     child: _GlassPanel(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,8 +692,7 @@ class _HomeFilterScrollStrip extends StatefulWidget {
   final Widget Function(BuildContext context, int index) itemBuilder;
 
   @override
-  State<_HomeFilterScrollStrip> createState() =>
-      _HomeFilterScrollStripState();
+  State<_HomeFilterScrollStrip> createState() => _HomeFilterScrollStripState();
 }
 
 class _HomeFilterScrollStripState extends State<_HomeFilterScrollStrip> {
@@ -881,44 +922,57 @@ class _HomeBlazingTitle extends StatelessWidget {
       fontWeight: FontWeight.w900,
       letterSpacing: -0.9,
     );
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        Transform.translate(
-          offset: const Offset(0, 1),
-          child: ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: baseStyle.copyWith(
-                color: const Color(0xFFFF9100).withValues(alpha: 0.55),
-              ),
+    Text titleText(TextStyle style) => Text(
+          text,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          softWrap: false,
+          style: style,
+        );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          width: constraints.maxWidth,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                Transform.translate(
+                  offset: const Offset(0, 1),
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    child: titleText(
+                      baseStyle.copyWith(
+                        color: const Color(0xFFFF9100).withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ),
+                ),
+                ShaderMask(
+                  blendMode: BlendMode.srcIn,
+                  shaderCallback: (bounds) => const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFFF8E1),
+                      Color(0xFFFFE082),
+                      Color(0xFFFFCA28),
+                      Color(0xFFFF9100),
+                      Color(0xFFFF6D00),
+                    ],
+                    stops: [0.0, 0.25, 0.45, 0.72, 1.0],
+                  ).createShader(bounds),
+                  child: titleText(baseStyle.copyWith(color: Colors.white)),
+                ),
+              ],
             ),
           ),
-        ),
-        ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) => const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFFF8E1),
-              Color(0xFFFFE082),
-              Color(0xFFFFCA28),
-              Color(0xFFFF9100),
-              Color(0xFFFF6D00),
-            ],
-            stops: [0.0, 0.25, 0.45, 0.72, 1.0],
-          ).createShader(bounds),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: baseStyle.copyWith(color: Colors.white),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -1449,22 +1503,22 @@ class _GlassThemeRow extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            AssetDetailScreen.open(
-              context,
-              RankedAsset.fromThemeItem(item),
-            );
+            AssetDetailScreen.open(context, RankedAsset.fromThemeItem(item));
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.35),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(

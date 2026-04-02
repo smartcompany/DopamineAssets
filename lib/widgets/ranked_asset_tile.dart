@@ -35,19 +35,13 @@ class RankedAssetTile extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 16,
-                    child: Text('$rank'),
-                  ),
+                  CircleAvatar(radius: 16, child: Text('$rank')),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          asset.name,
-                          style: theme.textTheme.titleMedium,
-                        ),
+                        Text(asset.name, style: theme.textTheme.titleMedium),
                         Text(
                           asset.symbol,
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -78,10 +72,7 @@ class RankedAssetTile extends StatelessWidget {
               ),
               if (asset.summaryLine != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  asset.summaryLine!,
-                  style: theme.textTheme.bodyMedium,
-                ),
+                Text(asset.summaryLine!, style: theme.textTheme.bodyMedium),
               ],
             ],
           ),
