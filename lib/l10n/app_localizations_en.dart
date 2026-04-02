@@ -194,6 +194,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameSaved => 'Display name updated.';
 
   @override
+  String get profileDisplayNameTaken => 'This display name is already taken.';
+
+  @override
+  String get profileDisplayNameDuplicateFromSocialTitle => 'Display name';
+
+  @override
+  String profileDisplayNameDuplicateFromSocialMessage(String name) {
+    return 'The name from your sign-in provider, \"$name\", is already in use. Enter a different display name below and tap Save.';
+  }
+
+  @override
+  String get profileDisplayNameDuplicateFromSocialOk => 'OK';
+
+  @override
+  String get privacyProcessingConsentTitle =>
+      'Personal data processing consent';
+
+  @override
+  String get privacyProcessingConsentLead =>
+      'Please review and accept the following to continue using the service.';
+
+  @override
+  String get privacyProcessingConsentBullet1 =>
+      'Data collected: account identifier (Firebase UID), email if provided, display name and profile photo, and information generated through use such as posts, comments, and watchlists.';
+
+  @override
+  String get privacyProcessingConsentBullet2 =>
+      'Purposes: identification, community and feed features, support, abuse prevention, and service improvement.';
+
+  @override
+  String get privacyProcessingConsentBullet3 =>
+      'Retention: we delete or anonymize data when you delete your account, except where law requires longer retention.';
+
+  @override
+  String get privacyProcessingConsentCheckbox =>
+      'I agree to the collection and use of my personal data as described above.';
+
+  @override
+  String get privacyProcessingConsentAgree => 'Agree and continue';
+
+  @override
+  String get privacyProcessingConsentDecline => 'Decline';
+
+  @override
   String get profileFollowUnfollow => 'Unfollow';
 
   @override

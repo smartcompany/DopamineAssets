@@ -191,6 +191,48 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileDisplayNameSaved => '닉네임을 저장했습니다.';
 
   @override
+  String get profileDisplayNameTaken => '이 닉네임은 이미 다른 사용자가 사용 중입니다.';
+
+  @override
+  String get profileDisplayNameDuplicateFromSocialTitle => '닉네임 확인';
+
+  @override
+  String profileDisplayNameDuplicateFromSocialMessage(String name) {
+    return '소셜 계정에서 가져온 이름 \"$name\"은(는) 이미 사용 중입니다. 아래에서 새 닉네임을 입력한 뒤 저장해 주세요.';
+  }
+
+  @override
+  String get profileDisplayNameDuplicateFromSocialOk => '확인';
+
+  @override
+  String get privacyProcessingConsentTitle => '개인정보 수집·이용 동의';
+
+  @override
+  String get privacyProcessingConsentLead =>
+      '서비스 이용을 위해 아래 내용을 확인하신 뒤 동의해 주세요.';
+
+  @override
+  String get privacyProcessingConsentBullet1 =>
+      '수집 항목: 계정 식별자(Firebase UID), 이메일(있는 경우), 닉네임·프로필 사진, 게시·댓글·관심 종목 등 서비스 이용 과정에서 생성되는 정보';
+
+  @override
+  String get privacyProcessingConsentBullet2 =>
+      '이용 목적: 회원 식별, 커뮤니티·피드 제공, 고객 지원, 부정 이용 방지 및 서비스 개선';
+
+  @override
+  String get privacyProcessingConsentBullet3 =>
+      '보관 및 파기: 탈퇴 시 관련 법령에 따른 보관 의무가 없는 한 지체 없이 삭제·처리합니다.';
+
+  @override
+  String get privacyProcessingConsentCheckbox => '위 개인정보 수집·이용에 동의합니다.';
+
+  @override
+  String get privacyProcessingConsentAgree => '동의하고 계속하기';
+
+  @override
+  String get privacyProcessingConsentDecline => '동의하지 않음';
+
+  @override
   String get profileFollowUnfollow => '언팔로우';
 
   @override

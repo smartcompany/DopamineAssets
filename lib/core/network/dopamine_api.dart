@@ -1100,11 +1100,35 @@ abstract final class DopamineApi {
         .toList();
   }
 
+  static Future<bool> fetchDisplayNameAvailable({
+    required String idToken,
+    required String displayName,
+  }) async {
+    final uri = _uri('/api/profile/display-name-check').replace(
+      queryParameters: {'displayName': displayName},
+    );
+    final response = await _client.get(
+      uri,
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid display name check');
+    }
+    final a = decoded['available'];
+    return a == true;
+  }
+
   static void _ensureOk(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) return;
     try {
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) {
+        if (response.statusCode == 409 &&
+            decoded['error'] == 'display_name_taken') {
+          throw ApiException('display_name_taken');
+        }
         final msg = decoded['message'];
         if (msg is String && msg.isNotEmpty) {
           throw ApiException(msg);

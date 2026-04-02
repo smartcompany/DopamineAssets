@@ -458,6 +458,78 @@ abstract class AppLocalizations {
   /// **'닉네임을 저장했습니다.'**
   String get profileDisplayNameSaved;
 
+  /// No description provided for @profileDisplayNameTaken.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 닉네임은 이미 다른 사용자가 사용 중입니다.'**
+  String get profileDisplayNameTaken;
+
+  /// No description provided for @profileDisplayNameDuplicateFromSocialTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임 확인'**
+  String get profileDisplayNameDuplicateFromSocialTitle;
+
+  /// No description provided for @profileDisplayNameDuplicateFromSocialMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'소셜 계정에서 가져온 이름 \"{name}\"은(는) 이미 사용 중입니다. 아래에서 새 닉네임을 입력한 뒤 저장해 주세요.'**
+  String profileDisplayNameDuplicateFromSocialMessage(String name);
+
+  /// No description provided for @profileDisplayNameDuplicateFromSocialOk.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인'**
+  String get profileDisplayNameDuplicateFromSocialOk;
+
+  /// No description provided for @privacyProcessingConsentTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'개인정보 수집·이용 동의'**
+  String get privacyProcessingConsentTitle;
+
+  /// No description provided for @privacyProcessingConsentLead.
+  ///
+  /// In ko, this message translates to:
+  /// **'서비스 이용을 위해 아래 내용을 확인하신 뒤 동의해 주세요.'**
+  String get privacyProcessingConsentLead;
+
+  /// No description provided for @privacyProcessingConsentBullet1.
+  ///
+  /// In ko, this message translates to:
+  /// **'수집 항목: 계정 식별자(Firebase UID), 이메일(있는 경우), 닉네임·프로필 사진, 게시·댓글·관심 종목 등 서비스 이용 과정에서 생성되는 정보'**
+  String get privacyProcessingConsentBullet1;
+
+  /// No description provided for @privacyProcessingConsentBullet2.
+  ///
+  /// In ko, this message translates to:
+  /// **'이용 목적: 회원 식별, 커뮤니티·피드 제공, 고객 지원, 부정 이용 방지 및 서비스 개선'**
+  String get privacyProcessingConsentBullet2;
+
+  /// No description provided for @privacyProcessingConsentBullet3.
+  ///
+  /// In ko, this message translates to:
+  /// **'보관 및 파기: 탈퇴 시 관련 법령에 따른 보관 의무가 없는 한 지체 없이 삭제·처리합니다.'**
+  String get privacyProcessingConsentBullet3;
+
+  /// No description provided for @privacyProcessingConsentCheckbox.
+  ///
+  /// In ko, this message translates to:
+  /// **'위 개인정보 수집·이용에 동의합니다.'**
+  String get privacyProcessingConsentCheckbox;
+
+  /// No description provided for @privacyProcessingConsentAgree.
+  ///
+  /// In ko, this message translates to:
+  /// **'동의하고 계속하기'**
+  String get privacyProcessingConsentAgree;
+
+  /// No description provided for @privacyProcessingConsentDecline.
+  ///
+  /// In ko, this message translates to:
+  /// **'동의하지 않음'**
+  String get privacyProcessingConsentDecline;
+
   /// No description provided for @profileFollowUnfollow.
   ///
   /// In ko, this message translates to:

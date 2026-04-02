@@ -18,6 +18,7 @@ import '../../core/network/dopamine_api.dart';
 import '../../core/push/push_prefs_keys.dart';
 import '../../core/text/ugc_banned_words.dart';
 import '../../core/storage/community_post_image_upload.dart';
+import '../legal/privacy_processing_consent.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/profile_activity_item.dart';
 import '../../data/models/ranked_asset.dart';
@@ -83,19 +84,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final firebaseName = firebaseUser.displayName?.trim();
       if (firebaseName != null && firebaseName.isNotEmpty) {
-        await DopamineApi.patchProfileDisplayName(
-          idToken: token,
-          displayName: firebaseName,
-        );
-        if (!mounted) return;
-        auth.setUserProfile(
-          DopamineUser(
-            uid: firebaseUser.uid,
+        var available = true;
+        try {
+          available = await DopamineApi.fetchDisplayNameAvailable(
+            idToken: token,
             displayName: firebaseName,
-            photoUrl: null,
-          ),
-        );
-        _syncNameField(firebaseName);
+          );
+        } catch (_) {
+          available = true;
+        }
+        if (available) {
+          await DopamineApi.patchProfileDisplayName(
+            idToken: token,
+            displayName: firebaseName,
+          );
+          if (!mounted) return;
+          auth.setUserProfile(
+            DopamineUser(
+              uid: firebaseUser.uid,
+              displayName: firebaseName,
+              photoUrl: null,
+            ),
+          );
+          _syncNameField(firebaseName);
+          return;
+        }
+        if (!mounted) return;
+        auth.setUserProfile(null);
+        _nameController.text = firebaseName;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(_showDuplicateSocialNameDialog(firebaseName));
+        });
         return;
       }
 
@@ -439,6 +459,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _showDuplicateSocialNameDialog(String name) async {
+    final l10n = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.profileDisplayNameDuplicateFromSocialTitle),
+        content: Text(l10n.profileDisplayNameDuplicateFromSocialMessage(name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.profileDisplayNameDuplicateFromSocialOk),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveDisplayName(AppLocalizations l10n) async {
     final text = _nameController.text.trim();
     if (text.isEmpty || text.length > 80) {
@@ -459,17 +496,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
 
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    final currentName = (auth.userProfile?.displayName ?? '').trim();
+    final nameChanged =
+        currentName.toLowerCase() != text.toLowerCase();
+
     setState(() => _savingName = true);
     try {
       final token = await fb.getIdToken();
-      if (token != null && token.isNotEmpty) {
-        await DopamineApi.patchProfileDisplayName(
-          idToken: token,
-          displayName: text,
-        );
+      if (token == null || token.isEmpty) return;
+
+      if (nameChanged || currentName.isEmpty) {
+        try {
+          final ok = await DopamineApi.fetchDisplayNameAvailable(
+            idToken: token,
+            displayName: text,
+          );
+          if (!ok) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.profileDisplayNameTaken)),
+            );
+            return;
+          }
+        } catch (_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.errorLoadFailed)),
+          );
+          return;
+        }
       }
+
+      await DopamineApi.patchProfileDisplayName(
+        idToken: token,
+        displayName: text,
+      );
       if (!mounted) return;
-      final auth = context.read<AuthProvider<DopamineUser>>();
       final current = auth.userProfile;
       auth.setUserProfile(
         DopamineUser(
@@ -483,6 +546,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.profileDisplayNameSaved)));
       await _loadData();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final msg = e.message == 'display_name_taken'
+          ? l10n.profileDisplayNameTaken
+          : e.message;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
@@ -548,6 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       try {
         await auth.deleteAccount();
+        await clearPrivacyProcessingConsent();
       } on FirebaseAuthException catch (e) {
         debugPrint(
           '[Dopamine][delete-account] auth.deleteAccount failed: code=${e.code} message=${e.message}',
@@ -579,6 +649,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _logout(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
+    await clearPrivacyProcessingConsent();
+    if (!context.mounted) return;
     await context.read<AuthProvider<DopamineUser>>().logout();
     if (context.mounted) {
       ScaffoldMessenger.of(

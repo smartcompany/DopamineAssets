@@ -67,6 +67,25 @@
   "profileActivityPostUpdated": "Saved.",
   "profileFollowListEmpty": "No users yet.",
   "profileDisplayNameSaved": "Display name updated.",
+  "profileDisplayNameTaken": "This display name is already taken.",
+  "profileDisplayNameDuplicateFromSocialTitle": "Display name",
+  "profileDisplayNameDuplicateFromSocialMessage": "The name from your sign-in provider, \"{name}\", is already in use. Enter a different display name below and tap Save.",
+  "@profileDisplayNameDuplicateFromSocialMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profileDisplayNameDuplicateFromSocialOk": "OK",
+  "privacyProcessingConsentTitle": "Personal data processing consent",
+  "privacyProcessingConsentLead": "Please review and accept the following to continue using the service.",
+  "privacyProcessingConsentBullet1": "Data collected: account identifier (Firebase UID), email if provided, display name and profile photo, and information generated through use such as posts, comments, and watchlists.",
+  "privacyProcessingConsentBullet2": "Purposes: identification, community and feed features, support, abuse prevention, and service improvement.",
+  "privacyProcessingConsentBullet3": "Retention: we delete or anonymize data when you delete your account, except where law requires longer retention.",
+  "privacyProcessingConsentCheckbox": "I agree to the collection and use of my personal data as described above.",
+  "privacyProcessingConsentAgree": "Agree and continue",
+  "privacyProcessingConsentDecline": "Decline",
   "profileFollowUnfollow": "Unfollow",
   "profileFollowTitleFollowing": "Following",
   "profileFollowTitleFollowers": "Followers",
