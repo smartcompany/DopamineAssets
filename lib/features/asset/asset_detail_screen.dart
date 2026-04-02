@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:ui' show ImageFilter;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -52,21 +52,39 @@ class AssetDetailScreen extends StatefulWidget {
 }
 
 class _AssetDetailScreenState extends State<AssetDetailScreen> {
-  late Future<AssetDetail> _future = _load();
+  /// ARB/AppLocalizations와 동일 — [Localizations.localeOf] 기준
+  late Future<AssetDetail> _future;
+  String? _assetDetailRequestKey;
   bool _favoriteLoading = false;
   bool _isFavorite = false;
   bool _cryptoProfileExpanded = false;
   bool _stockProfileDescriptionExpanded = false;
 
-  Future<AssetDetail> _load() {
-    return DopamineApi.fetchAssetDetail(asset: widget.rankedAsset);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final sym = widget.rankedAsset.symbol;
+    final lang = Localizations.localeOf(context).languageCode;
+    final key = '$sym|$lang';
+    if (_assetDetailRequestKey != key) {
+      _assetDetailRequestKey = key;
+      _future = DopamineApi.fetchAssetDetail(
+        asset: widget.rankedAsset,
+        locale: lang,
+      );
+    }
   }
 
   Future<void> _retry() async {
+    if (!mounted) return;
+    final lang = Localizations.localeOf(context).languageCode;
     setState(() {
       _cryptoProfileExpanded = false;
       _stockProfileDescriptionExpanded = false;
-      _future = _load();
+      _future = DopamineApi.fetchAssetDetail(
+        asset: widget.rankedAsset,
+        locale: lang,
+      );
     });
   }
 
@@ -76,6 +94,13 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     if (oldWidget.rankedAsset.symbol != widget.rankedAsset.symbol) {
       _cryptoProfileExpanded = false;
       _stockProfileDescriptionExpanded = false;
+      final lang = Localizations.localeOf(context).languageCode;
+      final key = '${widget.rankedAsset.symbol}|$lang';
+      _assetDetailRequestKey = key;
+      _future = DopamineApi.fetchAssetDetail(
+        asset: widget.rankedAsset,
+        locale: lang,
+      );
     }
   }
 
@@ -155,7 +180,10 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
         setState(() => _isFavorite = true);
       }
       if (mounted) {
-        unawaited(context.read<FavoritesCatalog>().syncFromServer());
+        final lang = Localizations.localeOf(context).languageCode;
+        unawaited(
+          context.read<FavoritesCatalog>().syncFromServer(locale: lang),
+        );
       }
     } on ApiException catch (e) {
       if (!mounted) return;

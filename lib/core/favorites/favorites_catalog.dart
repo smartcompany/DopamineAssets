@@ -24,11 +24,12 @@ class FavoritesCatalog extends ChangeNotifier {
   }
 
   /// 서버에서 관심 목록 전체를 가져온 뒤, 종목별로 asset-detail로 이름을 보강합니다.
-  Future<void> syncFromServer() async {
+  /// [locale]: ARB와 맞출 앱 로케일(`Localizations.localeOf(context).languageCode`).
+  Future<void> syncFromServer({String? locale}) async {
     while (_running != null) {
       await _running;
     }
-    _running = _syncImpl();
+    _running = _syncImpl(locale: locale);
     try {
       await _running;
     } finally {
@@ -36,7 +37,7 @@ class FavoritesCatalog extends ChangeNotifier {
     }
   }
 
-  Future<void> _syncImpl() async {
+  Future<void> _syncImpl({String? locale}) async {
     _loading = true;
     notifyListeners();
     try {
@@ -66,6 +67,7 @@ class FavoritesCatalog extends ChangeNotifier {
               assetClass: item.assetClass,
               displayName: item.name,
             ),
+            locale: locale,
           );
           final name = detail.name.isEmpty ? item.name : detail.name;
           out.add(

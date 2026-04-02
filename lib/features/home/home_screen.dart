@@ -47,17 +47,12 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<ThemeItem>> _hotThemesFuture;
   late Future<List<ThemeItem>> _crashedThemesFuture;
   late Future<MarketSummary> _marketFuture;
-  String _themeFetchLocale = '';
+  String? _themeLocaleKey;
 
   @override
   void initState() {
     super.initState();
     _pendingFilter = Set<String>.from(RankingFilterPrefs.allKeys);
-    _themeFetchLocale =
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    _hotThemesFuture = DopamineApi.fetchThemes('hot', locale: _themeFetchLocale);
-    _crashedThemesFuture =
-        DopamineApi.fetchThemes('crashed', locale: _themeFetchLocale);
     _marketFuture = DopamineApi.fetchMarketSummary();
     _bootstrapRankings();
   }
@@ -66,8 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final lang = Localizations.localeOf(context).languageCode;
-    if (lang == _themeFetchLocale) return;
-    _themeFetchLocale = lang;
+    if (_themeLocaleKey == lang) return;
+    _themeLocaleKey = lang;
     _hotThemesFuture = DopamineApi.fetchThemes('hot', locale: lang);
     _crashedThemesFuture = DopamineApi.fetchThemes('crashed', locale: lang);
     setState(() {});

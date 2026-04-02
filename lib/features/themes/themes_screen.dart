@@ -20,13 +20,7 @@ class _ThemesScreenState extends State<ThemesScreen> {
   late Future<List<ThemeItem>> _crashedFuture;
   late Future<List<ThemeItem>> _emergingFuture;
   String _locale = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _locale = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    _restartThemeFutures();
-  }
+  String? _themesLocaleKey;
 
   void _restartThemeFutures() {
     _hotFuture = DopamineApi.fetchThemes('hot', locale: _locale);
@@ -38,7 +32,8 @@ class _ThemesScreenState extends State<ThemesScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final lang = Localizations.localeOf(context).languageCode;
-    if (lang == _locale) return;
+    if (_themesLocaleKey == lang) return;
+    _themesLocaleKey = lang;
     _locale = lang;
     _restartThemeFutures();
     setState(() {});

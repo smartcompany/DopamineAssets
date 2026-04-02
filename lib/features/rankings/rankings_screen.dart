@@ -1,5 +1,3 @@
-import 'dart:ui' show PlatformDispatcher;
-
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 
@@ -20,25 +18,33 @@ class RankingsScreen extends StatefulWidget {
 class _RankingsScreenState extends State<RankingsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  late final Future<List<RankedAsset>> _upFuture;
-  late final Future<List<RankedAsset>> _downFuture;
+  late Future<List<RankedAsset>> _upFuture;
+  late Future<List<RankedAsset>> _downFuture;
+  String? _rankingsLocaleKey;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final lang = Localizations.localeOf(context).languageCode;
+    if (_rankingsLocaleKey == lang) return;
+    _rankingsLocaleKey = lang;
     final classesFuture = RankingFilterPrefs.load();
-    final loc = PlatformDispatcher.instance.locale.languageCode;
     _upFuture = classesFuture.then(
       (c) => DopamineApi.fetchRankingsUp(
         includeAssetClasses: c,
-        locale: loc,
+        locale: lang,
       ),
     );
     _downFuture = classesFuture.then(
       (c) => DopamineApi.fetchRankingsDown(
         includeAssetClasses: c,
-        locale: loc,
+        locale: lang,
       ),
     );
   }

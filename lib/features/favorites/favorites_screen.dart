@@ -28,10 +28,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
       final c = context.read<FavoritesCatalog>();
+      final lang = Localizations.localeOf(context).languageCode;
       if (user == null) {
         c.clear();
       } else {
-        unawaited(c.syncFromServer());
+        unawaited(c.syncFromServer(locale: lang));
       }
     });
   }
@@ -99,7 +100,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               final sections = _buildSectionsInOrder(grouped, l10n);
               return RefreshIndicator(
                 color: DopamineTheme.neonGreen,
-                onRefresh: () => context.read<FavoritesCatalog>().syncFromServer(),
+                onRefresh: () => context.read<FavoritesCatalog>().syncFromServer(
+                      locale: Localizations.localeOf(context).languageCode,
+                    ),
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: sections.length,

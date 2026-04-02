@@ -99,6 +99,8 @@ abstract final class DopamineApi {
 
   static Future<AssetDetail> fetchAssetDetail({
     required RankedAsset asset,
+    /// `ko` | `en` 등 — 서버가 kr_stock 표시명(한글/영문) 우선순위에 사용
+    String? locale,
   }) async {
     final ac = asset.assetClass;
     if (ac == null || ac.isEmpty) {
@@ -109,6 +111,10 @@ abstract final class DopamineApi {
       'assetClass': ac,
       'name': asset.name,
     };
+    final loc = locale?.trim();
+    if (loc != null && loc.isNotEmpty) {
+      q['locale'] = loc;
+    }
     final tid = asset.themeId?.trim();
     if (tid != null && tid.isNotEmpty) {
       q['themeId'] = tid;
@@ -254,13 +260,15 @@ abstract final class DopamineApi {
       symbol: symbol,
       name: name,
     );
-    final uri = _uri('/api/feed/asset-news').replace(
-      queryParameters: {
-        'q': q,
-        'limit': limit.clamp(1, 30).toString(),
-        'assetClass': assetClass,
-      },
-    );
+    final qp = <String, String>{
+      'q': q,
+      'limit': limit.clamp(1, 30).toString(),
+      'assetClass': assetClass,
+    };
+    if (assetClass == 'kr_stock') {
+      qp['symbol'] = symbol.trim();
+    }
+    final uri = _uri('/api/feed/asset-news').replace(queryParameters: qp);
     final response = await _client.get(uri, headers: _jsonHeaders);
     if (kDebugMode) {
       debugPrint('[DopamineApi][asset-news] GET $uri');

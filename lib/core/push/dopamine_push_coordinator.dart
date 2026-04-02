@@ -26,9 +26,21 @@ abstract final class DopaminePushCoordinator {
   static Future<void> start(GlobalKey<NavigatorState> navigatorKey) async {
     if (kIsWeb) return;
 
-    // Push 타이틀/본문 로컬라이징을 위해, 푸시 토큰 등록 시 기기 언어(ko/en)를 함께 저장합니다.
-    final deviceLang = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    final normalizedLocale = deviceLang.toLowerCase().startsWith('ko') ? 'ko' : 'en';
+    /// ARB / [MaterialApp]과 동일 — [Localizations]가 잡힐 때까지 잠깐 대기 후에도 매 등록마다 갱신.
+    for (var i = 0; i < 40; i++) {
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null && ctx.mounted) break;
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
+
+    String pushLocaleForServer() {
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        final code = Localizations.localeOf(ctx).languageCode.toLowerCase();
+        return code.startsWith('ko') ? 'ko' : 'en';
+      }
+      return 'en';
+    }
 
     final messaging = FirebaseMessaging.instance;
     try {
@@ -98,7 +110,7 @@ abstract final class DopaminePushCoordinator {
               idToken: idToken,
               fcmToken: fcm,
               platform: dopaminePushPlatformLabel(),
-              locale: normalizedLocale,
+              locale: pushLocaleForServer(),
             );
             debugPrint('[DopaminePush] server push-token OK');
             return;
@@ -126,7 +138,7 @@ abstract final class DopaminePushCoordinator {
           idToken: idToken,
           fcmToken: fcm,
           platform: dopaminePushPlatformLabel(),
-          locale: normalizedLocale,
+          locale: pushLocaleForServer(),
         );
       } catch (e) {
         debugPrint('[DopaminePush] onTokenRefresh: $e');
