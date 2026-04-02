@@ -1,9 +1,12 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/network/dopamine_api.dart';
-import '../../data/favorite_assets_prefs.dart';
+import '../../data/models/favorite_asset_item.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/dopamine_theme.dart';
@@ -20,10 +23,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   late Future<List<FavoriteAssetItem>> _future = _load();
   HomeShellNavigation? _shellNav;
   int _prevShellTabIndex = 0;
+  StreamSubscription<User?>? _authSub;
 
   Future<List<FavoriteAssetItem>> _load() async {
-    final items = await FavoriteAssetsPrefs.load();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const [];
+    final token = await user.getIdToken();
+    if (token == null || token.isEmpty) return const [];
+
+    final items = await DopamineApi.fetchFavoriteAssets(idToken: token);
     if (items.isEmpty) return items;
+
     final out = <FavoriteAssetItem>[];
     for (final item in items) {
       try {
@@ -34,18 +44,26 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             displayName: item.name,
           ),
         );
+        final name = detail.name.isEmpty ? item.name : detail.name;
         out.add(
           FavoriteAssetItem(
             symbol: item.symbol,
             assetClass: item.assetClass,
-            name: detail.name.isEmpty ? item.name : detail.name,
+            name: name,
           ),
         );
+        if (name != item.name) {
+          await DopamineApi.upsertFavoriteAsset(
+            idToken: token,
+            symbol: item.symbol,
+            assetClass: item.assetClass,
+            name: name,
+          );
+        }
       } catch (_) {
         out.add(item);
       }
     }
-    await FavoriteAssetsPrefs.save(out);
     return out;
   }
 
@@ -78,7 +96,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
+      if (!mounted) return;
+      _reload();
+    });
+  }
+
+  @override
   void dispose() {
+    _authSub?.cancel();
     _shellNav?.removeListener(_handleShellNav);
     super.dispose();
   }
@@ -107,11 +135,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               }
               final items = snapshot.data ?? const <FavoriteAssetItem>[];
               if (items.isEmpty) {
+                final signedIn = FirebaseAuth.instance.currentUser != null;
                 return Center(
-                  child: Text(
-                    '관심 자산이 없습니다.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: DopamineTheme.textSecondary,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Text(
+                      signedIn
+                          ? l10n.favoritesEmpty
+                          : l10n.favoritesSignInToSave,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: DopamineTheme.textSecondary,
+                      ),
                     ),
                   ),
                 );

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +13,6 @@ import '../../core/formatting/percent_format.dart';
 import '../../core/navigation/asset_chart_url.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
-import '../../data/favorite_assets_prefs.dart';
 import '../../data/models/asset_detail.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
@@ -85,31 +85,82 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
   Future<void> _syncFavoriteState() async {
     final ac = widget.rankedAsset.assetClass;
     if (ac == null || ac.isEmpty || ac == 'theme') return;
-    final v = await FavoriteAssetsPrefs.contains(
-      symbol: widget.rankedAsset.symbol,
-      assetClass: ac,
-    );
-    if (!mounted) return;
-    setState(() {
-      _isFavorite = v;
-    });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      setState(() => _isFavorite = false);
+      return;
+    }
+    final token = await user.getIdToken();
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      setState(() => _isFavorite = false);
+      return;
+    }
+    try {
+      final v = await DopamineApi.fetchFavoriteFavored(
+        idToken: token,
+        symbol: widget.rankedAsset.symbol,
+        assetClass: ac,
+      );
+      if (!mounted) return;
+      setState(() => _isFavorite = v);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isFavorite = false);
+    }
   }
 
   Future<void> _toggleFavorite(AssetDetail d) async {
     if (_favoriteLoading) return;
     final ac = d.assetClass.trim();
     if (ac.isEmpty || ac == 'theme') return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.profileNotSignedIn)),
+      );
+      return;
+    }
+    final token = await user.getIdToken();
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.profileNotSignedIn)),
+      );
+      return;
+    }
     setState(() => _favoriteLoading = true);
     try {
-      final next = await FavoriteAssetsPrefs.toggle(
-        FavoriteAssetItem(
+      if (_isFavorite) {
+        await DopamineApi.deleteFavoriteAsset(
+          idToken: token,
+          symbol: d.symbol,
+          assetClass: ac,
+        );
+        if (!mounted) return;
+        setState(() => _isFavorite = false);
+      } else {
+        await DopamineApi.upsertFavoriteAsset(
+          idToken: token,
           symbol: d.symbol,
           assetClass: ac,
           name: d.name,
-        ),
-      );
+        );
+        if (!mounted) return;
+        setState(() => _isFavorite = true);
+      }
+    } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => _isFavorite = next);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
     } finally {
       if (mounted) {
         setState(() => _favoriteLoading = false);

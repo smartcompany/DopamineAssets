@@ -24,6 +24,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navCommunity => '커뮤니티';
 
   @override
+  String get favoritesEmpty => '관심 자산이 없습니다.';
+
+  @override
+  String get favoritesSignInToSave => '로그인하면 이 기기에서 관심 종목을 저장하고 볼 수 있습니다.';
+
+  @override
   String get navProfile => '프로필';
 
   @override

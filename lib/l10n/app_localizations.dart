@@ -128,6 +128,18 @@ abstract class AppLocalizations {
   /// **'커뮤니티'**
   String get navCommunity;
 
+  /// No description provided for @favoritesEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'관심 자산이 없습니다.'**
+  String get favoritesEmpty;
+
+  /// No description provided for @favoritesSignInToSave.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그인하면 이 기기에서 관심 종목을 저장하고 볼 수 있습니다.'**
+  String get favoritesSignInToSave;
+
   /// No description provided for @navProfile.
   ///
   /// In ko, this message translates to:

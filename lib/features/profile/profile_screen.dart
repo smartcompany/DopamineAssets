@@ -51,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _savingName = false;
   bool _uploadingPhoto = false;
-  bool _hydratingProfile = false;
+  bool _syncingProfileFromServer = false;
   bool _pushPrefsLoading = false;
   bool _pushMasterEnabled = true;
   bool _pushSocialReply = true;
@@ -62,38 +62,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return auth.isLoggedIn();
   }
 
-  Future<void> _hydrateProfileIfMissing({
+  /// 서버 프로필을 먼저 조회한다. 있으면 그대로 반영만 하고, 없으면 Firebase 표시 이름으로 생성·저장한다.
+  Future<void> _syncProfileFromServer({
     required AuthProvider<DopamineUser> auth,
     required User firebaseUser,
   }) async {
-    if (_hydratingProfile) return;
-    if (auth.userProfile != null) return;
-    final firebaseName = firebaseUser.displayName?.trim();
-    if (firebaseName == null || firebaseName.isEmpty) return;
-
-    _hydratingProfile = true;
+    if (_syncingProfileFromServer) return;
+    _syncingProfileFromServer = true;
     try {
       final token = await firebaseUser.getIdToken();
       if (token == null || token.isEmpty) return;
-      await DopamineApi.patchProfileDisplayName(
-        idToken: token,
-        displayName: firebaseName,
-      );
-      if (!mounted) return;
-      auth.setUserProfile(
-        DopamineUser(
-          uid: firebaseUser.uid,
+
+      final existing = await DopamineApi.fetchProfileMe(idToken: token);
+      if (existing != null) {
+        auth.setUserProfile(existing);
+        if (!mounted) return;
+        _syncNameField(existing.displayName);
+        return;
+      }
+
+      final firebaseName = firebaseUser.displayName?.trim();
+      if (firebaseName != null && firebaseName.isNotEmpty) {
+        await DopamineApi.patchProfileDisplayName(
+          idToken: token,
           displayName: firebaseName,
-          photoUrl: null,
-        ),
-      );
-      _syncNameField(firebaseName);
+        );
+        if (!mounted) return;
+        auth.setUserProfile(
+          DopamineUser(
+            uid: firebaseUser.uid,
+            displayName: firebaseName,
+            photoUrl: null,
+          ),
+        );
+        _syncNameField(firebaseName);
+        return;
+      }
+
+      if (!mounted) return;
+      auth.setUserProfile(null);
+      _nameController.clear();
     } catch (e) {
-      debugPrint(
-        '[Profile] hydrate profile from firebase displayName failed: $e',
-      );
+      debugPrint('[Profile] sync profile from server failed: $e');
     } finally {
-      _hydratingProfile = false;
+      _syncingProfileFromServer = false;
     }
   }
 
@@ -106,8 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       final auth = context.read<AuthProvider<DopamineUser>>();
       if (_isAppSignedIn(auth) && u != null) {
-        await _hydrateProfileIfMissing(auth: auth, firebaseUser: u);
-        _syncNameField(auth.userProfile?.displayName ?? u.displayName);
+        await _syncProfileFromServer(auth: auth, firebaseUser: u);
         await _loadData();
       } else {
         ProfileStatsStore.instance.clear();
@@ -176,25 +187,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
     if (_savingName) return; // 사용자가 입력 중일 때는 덮어쓰지 않습니다.
 
-    final dn = _authProvider?.userProfile?.displayName;
-    if (dn == null) return;
-
-    final normalized = dn.trim();
-    if (normalized.isEmpty) return;
+    final p = _authProvider?.userProfile;
+    if (p == null) return;
 
     // 재로그인 시점에 auth.userProfile이 늦게 들어오면,
     // 기존 authStateChanges 콜백에서 동기화가 먼저 끝나서 이름이 안 보일 수 있습니다.
-    // provider 업데이트를 감지해서 컨트롤러를 다시 채웁니다.
+    // provider 업데이트를 감지해서 컨트롤러를 다시 채웁니다. (빈 닉네임도 반영)
+    final normalized = p.displayName.trim();
     if (_nameController.text.trim() != normalized) {
-      _syncNameField(dn);
+      _nameController.text = normalized;
     }
   }
 
   void _syncNameField(String? displayName) {
-    final n = displayName?.trim();
-    if (n != null && n.isNotEmpty) {
-      _nameController.text = n;
-    }
+    _nameController.text = (displayName ?? '').trim();
   }
 
   String _extFromPath(String path) {

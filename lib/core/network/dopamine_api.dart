@@ -14,6 +14,8 @@ import '../../data/models/market_summary.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../data/models/profile_activity_item.dart';
+import '../../auth/dopamine_user.dart';
+import '../../data/models/favorite_asset_item.dart';
 import '../push/push_prefs_keys.dart';
 
 abstract final class DopamineApi {
@@ -741,6 +743,37 @@ abstract final class DopamineApi {
         .toList();
   }
 
+  /// `GET /api/profile/me` — DB에 프로필 행이 없을 때만 `profile: null` → 여기서는 `null`.
+  /// 행이 있으면 닉네임이 비어 있어도 [DopamineUser] 반환.
+  static Future<DopamineUser?> fetchProfileMe({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/me'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid profile response');
+    }
+    final profile = decoded['profile'];
+    if (profile == null) return null;
+    if (profile is! Map<String, dynamic>) return null;
+    final uid = profile['uid'] as String?;
+    if (uid == null || uid.isEmpty) return null;
+    final displayName = (profile['displayName'] as String?)?.trim() ?? '';
+    final rawPhoto = profile['photoUrl'] as String?;
+    final photoUrl = rawPhoto != null && rawPhoto.trim().isNotEmpty
+        ? rawPhoto.trim()
+        : null;
+    return DopamineUser(
+      uid: uid,
+      displayName: displayName,
+      photoUrl: photoUrl,
+    );
+  }
+
   static Future<void> patchProfileDisplayName({
     required String idToken,
     required String displayName,
@@ -772,6 +805,84 @@ abstract final class DopamineApi {
       _uri('/api/profile/me'),
       headers: _bearerHeaders(idToken),
     );
+    _ensureOk(response);
+  }
+
+  static Future<List<FavoriteAssetItem>> fetchFavoriteAssets({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/favorites'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid favorites response');
+    }
+    final items = decoded['items'];
+    if (items is! List<dynamic>) {
+      throw ApiException('Invalid favorites items');
+    }
+    return items
+        .map((e) => FavoriteAssetItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<bool> fetchFavoriteFavored({
+    required String idToken,
+    required String symbol,
+    required String assetClass,
+  }) async {
+    final uri = _uri('/api/profile/favorites').replace(
+      queryParameters: {
+        'symbol': symbol,
+        'assetClass': assetClass,
+      },
+    );
+    final response = await _client.get(
+      uri,
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid favorite check response');
+    }
+    final v = decoded['favored'];
+    return v == true;
+  }
+
+  static Future<void> upsertFavoriteAsset({
+    required String idToken,
+    required String symbol,
+    required String assetClass,
+    required String name,
+  }) async {
+    final response = await _client.post(
+      _uri('/api/profile/favorites'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({
+        'symbol': symbol,
+        'assetClass': assetClass,
+        'name': name,
+      }),
+    );
+    _ensureOk(response);
+  }
+
+  static Future<void> deleteFavoriteAsset({
+    required String idToken,
+    required String symbol,
+    required String assetClass,
+  }) async {
+    final uri = _uri('/api/profile/favorites').replace(
+      queryParameters: {
+        'symbol': symbol,
+        'assetClass': assetClass,
+      },
+    );
+    final response = await _client.delete(uri, headers: _bearerHeaders(idToken));
     _ensureOk(response);
   }
 

@@ -32,19 +32,21 @@ final class DopamineAuthService implements AuthServiceInterface {
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) return null;
     final profile = decoded['profile'];
+    if (profile == null) return null;
     if (profile is! Map<String, dynamic>) {
       return null;
     }
     final uid = profile['uid'] as String?;
-    final displayName = profile['displayName'] as String?;
-    if (uid == null ||
-        uid.isEmpty ||
-        displayName == null ||
-        displayName.isEmpty) {
-      return null;
-    }
-    final photoUrl = profile['photoUrl'] as String?;
-    return DopamineUser(uid: uid, displayName: displayName, photoUrl: photoUrl);
+    if (uid == null || uid.isEmpty) return null;
+    final displayName = (profile['displayName'] as String?)?.trim() ?? '';
+    final rawPhoto = profile['photoUrl'] as String?;
+    final photoUrl =
+        rawPhoto != null && rawPhoto.trim().isNotEmpty ? rawPhoto.trim() : null;
+    return DopamineUser(
+      uid: uid,
+      displayName: displayName,
+      photoUrl: photoUrl,
+    );
   }
 
   @override

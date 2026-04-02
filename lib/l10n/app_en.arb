@@ -5,6 +5,8 @@
   "navHome": "Home",
   "actionLogin": "Log in",
   "navCommunity": "Community",
+  "favoritesEmpty": "No saved favorites yet.",
+  "favoritesSignInToSave": "Sign in to save and view favorites on this device.",
   "navProfile": "Profile",
   "profileSignedInSection": "Account",
   "profileAccountRefreshTooltip": "Refresh profile and activity",
