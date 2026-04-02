@@ -12,6 +12,7 @@ import 'package:share_lib/share_lib.dart';
 import 'app.dart';
 import 'auth/dopamine_auth_service.dart';
 import 'auth/dopamine_user.dart';
+import 'core/favorites/favorites_catalog.dart';
 import 'core/feed/home_asset_suggestions.dart';
 import 'core/navigation/home_shell_navigation.dart';
 import 'core/profile/profile_stats_store.dart';
@@ -63,6 +64,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider<HomeShellNavigation>(
           create: (_) => HomeShellNavigation(),
+        ),
+        ChangeNotifierProvider<FavoritesCatalog>(
+          create: (_) => FavoritesCatalog(),
         ),
         ChangeNotifierProvider<HomeAssetSuggestions>(
           create: (_) => HomeAssetSuggestions(),

@@ -17,11 +17,14 @@ class AssetCandleChartScreen extends StatefulWidget {
     required this.assetClass,
     this.title,
     this.themeId,
+    this.assetName,
   });
 
   final String symbol;
   final String assetClass;
   final String? title;
+  /// 크립토 차트 CoinGecko 매칭용(선택).
+  final String? assetName;
   /// 설정 시 [fetchThemeChartBars] 로 테마 평균 추이 (심볼 일봉 무시).
   final String? themeId;
 
@@ -31,6 +34,7 @@ class AssetCandleChartScreen extends StatefulWidget {
     required String assetClass,
     String? title,
     String? themeId,
+    String? assetName,
   }) {
     return Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -39,6 +43,7 @@ class AssetCandleChartScreen extends StatefulWidget {
           assetClass: assetClass,
           title: title,
           themeId: themeId,
+          assetName: assetName,
         ),
       ),
     );
@@ -62,6 +67,7 @@ class _AssetCandleChartScreenState extends State<AssetCandleChartScreen> {
       symbol: widget.symbol,
       assetClass: widget.assetClass,
       range: _range,
+      assetName: widget.assetName,
     );
   }
 

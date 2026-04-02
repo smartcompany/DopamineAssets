@@ -40,10 +40,13 @@ class AssetNewsSection extends StatefulWidget {
   final String assetClass;
   final String symbol;
   final String name;
+
   /// [AppLocalizations.localeName] — intl/ARB와 동일 기준.
   final String uiLocaleName;
+
   /// 비어 있지 않으면 [symbol]/[name] 대신 이 문자열로 뉴스 검색 (테마명 등).
   final String? searchQuery;
+
   /// 테마 구성 티커 — 콤마 검색어로 뉴스 조회 (테마 상세).
   final List<String>? themeSymbols;
 
@@ -58,7 +61,8 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
   bool _adSettingsLoaded = false;
 
   Future<AssetNewsFeed> _load() async {
-    final tickers = widget.themeSymbols
+    final tickers =
+        widget.themeSymbols
             ?.map((s) => s.trim())
             .where((s) => s.isNotEmpty)
             .toList() ??
@@ -200,9 +204,23 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
     });
     try {
       await _ensureAdSettings();
+      if (!mounted) return;
+      final canonicalUrls = canonicalNewsUrlsForAi(sourceItems);
+      if (canonicalUrls.isEmpty) {
+        throw StateError('no news urls');
+      }
+      final titleDigest = buildNewsTitleDigestForCanonicalUrls(
+        sourceItems,
+        canonicalUrls,
+      );
+      final articleTitles = articleTitlesForCanonicalUrls(
+        sourceItems,
+        canonicalUrls,
+      );
+
       final adDone = Completer<void>();
       // showAd 의 Future 는 로드·show() 직후에 끝나며, 닫힘과 무관합니다.
-      // 닫힘은 onAdDismissed / onAdFailedToShow 에서만 completer 를 완료해야 합니다.
+      // 닫힘은 onAdDismissed / onAdFailedToShow 에서만 completer 를 완료합니다.
       unawaited(
         AdService.shared.showAd(
           onAdDismissed: () {
@@ -214,24 +232,45 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
           },
         ),
       );
-      await adDone.future;
-      // 전면 전환 직후 바로 다이얼로그를 띄우면 광고가 겹쳐 보일 수 있어 한 프레임 넘깁니다.
+
+      // 광고 시청과 AI 요약 요청을 병렬로 진행합니다.
+      // 둘 다 끝난 뒤에만 결과 다이얼로그를 띄웁니다 (어느 쪽이 먼저 끝나도 상관없음).
+      NewsAiSummary? summaryResult;
+      Object? fetchErr;
+      final fetchDone = Completer<void>();
+      unawaited(
+        DopamineApi.fetchNewsAiSummary(
+              urls: canonicalUrls,
+              articleTitles: articleTitles,
+              symbol: widget.symbol,
+              assetClass: widget.assetClass,
+              assetName: widget.name,
+              locale: widget.uiLocaleName,
+              titleDigest: titleDigest,
+            )
+            .then((result) {
+              summaryResult = result;
+              if (!fetchDone.isCompleted) fetchDone.complete();
+            })
+            .catchError((Object e, StackTrace st) {
+              fetchErr = e;
+              if (!fetchDone.isCompleted) fetchDone.complete();
+            }),
+      );
+
+      await Future.wait<void>([adDone.future, fetchDone.future]);
+
+      // 전면 광고 직후 다이얼로그가 겹쳐 보이지 않도록 짧게 넘깁니다.
       await Future<void>.delayed(const Duration(milliseconds: 350));
       if (!mounted) return;
-      final canonicalUrls = canonicalNewsUrlsForAi(sourceItems);
-      if (canonicalUrls.isEmpty) {
-        throw StateError('no news urls');
+
+      if (fetchErr != null) {
+        throw fetchErr!;
       }
-      final titleDigest =
-          buildNewsTitleDigestForCanonicalUrls(sourceItems, canonicalUrls);
-      final result = await DopamineApi.fetchNewsAiSummary(
-        urls: canonicalUrls,
-        symbol: widget.symbol,
-        assetClass: widget.assetClass,
-        assetName: widget.name,
-        locale: widget.uiLocaleName,
-        titleDigest: titleDigest,
-      );
+      final result = summaryResult;
+      if (result == null) {
+        throw StateError('no summary result');
+      }
       if (kDebugMode) {
         debugPrint(
           '[NewsAI][UI] symbol=${widget.symbol} '
@@ -241,9 +280,9 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
       await _showAiSummaryDialog(result);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('AI 요약 실패: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('AI 요약 실패: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -279,10 +318,7 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
             const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: _retry,
-                child: Text(l10n.retry),
-              ),
+              child: TextButton(onPressed: _retry, child: Text(l10n.retry)),
             ),
           ],
         ),
@@ -306,9 +342,7 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
           onOpenFailed: () {
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.assetDetailOpenLinkFailed),
-              ),
+              SnackBar(content: Text(l10n.assetDetailOpenLinkFailed)),
             );
           },
         ),
@@ -322,10 +356,7 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
             },
             borderRadius: BorderRadius.circular(12),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 4,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -407,7 +438,11 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
                       ),
                     ),
                     InkWell(
-                      onTap: (waiting || feed == null || feed.items.isEmpty || _summarizing)
+                      onTap:
+                          (waiting ||
+                              feed == null ||
+                              feed.items.isEmpty ||
+                              _summarizing)
                           ? null
                           : () => _summarizeNewsWithAd(feed.items),
                       borderRadius: BorderRadius.circular(20),
@@ -418,7 +453,9 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
                         ),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: DopamineTheme.neonGreen.withValues(alpha: 0.55),
+                            color: DopamineTheme.neonGreen.withValues(
+                              alpha: 0.55,
+                            ),
                           ),
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -452,8 +489,7 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color:
-                              DopamineTheme.neonGreen.withValues(alpha: 0.9),
+                          color: DopamineTheme.neonGreen.withValues(alpha: 0.9),
                         ),
                       ),
                     ),
@@ -472,10 +508,7 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
 }
 
 class _NewsTile extends StatelessWidget {
-  const _NewsTile({
-    required this.item,
-    required this.onOpenFailed,
-  });
+  const _NewsTile({required this.item, required this.onOpenFailed});
 
   final AssetNewsItem item;
   final VoidCallback onOpenFailed;
@@ -576,9 +609,7 @@ class _GlassCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.32),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.14),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
             borderRadius: BorderRadius.circular(20),
           ),
           child: child,

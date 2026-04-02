@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/dopamine_community_profile_gate.dart';
+import '../../core/favorites/favorites_catalog.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/formatting/market_cap_display.dart';
@@ -151,6 +153,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
         );
         if (!mounted) return;
         setState(() => _isFavorite = true);
+      }
+      if (mounted) {
+        unawaited(context.read<FavoritesCatalog>().syncFromServer());
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -357,6 +362,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                         symbol: d.symbol,
                                         assetClass: d.assetClass,
                                         title: l10n.assetDetailOpenChart,
+                                        assetName: d.name,
                                       );
                                     }
                                   },

@@ -31,9 +31,9 @@ abstract final class DopamineApi {
     Set<String>? includeAssetClasses,
   }) async {
     final response = await _client.get(
-      _uri('/api/feed/rankings/up').replace(
-        queryParameters: _rankingsQuery(includeAssetClasses),
-      ),
+      _uri(
+        '/api/feed/rankings/up',
+      ).replace(queryParameters: _rankingsQuery(includeAssetClasses)),
       headers: _jsonHeaders,
     );
     return _decodeRankings(response);
@@ -43,9 +43,9 @@ abstract final class DopamineApi {
     Set<String>? includeAssetClasses,
   }) async {
     final response = await _client.get(
-      _uri('/api/feed/rankings/down').replace(
-        queryParameters: _rankingsQuery(includeAssetClasses),
-      ),
+      _uri(
+        '/api/feed/rankings/down',
+      ).replace(queryParameters: _rankingsQuery(includeAssetClasses)),
       headers: _jsonHeaders,
     );
     return _decodeRankings(response);
@@ -124,25 +124,28 @@ abstract final class DopamineApi {
     return AssetDetail.fromJson(decoded);
   }
 
-  /// 일봉 OHLC (서버 → Yahoo). [range]: `1mo` | `3mo` | `1y`.
+  /// 일봉 OHLC (서버 → Yahoo, 크립토는 Yahoo 실패 시 CoinGecko 폴백).
+  /// [assetName]: 크립토 차트 검색 정확도용(선택).
   static Future<List<AssetChartBar>> fetchAssetChartBars({
     required String symbol,
     required String assetClass,
     String range = '3mo',
+    String? assetName,
   }) async {
-    final uri = _uri('/api/feed/asset-chart').replace(
-      queryParameters: <String, String>{
-        'symbol': symbol,
-        'assetClass': assetClass,
-        'range': range,
-      },
-    );
+    final qp = <String, String>{
+      'symbol': symbol,
+      'assetClass': assetClass,
+      'range': range,
+    };
+    final n = assetName?.trim();
+    if (n != null && n.isNotEmpty) {
+      qp['assetName'] = n;
+    }
+    final uri = _uri('/api/feed/asset-chart').replace(queryParameters: qp);
     final response = await _client.get(uri, headers: _jsonHeaders);
     if (kDebugMode) {
       debugPrint('[DopamineApi][asset-chart] GET $uri');
-      debugPrint(
-        '[DopamineApi][asset-chart] status=${response.statusCode}',
-      );
+      debugPrint('[DopamineApi][asset-chart] status=${response.statusCode}');
     }
     _ensureOk(response);
     final decoded = jsonDecode(response.body);
@@ -164,17 +167,12 @@ abstract final class DopamineApi {
     String range = '3mo',
   }) async {
     final uri = _uri('/api/feed/theme-chart').replace(
-      queryParameters: <String, String>{
-        'themeId': themeId,
-        'range': range,
-      },
+      queryParameters: <String, String>{'themeId': themeId, 'range': range},
     );
     final response = await _client.get(uri, headers: _jsonHeaders);
     if (kDebugMode) {
       debugPrint('[DopamineApi][theme-chart] GET $uri');
-      debugPrint(
-        '[DopamineApi][theme-chart] status=${response.statusCode}',
-      );
+      debugPrint('[DopamineApi][theme-chart] status=${response.statusCode}');
     }
     _ensureOk(response);
     final decoded = jsonDecode(response.body);
@@ -258,9 +256,7 @@ abstract final class DopamineApi {
     final response = await _client.get(uri, headers: _jsonHeaders);
     if (kDebugMode) {
       debugPrint('[DopamineApi][asset-news] GET $uri');
-      debugPrint(
-        '[DopamineApi][asset-news] status=${response.statusCode}',
-      );
+      debugPrint('[DopamineApi][asset-news] status=${response.statusCode}');
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       return const AssetNewsFeed(items: [], loadFailed: true);
@@ -290,6 +286,7 @@ abstract final class DopamineApi {
 
   static Future<NewsAiSummary> fetchNewsAiSummary({
     required List<String> urls,
+    required List<String> articleTitles,
     required String symbol,
     required String assetClass,
     required String assetName,
@@ -308,6 +305,7 @@ abstract final class DopamineApi {
       headers: _jsonHeaders,
       body: jsonEncode({
         'urls': cleanUrls,
+        'articleTitles': articleTitles,
         'symbol': symbol,
         'assetClass': assetClass,
         'assetName': assetName,
@@ -322,9 +320,7 @@ abstract final class DopamineApi {
     }
     if (kDebugMode) {
       final hit = decoded['cached'] == true;
-      debugPrint(
-        '[DopamineApi][news-ai-summary] cached=$hit symbol=$symbol',
-      );
+      debugPrint('[DopamineApi][news-ai-summary] cached=$hit symbol=$symbol');
     }
     return NewsAiSummary.fromJson(decoded);
   }
@@ -360,15 +356,13 @@ abstract final class DopamineApi {
         'symbol': symbol,
         'assetClass': assetClass,
       },
-      if (bodyTerms != null && bodyTerms.isNotEmpty)
-        'q': bodyTerms.join(','),
+      if (bodyTerms != null && bodyTerms.isNotEmpty) 'q': bodyTerms.join(','),
       if (authorUid != null && authorUid.isNotEmpty) 'authorUid': authorUid,
     };
-    final uri = _uri('/api/feed/community-posts').replace(
-      queryParameters: q,
-    );
-    final headers =
-        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final uri = _uri('/api/feed/community-posts').replace(queryParameters: q);
+    final headers = idToken != null && idToken.isNotEmpty
+        ? _bearerHeaders(idToken)
+        : _jsonHeaders;
     final response = await _client.get(uri, headers: headers);
     if (kDebugMode) {
       debugPrint('[DopamineApi][community-posts] GET $uri');
@@ -391,11 +385,12 @@ abstract final class DopamineApi {
     required String uid,
     String? idToken,
   }) async {
-    final uri = _uri('/api/profile/public').replace(
-      queryParameters: {'uid': uid},
-    );
-    final headers =
-        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final uri = _uri(
+      '/api/profile/public',
+    ).replace(queryParameters: {'uid': uid});
+    final headers = idToken != null && idToken.isNotEmpty
+        ? _bearerHeaders(idToken)
+        : _jsonHeaders;
     final response = await _client.get(uri, headers: headers);
     _ensureOk(response);
     final decoded = jsonDecode(response.body);
@@ -421,9 +416,9 @@ abstract final class DopamineApi {
     required String idToken,
     required String targetUid,
   }) async {
-    final uri = _uri('/api/profile/block').replace(
-      queryParameters: {'targetUid': targetUid},
-    );
+    final uri = _uri(
+      '/api/profile/block',
+    ).replace(queryParameters: {'targetUid': targetUid});
     final response = await _client.delete(
       uri,
       headers: _bearerHeaders(idToken),
@@ -436,14 +431,12 @@ abstract final class DopamineApi {
     required String assetClass,
     String? idToken,
   }) async {
-    final uri = _uri('/api/feed/asset-comments').replace(
-      queryParameters: {
-        'symbol': symbol,
-        'assetClass': assetClass,
-      },
-    );
-    final headers =
-        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final uri = _uri(
+      '/api/feed/asset-comments',
+    ).replace(queryParameters: {'symbol': symbol, 'assetClass': assetClass});
+    final headers = idToken != null && idToken.isNotEmpty
+        ? _bearerHeaders(idToken)
+        : _jsonHeaders;
     final response = await _client.get(uri, headers: headers);
     if (kDebugMode) {
       debugPrint('[DopamineApi][asset-comments] GET $uri');
@@ -514,8 +507,9 @@ abstract final class DopamineApi {
     final path =
         '/api/feed/asset-comments/${Uri.encodeComponent(rootCommentId)}/thread';
     final uri = _uri(path);
-    final headers =
-        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final headers = idToken != null && idToken.isNotEmpty
+        ? _bearerHeaders(idToken)
+        : _jsonHeaders;
     final response = await _client.get(uri, headers: headers);
     if (kDebugMode) {
       debugPrint('[DopamineApi][asset-comments] GET thread $uri');
@@ -538,11 +532,11 @@ abstract final class DopamineApi {
     required String id,
     String? idToken,
   }) async {
-    final path =
-        '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
+    final path = '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
     final uri = _uri(path);
-    final headers =
-        idToken != null && idToken.isNotEmpty ? _bearerHeaders(idToken) : _jsonHeaders;
+    final headers = idToken != null && idToken.isNotEmpty
+        ? _bearerHeaders(idToken)
+        : _jsonHeaders;
     final response = await _client.get(uri, headers: headers);
     if (kDebugMode) {
       debugPrint('[DopamineApi][asset-comments] GET $uri');
@@ -566,8 +560,7 @@ abstract final class DopamineApi {
     required List<String> imageUrls,
     required String idToken,
   }) async {
-    final path =
-        '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
+    final path = '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
     final uri = _uri(path);
     final payload = <String, dynamic>{
       'body': body,
@@ -602,8 +595,7 @@ abstract final class DopamineApi {
     required String id,
     required String idToken,
   }) async {
-    final path =
-        '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
+    final path = '/api/feed/asset-comments/${Uri.encodeComponent(id)}';
     final uri = _uri(path);
     final response = await _client.delete(
       uri,
@@ -745,9 +737,7 @@ abstract final class DopamineApi {
 
   /// `GET /api/profile/me` — DB에 프로필 행이 없을 때만 `profile: null` → 여기서는 `null`.
   /// 행이 있으면 닉네임이 비어 있어도 [DopamineUser] 반환.
-  static Future<DopamineUser?> fetchProfileMe({
-    required String idToken,
-  }) async {
+  static Future<DopamineUser?> fetchProfileMe({required String idToken}) async {
     final response = await _client.get(
       _uri('/api/profile/me'),
       headers: _bearerHeaders(idToken),
@@ -767,11 +757,7 @@ abstract final class DopamineApi {
     final photoUrl = rawPhoto != null && rawPhoto.trim().isNotEmpty
         ? rawPhoto.trim()
         : null;
-    return DopamineUser(
-      uid: uid,
-      displayName: displayName,
-      photoUrl: photoUrl,
-    );
+    return DopamineUser(uid: uid, displayName: displayName, photoUrl: photoUrl);
   }
 
   static Future<void> patchProfileDisplayName({
@@ -798,9 +784,7 @@ abstract final class DopamineApi {
     _ensureOk(response);
   }
 
-  static Future<void> deleteProfileData({
-    required String idToken,
-  }) async {
+  static Future<void> deleteProfileData({required String idToken}) async {
     final response = await _client.delete(
       _uri('/api/profile/me'),
       headers: _bearerHeaders(idToken),
@@ -834,16 +818,10 @@ abstract final class DopamineApi {
     required String symbol,
     required String assetClass,
   }) async {
-    final uri = _uri('/api/profile/favorites').replace(
-      queryParameters: {
-        'symbol': symbol,
-        'assetClass': assetClass,
-      },
-    );
-    final response = await _client.get(
-      uri,
-      headers: _bearerHeaders(idToken),
-    );
+    final uri = _uri(
+      '/api/profile/favorites',
+    ).replace(queryParameters: {'symbol': symbol, 'assetClass': assetClass});
+    final response = await _client.get(uri, headers: _bearerHeaders(idToken));
     _ensureOk(response);
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {
@@ -876,13 +854,13 @@ abstract final class DopamineApi {
     required String symbol,
     required String assetClass,
   }) async {
-    final uri = _uri('/api/profile/favorites').replace(
-      queryParameters: {
-        'symbol': symbol,
-        'assetClass': assetClass,
-      },
+    final uri = _uri(
+      '/api/profile/favorites',
+    ).replace(queryParameters: {'symbol': symbol, 'assetClass': assetClass});
+    final response = await _client.delete(
+      uri,
+      headers: _bearerHeaders(idToken),
     );
-    final response = await _client.delete(uri, headers: _bearerHeaders(idToken));
     _ensureOk(response);
   }
 
@@ -963,6 +941,7 @@ abstract final class DopamineApi {
         body[camel] = patch[snake];
       }
     }
+
     mapKey(PushPrefsKeys.masterEnabled, 'masterEnabled');
     mapKey(PushPrefsKeys.socialReply, 'socialReply');
     mapKey(PushPrefsKeys.socialLike, 'socialLike');
@@ -1022,10 +1001,13 @@ abstract final class DopamineApi {
     required String idToken,
     required String targetUid,
   }) async {
-    final uri = _uri('/api/profile/follow').replace(
-      queryParameters: {'targetUid': targetUid},
+    final uri = _uri(
+      '/api/profile/follow',
+    ).replace(queryParameters: {'targetUid': targetUid});
+    final response = await _client.delete(
+      uri,
+      headers: _bearerHeaders(idToken),
     );
-    final response = await _client.delete(uri, headers: _bearerHeaders(idToken));
     _ensureOk(response);
   }
 
@@ -1073,19 +1055,19 @@ abstract final class DopamineApi {
   }
 
   static Map<String, String> _bearerHeaders(String idToken) => {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $idToken',
-      };
+    'Accept': 'application/json',
+    'Authorization': 'Bearer $idToken',
+  };
 
   static Map<String, String> _jsonBearerHeaders(String idToken) => {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $idToken',
-      };
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $idToken',
+  };
 
   static Map<String, String> get _jsonHeaders => const {
-        'Accept': 'application/json',
-      };
+    'Accept': 'application/json',
+  };
 
   static List<RankedAsset> _decodeRankings(http.Response response) {
     _ensureOk(response);
@@ -1106,13 +1088,10 @@ abstract final class DopamineApi {
     required String idToken,
     required String displayName,
   }) async {
-    final uri = _uri('/api/profile/display-name-check').replace(
-      queryParameters: {'displayName': displayName},
-    );
-    final response = await _client.get(
-      uri,
-      headers: _bearerHeaders(idToken),
-    );
+    final uri = _uri(
+      '/api/profile/display-name-check',
+    ).replace(queryParameters: {'displayName': displayName});
+    final response = await _client.get(uri, headers: _bearerHeaders(idToken));
     _ensureOk(response);
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {

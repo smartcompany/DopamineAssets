@@ -71,3 +71,15 @@ String buildNewsTitleDigestForCanonicalUrls(
   final bytes = utf8.encode(titles.join('\n'));
   return sha256.convert(bytes).toString();
 }
+
+/// [canonicalUrls] 순서와 1:1로 대응하는 기사 제목 (서버 AI 프롬프트용).
+List<String> articleTitlesForCanonicalUrls(
+  List<AssetNewsItem> items,
+  List<String> canonicalUrls,
+) {
+  final byUrl = <String, String>{};
+  for (final i in items) {
+    byUrl[normalizeNewsUrlForAi(i.url)] = i.title.trim();
+  }
+  return canonicalUrls.map((u) => byUrl[u] ?? '').toList();
+}

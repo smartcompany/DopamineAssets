@@ -4,8 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/navigation/home_shell_navigation.dart';
-import '../../core/network/dopamine_api.dart';
+import '../../core/favorites/favorites_catalog.dart';
 import '../../data/models/favorite_asset_item.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../l10n/app_localizations.dart';
@@ -20,94 +19,26 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  late Future<List<FavoriteAssetItem>> _future = _load();
-  HomeShellNavigation? _shellNav;
-  int _prevShellTabIndex = 0;
   StreamSubscription<User?>? _authSub;
-
-  Future<List<FavoriteAssetItem>> _load() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const [];
-    final token = await user.getIdToken();
-    if (token == null || token.isEmpty) return const [];
-
-    final items = await DopamineApi.fetchFavoriteAssets(idToken: token);
-    if (items.isEmpty) return items;
-
-    final out = <FavoriteAssetItem>[];
-    for (final item in items) {
-      try {
-        final detail = await DopamineApi.fetchAssetDetail(
-          asset: RankedAsset.communityShell(
-            symbol: item.symbol,
-            assetClass: item.assetClass,
-            displayName: item.name,
-          ),
-        );
-        final name = detail.name.isEmpty ? item.name : detail.name;
-        out.add(
-          FavoriteAssetItem(
-            symbol: item.symbol,
-            assetClass: item.assetClass,
-            name: name,
-          ),
-        );
-        if (name != item.name) {
-          await DopamineApi.upsertFavoriteAsset(
-            idToken: token,
-            symbol: item.symbol,
-            assetClass: item.assetClass,
-            name: name,
-          );
-        }
-      } catch (_) {
-        out.add(item);
-      }
-    }
-    return out;
-  }
-
-  Future<void> _reload() async {
-    setState(() {
-      _future = _load();
-    });
-  }
-
-  void _handleShellNav() {
-    final nav = _shellNav;
-    if (nav == null || !mounted) return;
-    final t = nav.tabIndex;
-    if (t == 1 && _prevShellTabIndex != 1) {
-      _reload();
-    }
-    _prevShellTabIndex = t;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final nav = context.read<HomeShellNavigation>();
-    if (!identical(_shellNav, nav)) {
-      _shellNav?.removeListener(_handleShellNav);
-      _shellNav = nav;
-      _prevShellTabIndex = nav.tabIndex;
-      _shellNav!.addListener(_handleShellNav);
-    }
-  }
 
   @override
   void initState() {
     super.initState();
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
+    // 첫 이벤트에 현재 로그인 상태가 오므로, 탭을 누를 때마다 리로드하지 않고 여기서만 동기화합니다.
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (!mounted) return;
-      _reload();
+      final c = context.read<FavoritesCatalog>();
+      if (user == null) {
+        c.clear();
+      } else {
+        unawaited(c.syncFromServer());
+      }
     });
   }
 
   @override
   void dispose() {
     _authSub?.cancel();
-    _shellNav?.removeListener(_handleShellNav);
     super.dispose();
   }
 
@@ -115,6 +46,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final cat = context.watch<FavoritesCatalog>();
+
     return Scaffold(
       body: DecoratedBox(
         decoration: const BoxDecoration(
@@ -125,24 +58,35 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
         ),
         child: SafeArea(
-          child: FutureBuilder<List<FavoriteAssetItem>>(
-            future: _future,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(color: DopamineTheme.neonGreen),
-                );
-              }
-              final items = snapshot.data ?? const <FavoriteAssetItem>[];
-              if (items.isEmpty) {
-                final signedIn = FirebaseAuth.instance.currentUser != null;
+          child: Builder(
+            builder: (context) {
+              final signedIn = FirebaseAuth.instance.currentUser != null;
+              if (!signedIn) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: Text(
-                      signedIn
-                          ? l10n.favoritesEmpty
-                          : l10n.favoritesSignInToSave,
+                      l10n.favoritesSignInToSave,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: DopamineTheme.textSecondary,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              if (cat.loading && cat.items.isEmpty) {
+                return const Center(
+                  child: CircularProgressIndicator(color: DopamineTheme.neonGreen),
+                );
+              }
+              final items = cat.items;
+              if (items.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Text(
+                      l10n.favoritesEmpty,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: DopamineTheme.textSecondary,
@@ -154,7 +98,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               final grouped = _groupFavoritesByClass(items);
               final sections = _buildSectionsInOrder(grouped, l10n);
               return RefreshIndicator(
-                onRefresh: _reload,
+                color: DopamineTheme.neonGreen,
+                onRefresh: () => context.read<FavoritesCatalog>().syncFromServer(),
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: sections.length,
@@ -189,8 +134,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                         displayName: item.name,
                                       ),
                                     );
-                                    if (!mounted) return;
-                                    _reload();
                                   },
                                 ),
                               )),
