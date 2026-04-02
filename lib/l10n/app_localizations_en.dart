@@ -137,7 +137,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePushSocialLike => 'Likes on my comments';
 
   @override
-  String get profilePushMarketDaily => 'Daily market brief';
+  String get profilePushMarketDaily => 'Daily market summary';
 
   @override
   String get profileStatPosts => 'Posts';

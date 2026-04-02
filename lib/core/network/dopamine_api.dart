@@ -890,10 +890,12 @@ abstract final class DopamineApi {
     required String idToken,
     required String fcmToken,
     String? platform,
+    String? locale,
   }) async {
     final body = <String, dynamic>{
       'fcmToken': fcmToken,
       if (platform != null && platform.isNotEmpty) 'platform': platform,
+      if (locale != null && locale.isNotEmpty) 'locale': locale,
     };
     final response = await _client.post(
       _uri('/api/profile/push-token'),

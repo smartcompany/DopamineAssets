@@ -347,7 +347,7 @@ abstract class AppLocalizations {
   /// No description provided for @profilePushMarketDaily.
   ///
   /// In ko, this message translates to:
-  /// **'일일 마켓 브리프'**
+  /// **'일일 마켓 요약'**
   String get profilePushMarketDaily;
 
   /// No description provided for @profileStatPosts.

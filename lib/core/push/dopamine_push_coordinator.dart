@@ -26,6 +26,10 @@ abstract final class DopaminePushCoordinator {
   static Future<void> start(GlobalKey<NavigatorState> navigatorKey) async {
     if (kIsWeb) return;
 
+    // Push 타이틀/본문 로컬라이징을 위해, 푸시 토큰 등록 시 기기 언어(ko/en)를 함께 저장합니다.
+    final deviceLang = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    final normalizedLocale = deviceLang.toLowerCase().startsWith('ko') ? 'ko' : 'en';
+
     final messaging = FirebaseMessaging.instance;
     try {
       await messaging.requestPermission(
@@ -94,6 +98,7 @@ abstract final class DopaminePushCoordinator {
               idToken: idToken,
               fcmToken: fcm,
               platform: dopaminePushPlatformLabel(),
+              locale: normalizedLocale,
             );
             debugPrint('[DopaminePush] server push-token OK');
             return;
@@ -121,6 +126,7 @@ abstract final class DopaminePushCoordinator {
           idToken: idToken,
           fcmToken: fcm,
           platform: dopaminePushPlatformLabel(),
+          locale: normalizedLocale,
         );
       } catch (e) {
         debugPrint('[DopaminePush] onTokenRefresh: $e');

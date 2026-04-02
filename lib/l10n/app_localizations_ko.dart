@@ -132,7 +132,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profilePushSocialLike => '내 댓글에 좋아요';
 
   @override
-  String get profilePushMarketDaily => '일일 마켓 브리프';
+  String get profilePushMarketDaily => '일일 마켓 요약';
 
   @override
   String get profileStatPosts => '게시글';
