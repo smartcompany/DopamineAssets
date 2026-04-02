@@ -32,12 +32,12 @@ Future<bool> ensurePrivacyProcessingConsent(BuildContext context) async {
   if (_dialogActive) return false;
   _dialogActive = true;
   try {
-    final result = await Navigator.of(context, rootNavigator: true).push<bool>(
-      MaterialPageRoute<bool>(
-        fullscreenDialog: true,
-        settings: const RouteSettings(name: privacyProcessingConsentRouteName),
-        builder: (_) => const _PrivacyProcessingConsentPage(),
-      ),
+    final result = await showDialog<bool>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      routeSettings: const RouteSettings(name: privacyProcessingConsentRouteName),
+      builder: (_) => const _PrivacyProcessingConsentPage(),
     );
     return result == true;
   } finally {
