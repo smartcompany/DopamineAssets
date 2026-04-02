@@ -59,6 +59,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   bool _isFollowing = false;
   bool _blockedByMe = false;
   List<CommunityPost> _posts = const [];
+  final Set<String> _likeBusyIds = {};
 
   @override
   void initState() {
@@ -175,6 +176,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _togglePostLike(CommunityPost p) async {
+    if (_likeBusyIds.contains(p.id)) return;
     if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
@@ -182,6 +184,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     if (fb == null || !mounted) return;
     final token = await fb.getIdToken();
     if (token == null || !mounted) return;
+    setState(() => _likeBusyIds.add(p.id));
     try {
       await DopamineApi.toggleCommentLike(idToken: token, commentId: p.id);
       if (mounted) await _loadData();
@@ -190,6 +193,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.errorLoadFailed)),
       );
+    } finally {
+      if (mounted) setState(() => _likeBusyIds.remove(p.id));
     }
   }
 
@@ -472,6 +477,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       post: _posts[index],
                       locale: locale,
                       myUid: myUid,
+                      likeInProgress:
+                          _likeBusyIds.contains(_posts[index].id),
                       onToggleLike: _togglePostLike,
                       onOpenPostDetail: _openPostDetail,
                       onReportPost:

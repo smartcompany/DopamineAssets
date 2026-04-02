@@ -51,6 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = false;
   Object? _loadError;
   List<ProfileActivityItem> _activity = const [];
+  final Set<String> _activityLikeBusyIds = {};
 
   bool _savingName = false;
 
@@ -865,6 +866,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _toggleActivityLike(CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
+    if (_activityLikeBusyIds.contains(p.id)) return;
     if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
@@ -872,6 +874,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user == null || !mounted) return;
     final token = await user.getIdToken();
     if (token == null || !mounted) return;
+    setState(() => _activityLikeBusyIds.add(p.id));
     try {
       await DopamineApi.toggleCommentLike(idToken: token, commentId: p.id);
       if (!mounted) return;
@@ -881,6 +884,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+    } finally {
+      if (mounted) setState(() => _activityLikeBusyIds.remove(p.id));
     }
   }
 
@@ -927,9 +932,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           context.read<HomeShellNavigation>().bumpCommunityFeedEpoch();
           await _loadData();
           if (!context.mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.profileActivityPostDeleted)),
+          );
         })(),
       );
     } catch (e) {
@@ -1594,6 +1599,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 locale: locale,
                 myUid: fb.uid,
+                likeInProgress: _activityLikeBusyIds.contains(item.commentId),
                 onToggleLike: _toggleActivityLike,
                 onOpenPostDetail: _openActivityPostDetail,
                 onEditOwnPost: (p) {

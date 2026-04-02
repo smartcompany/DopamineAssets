@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 
@@ -26,11 +28,18 @@ class _RankingsScreenState extends State<RankingsScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     final classesFuture = RankingFilterPrefs.load();
+    final loc = PlatformDispatcher.instance.locale.languageCode;
     _upFuture = classesFuture.then(
-      (c) => DopamineApi.fetchRankingsUp(includeAssetClasses: c),
+      (c) => DopamineApi.fetchRankingsUp(
+        includeAssetClasses: c,
+        locale: loc,
+      ),
     );
     _downFuture = classesFuture.then(
-      (c) => DopamineApi.fetchRankingsDown(includeAssetClasses: c),
+      (c) => DopamineApi.fetchRankingsDown(
+        includeAssetClasses: c,
+        locale: loc,
+      ),
     );
   }
 

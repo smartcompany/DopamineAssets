@@ -2,10 +2,61 @@ import 'package:translator/translator.dart';
 
 import '../../data/models/asset_news.dart';
 
-/// 서버는 영문 제목만 준다고 가정하고, 기기에서 제목만 번역한다.
-///
-/// [appLocaleName] 은 [AppLocalizations.localeName] 과 같게 넘기면
-/// `intl` / ARB UI 언어와 번역 대상이 맞는다.
+/// Google이 감지한 원문 언어가 UI 목표와 같으면(이미 그 언어) 원문 유지.
+bool _sourceMatchesUiTarget(String detectedSourceCode, String targetCode) {
+  final src = detectedSourceCode.toLowerCase();
+  final tgt = targetCode.toLowerCase();
+  if (src == tgt) return true;
+  if (src.startsWith('zh') || tgt.startsWith('zh')) {
+    return src == tgt;
+  }
+  final srcBase = src.split('-').first;
+  final tgtBase = tgt.split('-').first;
+  return srcBase == tgtBase;
+}
+
+/// UI 로케일 → Google Translate `to` 코드. 지원하지 않으면 `null`(번역 생략).
+String? googleTranslateTargetForUiLocale(String appLocaleName) {
+  final raw = appLocaleName.trim().toLowerCase();
+  if (raw.isEmpty) return null;
+  final primary = raw.split(RegExp('[-_]')).first;
+  switch (primary) {
+    case 'en':
+      return 'en';
+    case 'ko':
+      return 'ko';
+    case 'zh':
+    case 'zh-cn':
+    case 'zhcn':
+      return 'zh-cn';
+    case 'zh-tw':
+    case 'zhtw':
+      return 'zh-tw';
+    default:
+      return primary.length >= 2 && primary != 'auto' ? primary : null;
+  }
+}
+
+Future<String> _translateLineIfNeeded(
+  String text,
+  GoogleTranslator translator,
+  String targetCode,
+) async {
+  final t = text.trim();
+  if (t.isEmpty) return text;
+  try {
+    final tr = await translator.translate(t, from: 'auto', to: targetCode);
+    if (_sourceMatchesUiTarget(tr.sourceLanguage.code, targetCode)) {
+      return t;
+    }
+    final out = tr.text.trim();
+    return out.isNotEmpty ? out : t;
+  } catch (_) {
+    return t;
+  }
+}
+
+/// 뉴스 피드 제목을 UI 언어로 맞춤. 원문이 이미 그 언어면 그대로 둔다.
 Future<AssetNewsFeed> localizeNewsTitles(
   AssetNewsFeed feed,
   String appLocaleName,
@@ -24,22 +75,13 @@ Future<AssetNewsFeed> localizeNewsTitles(
     feed.items.map((item) async {
       final title = item.title.trim();
       if (title.isEmpty) return item;
-      try {
-        final t = await translator.translate(
-          title,
-          from: 'auto',
-          to: target,
-        );
-        final out = t.text.trim();
-        return AssetNewsItem(
-          title: out.isNotEmpty ? out : item.title,
-          url: item.url,
-          publishedAt: item.publishedAt,
-          source: item.source,
-        );
-      } catch (_) {
-        return item;
-      }
+      final out = await _translateLineIfNeeded(title, translator, target);
+      return AssetNewsItem(
+        title: out,
+        url: item.url,
+        publishedAt: item.publishedAt,
+        source: item.source,
+      );
     }),
   );
 
@@ -55,32 +97,6 @@ Future<String> translateTextForAppLocale(
   if (t.isEmpty) return text;
   final target = googleTranslateTargetForUiLocale(appLocaleName);
   if (target == null) return text;
-  try {
-    final translator = GoogleTranslator();
-    final out = await translator.translate(t, from: 'auto', to: target);
-    final s = out.text.trim();
-    return s.isNotEmpty ? s : text;
-  } catch (_) {
-    return text;
-  }
-}
-
-/// `null` 이면 번역 생략(영어 UI 등).
-String? googleTranslateTargetForUiLocale(String appLocaleName) {
-  final raw = appLocaleName.trim().toLowerCase();
-  if (raw.isEmpty) return null;
-  final primary = raw.split(RegExp('[-_]')).first;
-  if (primary == 'en') return null;
-
-  switch (primary) {
-    case 'zh':
-    case 'zh-cn':
-    case 'zhcn':
-      return 'zh-cn';
-    case 'zh-tw':
-    case 'zhtw':
-      return 'zh-tw';
-    default:
-      return primary;
-  }
+  final translator = GoogleTranslator();
+  return _translateLineIfNeeded(t, translator, target);
 }

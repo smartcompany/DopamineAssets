@@ -50,6 +50,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   final List<String> _bodySearchTerms = [];
 
+  /// 좋아요 API 중인 게시글 id (하트 로딩 표시)
+  final Set<String> _likeBusyIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -127,12 +130,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _toggleLike(int index, CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
+    if (_likeBusyIds.contains(p.id)) return;
     if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
       return;
     }
     if (!mounted) return;
     final token = await context.read<AuthProvider<DopamineUser>>().getIdToken();
     if (token == null || token.isEmpty || !mounted) return;
+    setState(() => _likeBusyIds.add(p.id));
     try {
       final r = await DopamineApi.toggleCommentLike(
         idToken: token,
@@ -149,6 +154,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+    } finally {
+      if (mounted) {
+        setState(() => _likeBusyIds.remove(p.id));
+      }
     }
   }
 
@@ -356,14 +365,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
       await runWithFullscreenLoading<void>(
         context,
         (() async {
-          final token =
-              await context.read<AuthProvider<DopamineUser>>().getIdToken();
+          final token = await context
+              .read<AuthProvider<DopamineUser>>()
+              .getIdToken();
           if (token == null || token.isEmpty) return;
           await DopamineApi.deleteAssetComment(id: p.id, idToken: token);
           if (!mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.profileActivityPostDeleted)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.profileActivityPostDeleted)),
+          );
           _scheduleFetch();
         })(),
       );
@@ -825,6 +835,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           post: p,
                           locale: locale,
                           myUid: myUid,
+                          likeInProgress: _likeBusyIds.contains(p.id),
                           onOpenAuthorProfile: _openAuthorProfile,
                           onToggleLike: (post) => _toggleLike(i, post),
                           onOpenPostDetail: _openPostDetail,

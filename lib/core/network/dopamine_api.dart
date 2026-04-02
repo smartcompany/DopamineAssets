@@ -29,11 +29,12 @@ abstract final class DopamineApi {
 
   static Future<List<RankedAsset>> fetchRankingsUp({
     Set<String>? includeAssetClasses,
+    String? locale,
   }) async {
     final response = await _client.get(
       _uri(
         '/api/feed/rankings/up',
-      ).replace(queryParameters: _rankingsQuery(includeAssetClasses)),
+      ).replace(queryParameters: _rankingsQuery(includeAssetClasses, locale)),
       headers: _jsonHeaders,
     );
     return _decodeRankings(response);
@@ -41,23 +42,30 @@ abstract final class DopamineApi {
 
   static Future<List<RankedAsset>> fetchRankingsDown({
     Set<String>? includeAssetClasses,
+    String? locale,
   }) async {
     final response = await _client.get(
       _uri(
         '/api/feed/rankings/down',
-      ).replace(queryParameters: _rankingsQuery(includeAssetClasses)),
+      ).replace(queryParameters: _rankingsQuery(includeAssetClasses, locale)),
       headers: _jsonHeaders,
     );
     return _decodeRankings(response);
   }
 
-  static Map<String, String> _rankingsQuery(Set<String>? includeAssetClasses) {
+  static Map<String, String> _rankingsQuery(
+    Set<String>? includeAssetClasses,
+    String? locale,
+  ) {
     final q = <String, String>{
       'limit': '10',
       'source': ApiConfig.rankingSource,
     };
     if (includeAssetClasses != null && includeAssetClasses.isNotEmpty) {
       q['include'] = includeAssetClasses.join(',');
+    }
+    if (locale != null && locale.isNotEmpty) {
+      q['locale'] = locale;
     }
     return q;
   }

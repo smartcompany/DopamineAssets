@@ -22,11 +22,15 @@ class CommunityPostCard extends StatelessWidget {
     this.onOpenAuthorProfile,
     this.onOpenPostDetail,
     this.showLikeButton = true,
+    this.likeInProgress = false,
   });
 
   final CommunityPost post;
   final String locale;
   final String? myUid;
+
+  /// 좋아요 API 진행 중 — 하트 자리에 작은 프로그레스 표시·탭 비활성
+  final bool likeInProgress;
   final Future<void> Function(CommunityPost p)? onToggleLike;
   final void Function(CommunityPost p)? onEditOwnPost;
   final void Function(CommunityPost p)? onDeleteOwnPost;
@@ -353,18 +357,38 @@ class CommunityPostCard extends StatelessWidget {
                             if (showLikeButton && onToggleLike != null)
                               GestureDetector(
                                 behavior: HitTestBehavior.opaque,
-                                onTap: () => onToggleLike!(post),
+                                onTap: likeInProgress
+                                    ? null
+                                    : () => onToggleLike!(post),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      post.likedByMe
-                                          ? Icons.favorite_rounded
-                                          : Icons.favorite_border_rounded,
-                                      size: 20,
-                                      color: post.likedByMe
-                                          ? DopamineTheme.accentRed
-                                          : DopamineTheme.textSecondary,
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: likeInProgress
+                                          ? const Center(
+                                              child: SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: DopamineTheme
+                                                          .neonGreen,
+                                                    ),
+                                              ),
+                                            )
+                                          : Icon(
+                                              post.likedByMe
+                                                  ? Icons.favorite_rounded
+                                                  : Icons
+                                                        .favorite_border_rounded,
+                                              size: 20,
+                                              color: post.likedByMe
+                                                  ? DopamineTheme.accentRed
+                                                  : DopamineTheme.textSecondary,
+                                            ),
                                     ),
                                     const SizedBox(width: 4),
                                     Text(

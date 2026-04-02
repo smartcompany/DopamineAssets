@@ -178,9 +178,17 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _rankingsLoading = true);
     }
     try {
+      if (!mounted) return;
+      final locale = Localizations.localeOf(context).languageCode;
       final results = await Future.wait([
-        DopamineApi.fetchRankingsUp(includeAssetClasses: c),
-        DopamineApi.fetchRankingsDown(includeAssetClasses: c),
+        DopamineApi.fetchRankingsUp(
+          includeAssetClasses: c,
+          locale: locale,
+        ),
+        DopamineApi.fetchRankingsDown(
+          includeAssetClasses: c,
+          locale: locale,
+        ),
       ]);
       if (!mounted || id != _rankingRequestId) {
         _logRankings('request #$id dropped (stale or unmounted)');
