@@ -65,6 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _pushSocialReply = true;
   bool _pushSocialLike = true;
   bool _pushMarketDaily = true;
+  bool _pushHotMoverDiscussion = true;
 
   bool _isAppSignedIn(AuthProvider<DopamineUser> auth) {
     return auth.isLoggedIn();
@@ -372,6 +373,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _pushSocialReply = _pushPrefBool(push, 'social_reply');
         _pushSocialLike = _pushPrefBool(push, 'social_like');
         _pushMarketDaily = _pushPrefBool(push, 'market_daily_brief');
+        _pushHotMoverDiscussion = _pushPrefBool(
+          push,
+          PushPrefsKeys.hotMoverDiscussion,
+        );
         _loading = false;
       });
     } catch (e) {
@@ -393,12 +398,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool? reply,
     bool? like,
     bool? daily,
+    bool? hotMover,
   }) {
     return <String, bool>{
       PushPrefsKeys.masterEnabled: master ?? _pushMasterEnabled,
       PushPrefsKeys.socialReply: reply ?? _pushSocialReply,
       PushPrefsKeys.socialLike: like ?? _pushSocialLike,
       PushPrefsKeys.marketDailyBrief: daily ?? _pushMarketDaily,
+      PushPrefsKeys.hotMoverDiscussion:
+          hotMover ?? _pushHotMoverDiscussion,
     };
   }
 
@@ -414,6 +422,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     var reply = _pushSocialReply;
     var like = _pushSocialLike;
     var daily = _pushMarketDaily;
+    var hotMover = _pushHotMoverDiscussion;
     switch (key) {
       case PushPrefsKeys.masterEnabled:
         master = value;
@@ -427,10 +436,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case PushPrefsKeys.marketDailyBrief:
         daily = value;
         break;
+      case PushPrefsKeys.hotMoverDiscussion:
+        hotMover = value;
+        break;
     }
     debugPrint(
       '[PushPrefs][UI] toggle key=$key value=$value'
-      ' current=${_pushSnapshot()} next=${_pushSnapshot(master: master, reply: reply, like: like, daily: daily)}',
+      ' current=${_pushSnapshot()} next=${_pushSnapshot(master: master, reply: reply, like: like, daily: daily, hotMover: hotMover)}',
     );
 
     setState(() => _pushPrefsLoading = true);
@@ -440,6 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         PushPrefsKeys.socialReply: reply,
         PushPrefsKeys.socialLike: like,
         PushPrefsKeys.marketDailyBrief: daily,
+        PushPrefsKeys.hotMoverDiscussion: hotMover,
       };
       debugPrint('[PushPrefs][UI] PATCH payload=$payload');
       final updated = await DopamineApi.patchPushPrefs(
@@ -458,6 +471,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _pushMarketDaily = _pushPrefBool(
           updated,
           PushPrefsKeys.marketDailyBrief,
+        );
+        _pushHotMoverDiscussion = _pushPrefBool(
+          updated,
+          PushPrefsKeys.hotMoverDiscussion,
         );
       });
       debugPrint('[PushPrefs][UI] state updated=${_pushSnapshot()}');
@@ -1406,6 +1423,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           var reply = _pushSocialReply;
           var like = _pushSocialLike;
           var daily = _pushMarketDaily;
+          var hotMover = _pushHotMoverDiscussion;
           final theme = Theme.of(ctx);
           return Scaffold(
             appBar: AppBar(title: Text(l10n.profileSettingsTitle)),
@@ -1427,6 +1445,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         case 'market_daily_brief':
                           daily = next;
                           break;
+                        case 'hot_mover_discussion':
+                          hotMover = next;
+                          break;
                       }
                     });
                     await _togglePushPref(key, next);
@@ -1435,6 +1456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       reply = _pushSocialReply;
                       like = _pushSocialLike;
                       daily = _pushMarketDaily;
+                      hotMover = _pushHotMoverDiscussion;
                     });
                   }
 
@@ -1492,6 +1514,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               enabled: master,
                               onChanged: (v) =>
                                   toggle(PushPrefsKeys.marketDailyBrief, v),
+                            ),
+                            _pushToggleRow(
+                              context: ctx,
+                              label: l10n.profilePushHotMoverDiscussion,
+                              value: hotMover,
+                              enabled: master,
+                              onChanged: (v) =>
+                                  toggle(PushPrefsKeys.hotMoverDiscussion, v),
                             ),
                             if (_pushPrefsLoading)
                               const Padding(

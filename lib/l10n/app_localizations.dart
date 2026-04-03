@@ -350,6 +350,12 @@ abstract class AppLocalizations {
   /// **'일일 마켓 요약'**
   String get profilePushMarketDaily;
 
+  /// No description provided for @profilePushHotMoverDiscussion.
+  ///
+  /// In ko, this message translates to:
+  /// **'급등·급락 종목의 활발한 토론'**
+  String get profilePushHotMoverDiscussion;
+
   /// No description provided for @profileStatPosts.
   ///
   /// In ko, this message translates to:

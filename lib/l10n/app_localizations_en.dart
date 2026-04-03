@@ -140,6 +140,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePushMarketDaily => 'Daily market summary';
 
   @override
+  String get profilePushHotMoverDiscussion => 'Hot movers — lively discussions';
+
+  @override
   String get profileStatPosts => 'Posts';
 
   @override

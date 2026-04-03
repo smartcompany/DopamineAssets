@@ -62,6 +62,43 @@ final class CommunityPost {
     );
   }
 
+  /// 푸시 딥링크 등: 루트 [AssetComment] 응답을 목록용 게시글 모델로 변환합니다.
+  factory CommunityPost.fromRootAssetComment({
+    required String id,
+    required String body,
+    String? title,
+    List<String> imageUrls = const [],
+    required String authorUid,
+    required String authorDisplayName,
+    String? authorPhotoUrl,
+    required DateTime createdAt,
+    required String assetSymbol,
+    required String assetClass,
+    String? assetDisplayName,
+    int replyCount = 0,
+    int likeCount = 0,
+    bool likedByMe = false,
+    bool moderationHiddenFromPublic = false,
+  }) {
+    return CommunityPost(
+      id: id,
+      body: body,
+      title: title,
+      imageUrls: imageUrls,
+      authorUid: authorUid,
+      authorDisplayName: authorDisplayName,
+      authorPhotoUrl: authorPhotoUrl,
+      createdAt: createdAt,
+      assetSymbol: assetSymbol,
+      assetClass: assetClass,
+      assetDisplayName: assetDisplayName,
+      replyCount: replyCount,
+      likeCount: likeCount,
+      likedByMe: likedByMe,
+      moderationHiddenFromPublic: moderationHiddenFromPublic,
+    );
+  }
+
   factory CommunityPost.fromJson(Map<String, dynamic> json) {
     final rawName = json['author_display_name'] as String?;
     final name =

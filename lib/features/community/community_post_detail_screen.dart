@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -105,6 +107,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     super.initState();
     _following = widget.followingByUid?[_post.authorUid] ?? false;
     _loadThread();
+    unawaited(
+      DopamineApi.recordCommunityRootPostView(rootCommentId: _post.id),
+    );
   }
 
   @override

@@ -172,6 +172,18 @@ abstract final class DopaminePushCoordinator {
           nav.openCommunityForAsset(symbol: sym, assetClass: ac);
         }
       }
+      if (type == 'hot_mover_discussion') {
+        final sym = data['symbol']?.trim() ?? '';
+        final ac = data['assetClass']?.trim() ?? '';
+        final rootId = data['rootCommentId']?.trim() ?? '';
+        if (sym.isNotEmpty && ac.isNotEmpty && rootId.isNotEmpty) {
+          nav.openCommunityHotDiscussion(
+            symbol: sym,
+            assetClass: ac,
+            rootCommentId: rootId,
+          );
+        }
+      }
     }
 
     void handleForeground(RemoteMessage m) {

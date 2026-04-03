@@ -135,6 +135,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profilePushMarketDaily => '일일 마켓 요약';
 
   @override
+  String get profilePushHotMoverDiscussion => '급등·급락 종목의 활발한 토론';
+
+  @override
   String get profileStatPosts => '게시글';
 
   @override

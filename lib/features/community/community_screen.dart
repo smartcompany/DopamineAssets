@@ -108,6 +108,67 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Future.value();
   }
 
+  Future<void> _openPushedThread(String rootCommentId) async {
+    final l10n = AppLocalizations.of(context)!;
+    String? idToken;
+    if (mounted) {
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      if (auth.isLoggedIn()) {
+        idToken = await auth.getIdToken();
+      }
+    }
+    try {
+      final c = await DopamineApi.fetchAssetCommentById(
+        id: rootCommentId,
+        idToken: idToken,
+      );
+      if (!mounted) return;
+      final sym = c.assetSymbol?.trim() ?? '';
+      final cls = c.assetClass?.trim() ?? '';
+      if (sym.isEmpty || cls.isEmpty) return;
+      final post = CommunityPost.fromRootAssetComment(
+        id: c.id,
+        body: c.body,
+        title: c.title,
+        imageUrls: c.imageUrls,
+        authorUid: c.authorUid,
+        authorDisplayName: c.authorDisplayName,
+        authorPhotoUrl: c.authorPhotoUrl,
+        createdAt: c.createdAt,
+        assetSymbol: sym,
+        assetClass: cls,
+        assetDisplayName: c.assetDisplayName,
+        replyCount: 0,
+        likeCount: c.likeCount,
+        likedByMe: c.likedByMe,
+        moderationHiddenFromPublic: c.moderationHiddenFromPublic,
+      );
+      final locale = Localizations.localeOf(context).toLanguageTag();
+      final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
+      final changed = await CommunityPostDetailScreen.open(
+        context,
+        post: post,
+        locale: locale,
+        myUid: myUid,
+        onPostUpdated: (u) {
+          final i = _posts.indexWhere((x) => x.id == u.id);
+          if (i >= 0) {
+            setState(() => _posts[i] = u);
+          }
+        },
+      );
+      if (changed && mounted) {
+        _scheduleFetch();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
   Future<void> _openPostDetail(CommunityPost p) async {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
@@ -184,6 +245,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final nav = _nav;
     if (nav == null || !mounted) return;
 
+    final pendingRootId = nav.takePendingCommunityRootCommentId();
+
     final f = nav.takePendingFilter();
     if (f != null) {
       setState(() {
@@ -194,6 +257,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _searchController.clear();
       });
       _scheduleFetch();
+    }
+
+    if (pendingRootId != null && pendingRootId.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_openPushedThread(pendingRootId));
+      });
     }
 
     if (nav.communityFeedEpoch != _lastCommunityFeedEpoch) {

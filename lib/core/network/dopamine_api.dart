@@ -544,6 +544,27 @@ abstract final class DopamineApi {
         .toList();
   }
 
+  /// 루트 글 상세 진입 시 조회수 집계(실패해도 UI에는 영향 없음).
+  static Future<void> recordCommunityRootPostView({
+    required String rootCommentId,
+  }) async {
+    final uri = _uri(
+      '/api/feed/asset-comments/${Uri.encodeComponent(rootCommentId)}/record-view',
+    );
+    try {
+      final response = await _client.post(uri, headers: _jsonHeaders);
+      if (kDebugMode) {
+        debugPrint(
+          '[DopamineApi][record-view] status=${response.statusCode} id=$rootCommentId',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[DopamineApi][record-view] $e');
+      }
+    }
+  }
+
   static Future<AssetComment> fetchAssetCommentById({
     required String id,
     String? idToken,
@@ -943,6 +964,7 @@ abstract final class DopamineApi {
       PushPrefsKeys.marketDailyBrief: prefs['marketDailyBrief'],
       PushPrefsKeys.marketWatchlist: prefs['marketWatchlist'],
       PushPrefsKeys.marketTheme: prefs['marketTheme'],
+      PushPrefsKeys.hotMoverDiscussion: prefs['hotMoverDiscussion'],
     };
   }
 
@@ -966,6 +988,7 @@ abstract final class DopamineApi {
     mapKey(PushPrefsKeys.marketDailyBrief, 'marketDailyBrief');
     mapKey(PushPrefsKeys.marketWatchlist, 'marketWatchlist');
     mapKey(PushPrefsKeys.marketTheme, 'marketTheme');
+    mapKey(PushPrefsKeys.hotMoverDiscussion, 'hotMoverDiscussion');
 
     if (kDebugMode) {
       debugPrint(
@@ -998,6 +1021,7 @@ abstract final class DopamineApi {
       PushPrefsKeys.marketDailyBrief: prefs['marketDailyBrief'],
       PushPrefsKeys.marketWatchlist: prefs['marketWatchlist'],
       PushPrefsKeys.marketTheme: prefs['marketTheme'],
+      PushPrefsKeys.hotMoverDiscussion: prefs['hotMoverDiscussion'],
     };
   }
 

@@ -13,5 +13,6 @@ abstract final class PushPrefsKeys {
   static const marketDailyBrief = 'market_daily_brief';
   static const marketWatchlist = 'market_watchlist';
   static const marketTheme = 'market_theme';
+  static const hotMoverDiscussion = 'hot_mover_discussion';
 }
 
