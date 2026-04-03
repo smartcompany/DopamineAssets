@@ -30,6 +30,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Kakao 로그인: 카카오톡·브라우저에서 인증 후 앱으로 복귀 (KakaoSdk.init 네이티브 앱 키와 동일) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:host="oauth"
+                    android:scheme="kakaobb1d3f08a1446fbcbe02b73dc9c2ce4f"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
@@ -47,5 +56,6 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <package android:name="com.kakao.talk"/>
     </queries>
 </manifest>

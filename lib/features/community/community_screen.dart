@@ -143,12 +143,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
         likedByMe: c.likedByMe,
         moderationHiddenFromPublic: c.moderationHiddenFromPublic,
       );
-      final locale = Localizations.localeOf(context).toLanguageTag();
       final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
       final changed = await CommunityPostDetailScreen.open(
         context,
         post: post,
-        locale: locale,
         myUid: myUid,
         onPostUpdated: (u) {
           final i = _posts.indexWhere((x) => x.id == u.id);
@@ -170,12 +168,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _openPostDetail(CommunityPost p) async {
-    final locale = Localizations.localeOf(context).toLanguageTag();
     final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
     final changed = await CommunityPostDetailScreen.open(
       context,
       post: p,
-      locale: locale,
       myUid: myUid,
       onPostUpdated: (u) {
         final i = _posts.indexWhere((x) => x.id == u.id);
@@ -513,7 +509,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).toLanguageTag();
     final auth = context.watch<AuthProvider<DopamineUser>>();
     final myUid = auth.currentUid();
     context.watch<HomeAssetSuggestions>();
@@ -902,7 +897,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         final p = items[i];
                         return CommunityPostCard(
                           post: p,
-                          locale: locale,
                           myUid: myUid,
                           likeInProgress: _likeBusyIds.contains(p.id),
                           onOpenAuthorProfile: _openAuthorProfile,

@@ -21,13 +21,9 @@
 		<key>CFBundleSignature</key>
 		<string>????</string>
 		<key>CFBundleVersion</key>
-		<string>5</string>
+		<string>6</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
-		<key>UIDeviceFamily</key>
-		<array>
-			<integer>1</integer>
-		</array>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>UIMainStoryboardFile</key>
@@ -67,6 +63,20 @@
 					<string>com.googleusercontent.apps.312575797891-h2ruihb0cbk4t08q5puj261kgso2rp3e</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>kakaobb1d3f08a1446fbcbe02b73dc9c2ce4f</string>
+				</array>
+			</dict>
+		</array>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>kakaokompassauth</string>
+			<string>kakaolink</string>
+			<string>kakaotalk</string>
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>

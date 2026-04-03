@@ -120,7 +120,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileSettingsTitle => '설정';
 
   @override
-  String get profileSettingsMoreSoon => '추가 설정은 곧 제공됩니다.';
+  String get profileSettingsLegalDisclosures => '데이터 안내 및 면책';
 
   @override
   String get profilePushMaster => '전체 알림';

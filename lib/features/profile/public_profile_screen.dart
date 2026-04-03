@@ -157,12 +157,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _openPostDetail(CommunityPost p) async {
-    final locale = Localizations.localeOf(context).toLanguageTag();
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final changed = await CommunityPostDetailScreen.open(
       context,
       post: p,
-      locale: locale,
       myUid: myUid,
       onPostUpdated: (_) {
         if (mounted) {
@@ -358,7 +356,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _CountStat(label: '게시글', value: _postsCount),
+                      child: _CountStat(
+                        label: l10n.profileStatPosts,
+                        value: _postsCount,
+                      ),
                     ),
                     Expanded(
                       child: _CountStat(label: l10n.profileStatFollowers, value: _followersCount),
@@ -412,7 +413,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                   .withValues(alpha: 0.4),
                             ),
                           ),
-                          child: Text(_blockedByMe ? '차단 해제' : '차단'),
+                          child: Text(
+                            _blockedByMe
+                                ? l10n.profileUnblockAction
+                                : l10n.communityBlockAuthorShort,
+                          ),
                         ),
                       ),
                     ],
@@ -459,7 +464,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     ),
                   );
                 }
-                final locale = Localizations.localeOf(context).toLanguageTag();
                 final myUid = FirebaseAuth.instance.currentUser?.uid;
                 final showModeration =
                     myUid != null && myUid != widget.authorUid;
@@ -475,7 +479,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   itemBuilder: (context, index) {
                     return CommunityPostCard(
                       post: _posts[index],
-                      locale: locale,
                       myUid: myUid,
                       likeInProgress:
                           _likeBusyIds.contains(_posts[index].id),

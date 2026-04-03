@@ -1048,6 +1048,59 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                               );
                             },
                           )
+                  else if (_lockAssetPick &&
+                      !_isReplyEdit &&
+                      _selectedAsset != null)
+                    InputDecorator(
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: _composeFieldContentPadding,
+                        filled: true,
+                        fillColor: Colors.black.withValues(alpha: 0.22),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
+                        ),
+                      ),
+                      child: Builder(
+                        builder: (context) {
+                          final sel = _selectedAsset!;
+                          final sameName =
+                              sel.name.trim() == sel.symbol.trim();
+                          if (sameName) {
+                            return Text(
+                              '${sel.symbol} · ${_classLabel(_assetClass, l10n)}',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: DopamineTheme.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          }
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                sel.name,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: DopamineTheme.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${sel.symbol} · ${_classLabel(_assetClass, l10n)}',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: DopamineTheme.textSecondary,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    )
                   else if (symbols.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),

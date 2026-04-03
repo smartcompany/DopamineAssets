@@ -8,8 +8,9 @@ String formatRelativeCommentTime(DateTime createdAt, String localeTag) {
   if (diff.isNegative) {
     diff = Duration.zero;
   }
-  final lc = localeTag.toLowerCase();
-  final isKo = lc.startsWith('ko');
+  final parts = localeTag.trim().split(RegExp(r'[-_]'));
+  final primary = parts.isEmpty ? '' : parts.first.toLowerCase();
+  final isKo = primary == 'ko';
 
   if (diff.inSeconds < 60) {
     return isKo ? '방금' : 'just now';

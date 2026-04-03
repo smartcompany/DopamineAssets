@@ -125,7 +125,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSettingsTitle => 'Settings';
 
   @override
-  String get profileSettingsMoreSoon => 'More settings coming soon.';
+  String get profileSettingsLegalDisclosures => 'Data sources & disclaimers';
 
   @override
   String get profilePushMaster => 'All notifications';

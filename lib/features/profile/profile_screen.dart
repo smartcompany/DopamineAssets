@@ -11,6 +11,7 @@ import 'package:share_lib/share_lib.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
+import '../../core/config/api_config.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/profile/profile_stats_store.dart';
@@ -26,6 +27,7 @@ import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
 import '../../widgets/run_with_fullscreen_loading.dart';
 import '../asset/asset_detail_screen.dart';
+import '../asset/asset_news_webview_screen.dart';
 import '../community/community_compose_screen.dart';
 import '../community/community_post_card.dart';
 import '../community/community_post_detail_screen.dart';
@@ -864,11 +866,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _openActivityPostDetail(CommunityPost p) async {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
-    final locale = Localizations.localeOf(context).toLanguageTag();
     final changed = await CommunityPostDetailScreen.open(
       context,
       post: p,
-      locale: locale,
       myUid: fb.uid,
       onPostUpdated: (_) {
         if (mounted) {
@@ -1538,10 +1538,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        l10n.profileSettingsMoreSoon,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: DopamineTheme.textSecondary,
+                      Material(
+                        color: Colors.black.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(12),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.gavel_outlined,
+                            color: DopamineTheme.neonGreen.withValues(
+                              alpha: 0.95,
+                            ),
+                          ),
+                          title: Text(
+                            l10n.profileSettingsLegalDisclosures,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: DopamineTheme.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: DopamineTheme.textSecondary,
+                          ),
+                          onTap: () {
+                            final lang =
+                                Localizations.localeOf(context).languageCode;
+                            final hash = lang == 'ko' ? 'ko' : 'en';
+                            final uri = Uri.parse(
+                              '${ApiConfig.baseUrl}/legal/app-disclosures.html#$hash',
+                            );
+                            unawaited(
+                              AssetNewsWebViewScreen.open(
+                                context,
+                                url: uri,
+                                pageTitle: l10n.profileSettingsLegalDisclosures,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -1627,7 +1659,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? profilePhotoUrl!.trim()
                       : null,
                 ),
-                locale: locale,
                 myUid: fb.uid,
                 likeInProgress: _activityLikeBusyIds.contains(item.commentId),
                 onToggleLike: _toggleActivityLike,
@@ -1657,7 +1688,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.watch<AuthProvider<DopamineUser>>();
     final fb = FirebaseAuth.instance.currentUser;
     final appSignedIn = _isAppSignedIn(auth);
-    final locale = Localizations.localeOf(context).toLanguageTag();
+    final locale = l10n.localeName;
     final profileSaved = appSignedIn;
     final profilePhotoUrl = auth.userProfile?.photoUrl;
 

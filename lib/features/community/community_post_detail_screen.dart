@@ -30,7 +30,6 @@ class CommunityPostDetailScreen extends StatefulWidget {
   const CommunityPostDetailScreen({
     super.key,
     required this.post,
-    required this.locale,
     this.myUid,
     this.followingByUid,
     this.onToggleFollow,
@@ -38,7 +37,6 @@ class CommunityPostDetailScreen extends StatefulWidget {
   });
 
   final CommunityPost post;
-  final String locale;
   final String? myUid;
   final Map<String, bool>? followingByUid;
   final Future<void> Function(CommunityPost p)? onToggleFollow;
@@ -47,7 +45,6 @@ class CommunityPostDetailScreen extends StatefulWidget {
   static Future<bool> open(
     BuildContext context, {
     required CommunityPost post,
-    required String locale,
     String? myUid,
     Map<String, bool>? followingByUid,
     Future<void> Function(CommunityPost p)? onToggleFollow,
@@ -57,7 +54,6 @@ class CommunityPostDetailScreen extends StatefulWidget {
       MaterialPageRoute<bool>(
         builder: (ctx) => CommunityPostDetailScreen(
           post: post,
-          locale: locale,
           myUid: myUid,
           followingByUid: followingByUid,
           onToggleFollow: onToggleFollow,
@@ -673,7 +669,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final myUid = _effectiveMyUid;
     final showOwnMenu = myUid != null && c.authorUid == myUid;
     final showOtherMenu = myUid != null && c.authorUid != myUid;
-    final relativeTime = formatRelativeCommentTime(c.createdAt, widget.locale);
+    final relativeTime =
+        formatRelativeCommentTime(c.createdAt, l10n.localeName);
 
     return Padding(
       padding: EdgeInsets.only(left: depth * 12.0, bottom: 12),
@@ -919,7 +916,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final timeStr = DateFormat.yMMMd(
-      widget.locale,
+      l10n.localeName,
     ).add_jm().format(_post.createdAt.toLocal());
     final assetName = _post.assetDisplayName?.trim();
     final showFollow =

@@ -12,7 +12,6 @@ class CommunityPostCard extends StatelessWidget {
   const CommunityPostCard({
     super.key,
     required this.post,
-    required this.locale,
     this.myUid,
     this.onToggleLike,
     this.onEditOwnPost,
@@ -26,7 +25,6 @@ class CommunityPostCard extends StatelessWidget {
   });
 
   final CommunityPost post;
-  final String locale;
   final String? myUid;
 
   /// 좋아요 API 진행 중 — 하트 자리에 작은 프로그레스 표시·탭 비활성
@@ -63,7 +61,7 @@ class CommunityPostCard extends StatelessWidget {
     final theme = Theme.of(context);
     final assetName = post.assetDisplayName?.trim();
     final timeStr = DateFormat.yMMMd(
-      locale,
+      l10n.localeName,
     ).add_jm().format(post.createdAt.toLocal());
     final showOwnMenu =
         myUid != null &&

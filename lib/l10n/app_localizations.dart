@@ -320,11 +320,11 @@ abstract class AppLocalizations {
   /// **'설정'**
   String get profileSettingsTitle;
 
-  /// No description provided for @profileSettingsMoreSoon.
+  /// No description provided for @profileSettingsLegalDisclosures.
   ///
   /// In ko, this message translates to:
-  /// **'추가 설정은 곧 제공됩니다.'**
-  String get profileSettingsMoreSoon;
+  /// **'데이터 안내 및 면책'**
+  String get profileSettingsLegalDisclosures;
 
   /// No description provided for @profilePushMaster.
   ///
