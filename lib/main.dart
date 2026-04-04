@@ -13,6 +13,7 @@ import 'package:share_lib/share_lib.dart';
 import 'app.dart';
 import 'auth/dopamine_auth_service.dart';
 import 'auth/dopamine_user.dart';
+import 'core/config/app_settings_preload.dart';
 import 'core/favorites/favorites_catalog.dart';
 import 'core/feed/home_asset_suggestions.dart';
 import 'core/navigation/home_shell_navigation.dart';
@@ -56,6 +57,7 @@ Future<void> main() async {
         '312575797891-32oqllsgnd6dcp9uhr85h9s7idsmlg6t.apps.googleusercontent.com',
   );
   await authProvider.initialize();
+  await preloadAppSettings();
   await UgcBannedWords.preload();
   final navigatorKey = GlobalKey<NavigatorState>();
   runApp(

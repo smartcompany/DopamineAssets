@@ -433,6 +433,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityComposeAddPhotoShort => 'Photo';
 
   @override
+  String get communityComposeAddGifShort => 'GIF';
+
+  @override
+  String get communityComposeGiphySearchHint => 'Search GIPHY';
+
+  @override
+  String get communityComposeGiphyPoweredBy => 'Powered by GIPHY';
+
+  @override
+  String get communityComposeGiphyTooLarge =>
+      'This file is over 5MB. Pick another GIF.';
+
+  @override
+  String get communityComposeGiphyDownloadError =>
+      'Could not load the GIF. Try again.';
+
+  @override
+  String get communityComposeGiphyRateLimited =>
+      'Please try again in a moment. (rate limit)';
+
+  @override
+  String get communityComposeGiphyLoadError => 'Could not load the list.';
+
+  @override
+  String get communityComposeGiphyRetry => 'Retry';
+
+  @override
+  String get communityComposeGiphyEmpty => 'No results.';
+
+  @override
+  String get communityComposeGiphyThumbError => 'Preview unavailable';
+
+  @override
   String get communityComposeEditTitle => 'Edit post';
 
   @override

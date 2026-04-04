@@ -896,6 +896,66 @@ abstract class AppLocalizations {
   /// **'사진'**
   String get communityComposeAddPhotoShort;
 
+  /// No description provided for @communityComposeAddGifShort.
+  ///
+  /// In ko, this message translates to:
+  /// **'GIF'**
+  String get communityComposeAddGifShort;
+
+  /// No description provided for @communityComposeGiphySearchHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'GIPHY 검색'**
+  String get communityComposeGiphySearchHint;
+
+  /// No description provided for @communityComposeGiphyPoweredBy.
+  ///
+  /// In ko, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get communityComposeGiphyPoweredBy;
+
+  /// No description provided for @communityComposeGiphyTooLarge.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일이 5MB를 넘어 첨부할 수 없습니다. 다른 GIF를 선택해 주세요.'**
+  String get communityComposeGiphyTooLarge;
+
+  /// No description provided for @communityComposeGiphyDownloadError.
+  ///
+  /// In ko, this message translates to:
+  /// **'GIF를 불러오지 못했습니다. 다시 시도해 주세요.'**
+  String get communityComposeGiphyDownloadError;
+
+  /// No description provided for @communityComposeGiphyRateLimited.
+  ///
+  /// In ko, this message translates to:
+  /// **'잠시 후 다시 시도해 주세요. (요청 한도)'**
+  String get communityComposeGiphyRateLimited;
+
+  /// No description provided for @communityComposeGiphyLoadError.
+  ///
+  /// In ko, this message translates to:
+  /// **'목록을 불러오지 못했습니다.'**
+  String get communityComposeGiphyLoadError;
+
+  /// No description provided for @communityComposeGiphyRetry.
+  ///
+  /// In ko, this message translates to:
+  /// **'다시 시도'**
+  String get communityComposeGiphyRetry;
+
+  /// No description provided for @communityComposeGiphyEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'결과가 없습니다.'**
+  String get communityComposeGiphyEmpty;
+
+  /// No description provided for @communityComposeGiphyThumbError.
+  ///
+  /// In ko, this message translates to:
+  /// **'미리보기를 불러올 수 없음'**
+  String get communityComposeGiphyThumbError;
+
   /// No description provided for @communityComposeEditTitle.
   ///
   /// In ko, this message translates to:

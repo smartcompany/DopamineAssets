@@ -426,6 +426,38 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityComposeAddPhotoShort => '사진';
 
   @override
+  String get communityComposeAddGifShort => 'GIF';
+
+  @override
+  String get communityComposeGiphySearchHint => 'GIPHY 검색';
+
+  @override
+  String get communityComposeGiphyPoweredBy => 'Powered by GIPHY';
+
+  @override
+  String get communityComposeGiphyTooLarge =>
+      '파일이 5MB를 넘어 첨부할 수 없습니다. 다른 GIF를 선택해 주세요.';
+
+  @override
+  String get communityComposeGiphyDownloadError =>
+      'GIF를 불러오지 못했습니다. 다시 시도해 주세요.';
+
+  @override
+  String get communityComposeGiphyRateLimited => '잠시 후 다시 시도해 주세요. (요청 한도)';
+
+  @override
+  String get communityComposeGiphyLoadError => '목록을 불러오지 못했습니다.';
+
+  @override
+  String get communityComposeGiphyRetry => '다시 시도';
+
+  @override
+  String get communityComposeGiphyEmpty => '결과가 없습니다.';
+
+  @override
+  String get communityComposeGiphyThumbError => '미리보기를 불러올 수 없음';
+
+  @override
   String get communityComposeEditTitle => '글 수정';
 
   @override

@@ -10,6 +10,8 @@ import 'package:share_lib/share_lib.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../core/feed/home_asset_suggestions.dart';
+import '../../core/giphy/giphy_config.dart';
+import '../../core/giphy/giphy_picker_sheet.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/storage/community_post_image_upload.dart';
@@ -19,6 +21,15 @@ import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../theme/dopamine_theme.dart';
+
+/// 갤러리 첨부([XFile]) 또는 GIPHY CDN URL(우리 Storage에 GIF 업로드 없음).
+final class _PendingPick {
+  _PendingPick.local(this.file) : giphyUrl = null;
+  _PendingPick.giphy(this.giphyUrl) : file = null;
+
+  final XFile? file;
+  final String? giphyUrl;
+}
 
 // 글쓰기 본문 에디터 — 글자 크기·줄간격은 여기만 조정하면 됩니다.
 abstract final class _CommunityComposeBodyFieldText {
@@ -103,6 +114,7 @@ class CommunityComposeScreen extends StatefulWidget {
 
 class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   static const _maxImages = 6;
+  static const double _mobileComposeMediaIconSize = 30;
 
   /// 제목 필드와 동일한 한 줄 입력 높이(패딩) — 드롭다운 기본 터치 타깃 여백 제거용
   static const EdgeInsets _composeFieldContentPadding = EdgeInsets.symmetric(
@@ -116,7 +128,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
   String _assetClass = 'us_stock';
   RankedAsset? _selectedAsset;
-  final List<XFile> _images = [];
+  final List<_PendingPick> _pendingPicks = [];
   final List<String> _existingImageUrls = [];
   bool _submitting = false;
 
@@ -314,7 +326,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       _existingImageUrls
         ..clear()
         ..addAll(p.imageUrls);
-      _images.clear();
+      _pendingPicks.clear();
       _selectedAsset = _resolveAsset(
         sug,
         p.assetSymbol,
@@ -353,7 +365,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         _existingImageUrls
           ..clear()
           ..addAll(c.imageUrls);
-        _images.clear();
+        _pendingPicks.clear();
         if (sym != null &&
             sym.isNotEmpty &&
             cls != null &&
@@ -456,7 +468,18 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     }
   }
 
-  int get _totalImageCount => _existingImageUrls.length + _images.length;
+  /// 갤러리 경로가 없는 첨부(예: GIPHY [XFile.fromData])도 MIME을 맞춥니다.
+  String _uploadExtFor(XFile x) {
+    if (x.path.isNotEmpty) return _extFromPath(x.path);
+    final name = x.name;
+    if (name.contains('.')) return _extFromPath(name);
+    final mt = x.mimeType;
+    if (mt == 'image/gif') return 'gif';
+    return 'jpg';
+  }
+
+  int get _totalImageCount =>
+      _existingImageUrls.length + _pendingPicks.length;
 
   Future<void> _pickImages() async {
     if (_totalImageCount >= _maxImages) return;
@@ -465,7 +488,22 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     setState(() {
       for (final p in picked) {
         if (_totalImageCount >= _maxImages) break;
-        _images.add(p);
+        _pendingPicks.add(_PendingPick.local(p));
+      }
+    });
+    if (mounted && !kIsWeb) {
+      _bodyFocusNode.requestFocus();
+    }
+  }
+
+  Future<void> _pickGiphy(AppLocalizations l10n) async {
+    if (!giphyPickerAvailable || _totalImageCount >= _maxImages) return;
+    if (!mounted) return;
+    final url = await showGiphyPickerSheet(context);
+    if (!mounted || url == null) return;
+    setState(() {
+      if (_totalImageCount < _maxImages) {
+        _pendingPicks.add(_PendingPick.giphy(url));
       }
     });
     if (mounted && !kIsWeb) {
@@ -530,9 +568,15 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
       Future<List<String>> uploadNewPicks() async {
         final urls = <String>[];
-        for (final x in _images) {
+        for (final pick in _pendingPicks) {
+          final giphy = pick.giphyUrl;
+          if (giphy != null) {
+            urls.add(giphy);
+            continue;
+          }
+          final x = pick.file!;
           final bytes = await x.readAsBytes();
-          final ext = _extFromPath(x.path);
+          final ext = _uploadExtFor(x);
           final url = await uploadCommunityPostImage(
             idToken: token,
             bytes: bytes,
@@ -598,7 +642,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   Widget _thumbnailStrip({
     EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(12, 4, 12, 8),
   }) {
-    final n = _existingImageUrls.length + _images.length;
+    final n = _existingImageUrls.length + _pendingPicks.length;
     if (n == 0) return const SizedBox.shrink();
     return SizedBox(
       height: 76,
@@ -654,39 +698,54 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
             );
           }
           final j = i - existingCount;
+          final pick = _pendingPicks[j];
+          final giphyUrl = pick.giphyUrl;
           return Stack(
             clipBehavior: Clip.none,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: FutureBuilder<Uint8List>(
-                  future: _images[j].readAsBytes(),
-                  builder: (context, snap) {
-                    if (snap.hasData) {
-                      return Image.memory(
-                        snap.data!,
+                child: giphyUrl != null
+                    ? Image.network(
+                        giphyUrl,
                         width: 72,
                         height: 72,
                         fit: BoxFit.cover,
-                      );
-                    }
-                    return Container(
-                      width: 72,
-                      height: 72,
-                      color: Colors.white.withValues(alpha: 0.06),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: DopamineTheme.neonGreen,
-                          ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            Container(
+                          width: 72,
+                          height: 72,
+                          color: Colors.white.withValues(alpha: 0.06),
                         ),
+                      )
+                    : FutureBuilder<Uint8List>(
+                        future: pick.file!.readAsBytes(),
+                        builder: (context, snap) {
+                          if (snap.hasData) {
+                            return Image.memory(
+                              snap.data!,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                            );
+                          }
+                          return Container(
+                            width: 72,
+                            height: 72,
+                            color: Colors.white.withValues(alpha: 0.06),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: DopamineTheme.neonGreen,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
               Positioned(
                 top: -6,
@@ -705,7 +764,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                     icon: const Icon(Icons.close_rounded, size: 16),
                     color: Colors.white,
                     onPressed: () {
-                      setState(() => _images.removeAt(j));
+                      setState(() => _pendingPicks.removeAt(j));
                     },
                   ),
                 ),
@@ -722,19 +781,43 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       padding: const EdgeInsets.fromLTRB(4, 0, 8, 8),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: _totalImageCount >= _maxImages ? null : _pickImages,
-          icon: const Icon(
-            Icons.add_photo_alternate_outlined,
-            color: DopamineTheme.neonGreen,
-          ),
-          label: Text(
-            l10n.communityComposeAddPhotoShort,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: DopamineTheme.neonGreen,
-              fontWeight: FontWeight.w700,
+        child: Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            TextButton.icon(
+              onPressed: _totalImageCount >= _maxImages ? null : _pickImages,
+              icon: const Icon(
+                Icons.add_photo_alternate_outlined,
+                color: DopamineTheme.neonGreen,
+              ),
+              label: Text(
+                l10n.communityComposeAddPhotoShort,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: DopamineTheme.neonGreen,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-          ),
+            if (giphyPickerAvailable)
+              TextButton.icon(
+                onPressed: _totalImageCount >= _maxImages
+                    ? null
+                    : () => _pickGiphy(l10n),
+                icon: const Icon(
+                  Icons.gif_box_outlined,
+                  color: DopamineTheme.neonGreen,
+                ),
+                label: Text(
+                  l10n.communityComposeAddGifShort,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: DopamineTheme.neonGreen,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -760,18 +843,21 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                       ? null
                       : _pickImages,
                   icon: const Icon(Icons.add_photo_alternate_outlined),
+                  iconSize: _mobileComposeMediaIconSize,
                   color: DopamineTheme.neonGreen,
                   tooltip: l10n.communityComposeAddPhotoShort,
                 ),
-                Expanded(
-                  child: Text(
-                    l10n.communityComposeAddPhotoShort,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: DopamineTheme.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                if (giphyPickerAvailable) ...[
+                  IconButton(
+                    onPressed: _totalImageCount >= _maxImages
+                        ? null
+                        : () => _pickGiphy(l10n),
+                    icon: const Icon(Icons.gif_box_outlined),
+                    iconSize: _mobileComposeMediaIconSize,
+                    color: DopamineTheme.neonGreen,
+                    tooltip: l10n.communityComposeAddGifShort,
                   ),
-                ),
+                ],
               ],
             ),
           ),

@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 
 import '../config/api_config.dart';
 import '../network/api_exception.dart';
+import 'upload_limits.dart';
 
 Future<String> _uploadImage({
   required String idToken,
@@ -13,42 +13,68 @@ Future<String> _uploadImage({
   required String contentType,
   required String scope,
 }) async {
-  final uri = Uri.parse('${ApiConfig.baseUrl}/api/feed/community-image');
-  final request = http.MultipartRequest('POST', uri);
-  request.headers['Authorization'] = 'Bearer $idToken';
-  request.fields['scope'] = scope;
-  MediaType? mediaType;
-  try {
-    mediaType = MediaType.parse(contentType);
-  } catch (_) {
-    mediaType = MediaType('image', 'jpeg');
+  if (bytes.length > kCommunityImageUploadMaxBytes) {
+    throw ApiException(
+      '파일이 너무 큽니다(최대 ${(kCommunityImageUploadMaxBytes / (1024 * 1024)).round()}MB). '
+      'GIF는 다른 것을 선택하거나 첨부 수를 줄여 주세요.',
+    );
   }
-  request.files.add(
-    http.MultipartFile.fromBytes(
-      'file',
-      bytes,
-      filename: filename,
-      contentType: mediaType,
-    ),
+
+  final signUri =
+      Uri.parse('${ApiConfig.baseUrl}/api/feed/community-image/sign');
+  final signRes = await http.post(
+    signUri,
+    headers: {
+      'Authorization': 'Bearer $idToken',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'contentType': contentType,
+      'scope': scope,
+      'byteLength': bytes.length,
+    }),
   );
 
-  final streamed = await request.send();
-  final response = await http.Response.fromStream(streamed);
-  if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw ApiException('HTTP ${response.statusCode}');
+  if (signRes.statusCode < 200 || signRes.statusCode >= 300) {
+    try {
+      final err = jsonDecode(signRes.body);
+      if (err is Map<String, dynamic> && err['error'] == 'invalid_size') {
+        throw ApiException(
+          '파일이 너무 큽니다(최대 ${(kCommunityImageUploadMaxBytes / (1024 * 1024)).round()}MB). '
+          'GIF는 다른 것을 선택하거나 첨부 수를 줄여 주세요.',
+        );
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+    }
+    throw ApiException('HTTP ${signRes.statusCode}');
   }
-  final decoded = jsonDecode(response.body);
-  if (decoded is! Map<String, dynamic>) {
-    throw ApiException('Invalid upload response');
+
+  final signJson = jsonDecode(signRes.body) as Map<String, dynamic>;
+  final signedUrl = signJson['signedUrl'] as String?;
+  final publicUrl = signJson['publicUrl'] as String?;
+  if (signedUrl == null ||
+      publicUrl == null ||
+      signedUrl.isEmpty ||
+      publicUrl.isEmpty) {
+    throw ApiException('Invalid sign response');
   }
-  final url = decoded['url'] as String?;
-  if (url == null || url.isEmpty) {
-    throw ApiException('Missing image URL');
+
+  final putRes = await http.put(
+    Uri.parse(signedUrl),
+    headers: {'Content-Type': contentType},
+    body: bytes,
+  );
+
+  if (putRes.statusCode < 200 || putRes.statusCode >= 300) {
+    throw ApiException('업로드 실패 (${putRes.statusCode})');
   }
-  return url;
+
+  return publicUrl;
 }
 
-/// Supabase Storage (`dopamine-assets`) — 서버 [POST /api/feed/community-image] 경유.
+/// Supabase Storage — [POST /api/feed/community-image/sign] 후 서명 URL로 직접 PUT.
 Future<String> uploadCommunityPostImage({
   required String idToken,
   required List<int> bytes,
@@ -64,7 +90,7 @@ Future<String> uploadCommunityPostImage({
   );
 }
 
-/// 프로필 사진 전용 업로드. Storage 경로는 `profiles/{uid}/...`.
+/// 프로필 사진 전용. Storage 경로는 `profiles/{uid}/...`.
 Future<String> uploadProfileImage({
   required String idToken,
   required List<int> bytes,
