@@ -29,6 +29,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const int _rankingTopN = 10;
+  static const int _rankingCollapsedVisible = 3;
   static const Duration _rankingPollInterval = Duration(seconds: 5);
   static const Duration _filterApplyDebounce = Duration(milliseconds: 600);
 
@@ -44,6 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _rankingPollTimer;
   int _rankingRequestId = 0;
   Timer? _filterApplyTimer;
+
+  bool _rankingUpExpanded = false;
+  bool _rankingDownExpanded = false;
 
   late Future<List<ThemeItem>> _hotThemesFuture;
   late Future<List<ThemeItem>> _crashedThemesFuture;
@@ -341,7 +345,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final expanded = up ? _rankingUpExpanded : _rankingDownExpanded;
+    final canToggle = slice.length > _rankingCollapsedVisible;
+    final visible = !canToggle || expanded
+        ? slice
+        : slice.sublist(0, _rankingCollapsedVisible);
     final orderKey = slice.map((e) => e.symbol).join('\u241e');
+    final switcherKey = '$orderKey\u241f${expanded ? 'x' : 'c'}';
+    final expandAccentColor =
+        up ? DopamineTheme.neonGreen : DopamineTheme.accentRed;
+
     return [
       SliverToBoxAdapter(
         child: Padding(
@@ -351,15 +364,65 @@ class _HomeScreenState extends State<HomeScreen> {
             switchInCurve: Curves.easeOutCubic,
             switchOutCurve: Curves.easeInCubic,
             child: Column(
-              key: ValueKey<String>(orderKey),
+              key: ValueKey<String>(switcherKey),
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (var i = 0; i < slice.length; i++)
+                for (var i = 0; i < visible.length; i++)
                   _GlassAssetRow(
                     rank: i + 1,
-                    asset: slice[i],
+                    asset: visible[i],
                     locale: locale,
                     upList: up,
+                  ),
+                if (canToggle)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              if (up) {
+                                _rankingUpExpanded = !_rankingUpExpanded;
+                              } else {
+                                _rankingDownExpanded = !_rankingDownExpanded;
+                              }
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  expanded
+                                      ? l10n.homeRankingShowLessTooltip
+                                      : l10n.homeRankingShowMoreTooltip,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: expandAccentColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  expanded
+                                      ? Icons.keyboard_arrow_up_rounded
+                                      : Icons.keyboard_arrow_down_rounded,
+                                  color: expandAccentColor,
+                                  size: 26,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),

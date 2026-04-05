@@ -1028,6 +1028,18 @@ abstract class AppLocalizations {
   /// **'오늘 가장 크게 박살난 것'**
   String get rankingsDownTitle;
 
+  /// No description provided for @homeRankingShowMoreTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'더 보기'**
+  String get homeRankingShowMoreTooltip;
+
+  /// No description provided for @homeRankingShowLessTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'접기'**
+  String get homeRankingShowLessTooltip;
+
   /// No description provided for @themesHotTitle.
   ///
   /// In ko, this message translates to:

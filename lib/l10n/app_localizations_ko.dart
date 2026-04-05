@@ -496,6 +496,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rankingsDownTitle => '오늘 가장 크게 박살난 것';
 
   @override
+  String get homeRankingShowMoreTooltip => '더 보기';
+
+  @override
+  String get homeRankingShowLessTooltip => '접기';
+
+  @override
   String get themesHotTitle => '오늘 가장 미친 테마';
 
   @override

@@ -505,6 +505,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankingsDownTitle => 'Biggest losers today';
 
   @override
+  String get homeRankingShowMoreTooltip => 'Show more';
+
+  @override
+  String get homeRankingShowLessTooltip => 'Show less';
+
+  @override
   String get themesHotTitle => 'Hottest themes today';
 
   @override

@@ -197,6 +197,8 @@
   "rankingsDownTab": "Crashing 💀",
   "rankingsUpTitle": "Wildest gainers today",
   "rankingsDownTitle": "Biggest losers today",
+  "homeRankingShowMoreTooltip": "Show more",
+  "homeRankingShowLessTooltip": "Show less",
   "themesHotTitle": "Hottest themes today",
   "themesCrashedTitle": "Themes that got crushed",
   "themesEmergingTitle": "Suddenly trending themes",
