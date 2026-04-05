@@ -505,7 +505,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankingsDownTitle => 'Biggest losers today';
 
   @override
+  String get homeInterestSurgeTitle => 'Today\'s interest surge';
+
+  @override
+  String get homeInterestSurgeInfoIconTooltip => 'How this list is built';
+
+  @override
+  String get homeInterestSurgeInfoTitle => 'About today\'s interest surge';
+
+  @override
+  String get homeInterestSurgeInfoBody =>
+      'This list is built with AI: it picks US and Korean stocks, crypto, and commodities that look attention-worthy from recent market context, news, and investor-interest signals, then estimates a relative 0–100 \"trend\" score for each.\n\nScores are processed and stored on our servers once per day; the app shows the latest snapshot.\n\nFor information only—not investment advice, and not a guarantee of returns.';
+
+  @override
+  String get homeInterestSurgeInfoDismiss => 'OK';
+
+  @override
+  String get homeTrendScoreLabel => 'Trend';
+
+  @override
   String get homeRankingShowMoreTooltip => 'Show more';
+
+  @override
+  String get homeInterestSurgeShowMoreWithAd => 'Watch ad to show more';
 
   @override
   String get homeRankingShowLessTooltip => 'Show less';

@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 
+import '../../data/models/interest_surge_item.dart';
 import '../../data/models/ranked_asset.dart';
 
-/// 홈 상·하위 랭킹에서 가져온 종목명·심볼로 커뮤니티 검색 자동완성에 씁니다.
+/// 홈 상·하위 랭킹 + 관심 폭주(interest-surge) 종목으로 커뮤니티 글쓰기 심볼·자산군 제안을 채웁니다.
 class HomeAssetSuggestions extends ChangeNotifier {
   final List<String> _labels = [];
   final Set<String> _seen = {};
@@ -57,6 +58,60 @@ class HomeAssetSuggestions extends ChangeNotifier {
       addAsset(a);
       addLabel(a);
     }
+    _rankedAssets.sort((a, b) {
+      final c = a.symbol.compareTo(b.symbol);
+      if (c != 0) return c;
+      return (a.assetClass ?? '').compareTo(b.assetClass ?? '');
+    });
+    notifyListeners();
+  }
+
+  static const _mergeableInterestClasses = <String>{
+    'us_stock',
+    'kr_stock',
+    'crypto',
+    'commodity',
+  };
+
+  /// `dopamine_interest_asset_scores` 기반 관심 폭주 목록 — 랭킹과 동일 `(symbol|assetClass)` 는 제외.
+  void mergeInterestSurgeItems(List<InterestSurgeItem> items) {
+    if (items.isEmpty) return;
+    final seenPair = <String>{
+      for (final a in _rankedAssets)
+        '${a.symbol.trim()}|${a.assetClass?.trim() ?? ''}',
+    };
+
+    for (final item in items) {
+      final ac = item.category.trim();
+      if (!_mergeableInterestClasses.contains(ac)) continue;
+      final sym = item.symbol.trim();
+      if (sym.isEmpty) continue;
+      final key = '$sym|$ac';
+      if (seenPair.contains(key)) continue;
+      seenPair.add(key);
+
+      final name = item.name.trim().isEmpty ? sym : item.name.trim();
+      _rankedAssets.add(
+        RankedAsset(
+          symbol: sym,
+          name: name,
+          priceChangePct: 0,
+          volumeChangePct: 0,
+          dopamineScore: 0,
+          assetClass: ac,
+        ),
+      );
+
+      if (name.isNotEmpty && !_seen.contains(name)) {
+        _seen.add(name);
+        _labels.add(name);
+      }
+      if (!_seen.contains(sym)) {
+        _seen.add(sym);
+        _labels.add(sym);
+      }
+    }
+
     _rankedAssets.sort((a, b) {
       final c = a.symbol.compareTo(b.symbol);
       if (c != 0) return c;

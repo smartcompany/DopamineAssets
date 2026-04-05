@@ -12,6 +12,7 @@ import '../../data/models/asset_detail.dart';
 import '../../data/models/asset_news.dart';
 import '../../data/models/market_summary.dart';
 import '../../data/models/ranked_asset.dart';
+import '../../data/models/interest_surge_item.dart';
 import '../../data/models/theme_item.dart';
 import '../../data/models/profile_activity_item.dart';
 import '../../auth/dopamine_user.dart';
@@ -1121,6 +1122,26 @@ abstract final class DopamineApi {
     }
     return items
         .map((e) => RankedAsset.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Supabase `dopamine_interest_asset_scores` 기반 홈 「오늘 관심 폭주」.
+  static Future<List<InterestSurgeItem>> fetchInterestSurge() async {
+    final response = await _client.get(
+      _uri('/api/feed/interest-surge'),
+      headers: _jsonHeaders,
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid interest surge payload');
+    }
+    final raw = decoded['items'];
+    if (raw is! List<dynamic>) {
+      return const [];
+    }
+    return raw
+        .map((e) => InterestSurgeItem.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

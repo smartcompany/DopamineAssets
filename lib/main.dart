@@ -6,6 +6,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
@@ -37,6 +38,7 @@ Future<void> main() async {
     if (e.code != 'duplicate-app') rethrow;
   }
   if (!kIsWeb) {
+    unawaited(MobileAds.instance.initialize());
     final crashlytics = FirebaseCrashlytics.instance;
     await crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
     FlutterError.onError = crashlytics.recordFlutterFatalError;

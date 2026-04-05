@@ -208,6 +208,11 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final a = widget.rankedAsset;
+    // `extendBodyBehindAppBar` 이면 본문이 앱바 아래까지 그려지므로, 상태바+툴바 높이만큼
+    // 내려 주지 않으면 카드 타이틀이 뒤로 버튼·앱 타이틀과 겹쳐 보일 수 있음.
+    final topUnderAppBar = MediaQuery.paddingOf(context).top +
+        (AppBarTheme.of(context).toolbarHeight ?? kToolbarHeight) +
+        12;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -230,24 +235,27 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               ),
             ),
           ),
-          FutureBuilder<AssetDetail>(
-            future: _future,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: DopamineTheme.neonGreen,
-                  ),
-                );
-              }
-              if (snapshot.hasError) {
-                final err = snapshot.error;
-                final msg = err is ApiException ? err.message : err.toString();
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
+          Padding(
+            padding: EdgeInsets.only(top: topUnderAppBar),
+            child: FutureBuilder<AssetDetail>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: DopamineTheme.neonGreen,
+                    ),
+                  );
+                }
+                if (snapshot.hasError) {
+                  final err = snapshot.error;
+                  final msg =
+                      err is ApiException ? err.message : err.toString();
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
@@ -284,7 +292,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
               final showThemeChart =
                   isTheme && themeIdForChart.isNotEmpty;
               return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 100, 20, 32),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -443,9 +451,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                 color: DopamineTheme.textSecondary,
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 22),
                           ] else
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 22),
                           _kvRow(
                             theme,
                             l10n.assetDetailPriceChange,
@@ -523,7 +531,8 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                   ],
                 ),
               );
-            },
+              },
+            ),
           ),
         ],
       ),

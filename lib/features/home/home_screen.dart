@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/ads/home_ranking_banner_ad.dart';
+import '../../core/ads/interest_surge_expand_ad_gate.dart';
 import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/config/api_config.dart';
 import '../../core/formatting/percent_format.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../data/ranking_filter_prefs.dart';
 import '../../data/models/market_summary.dart';
+import '../../data/models/interest_surge_item.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../theme/dopamine_theme.dart';
@@ -18,6 +21,60 @@ import '../asset/asset_detail_screen.dart';
 
 /// 홈 본문·섹션 제목과 동일한 좌우 여백(랭킹 카드 리스트와 정렬).
 const double _kHomeGutter = 20;
+
+void _showInterestSurgeInfoDialog(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  final theme = Theme.of(context);
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF221039),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.bolt_rounded,
+            color: DopamineTheme.accentOrange,
+            size: 26,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l10n.homeInterestSurgeInfoTitle,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: DopamineTheme.textPrimary,
+                fontWeight: FontWeight.w800,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Text(
+          l10n.homeInterestSurgeInfoBody,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: DopamineTheme.textSecondary,
+            height: 1.5,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text(
+            l10n.homeInterestSurgeInfoDismiss,
+            style: TextStyle(
+              color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 /// 캡처 기준: 퍼플 그라데이션 + 네온 그린 + 글래스 카드
 class HomeScreen extends StatefulWidget {
@@ -30,6 +87,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const int _rankingTopN = 10;
   static const int _rankingCollapsedVisible = 3;
+  static const int _interestSurgeMax = 10;
+  static const int _interestSurgeCollapsedVisible = 3;
   static const Duration _rankingPollInterval = Duration(seconds: 5);
   static const Duration _filterApplyDebounce = Duration(milliseconds: 600);
 
@@ -48,6 +107,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _rankingUpExpanded = false;
   bool _rankingDownExpanded = false;
+  bool _interestSurgeExpanded = false;
+  bool _interestSurgeAdLoading = false;
+
+  List<InterestSurgeItem>? _interestSurgeItems;
 
   late Future<List<ThemeItem>> _hotThemesFuture;
   late Future<List<ThemeItem>> _crashedThemesFuture;
@@ -177,6 +240,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (showLoadingIndicator && mounted) {
       setState(() => _rankingsLoading = true);
     }
+
+    Object? rankingsErr;
+    List<RankedAsset> up = _upItems ?? [];
+    List<RankedAsset> down = _downItems ?? [];
+
     try {
       if (!mounted) return;
       final locale = Localizations.localeOf(context).languageCode;
@@ -191,28 +259,44 @@ class _HomeScreenState extends State<HomeScreen> {
       _logRankings(
         'request #$id ok → up=${results[0].length} down=${results[1].length}',
       );
-      setState(() {
-        _upItems = results[0];
-        _downItems = results[1];
-        _rankingsLoading = false;
-        _rankingsError = null;
-      });
-      if (mounted) {
-        context.read<HomeAssetSuggestions>().setFromRankings(
-          results[0],
-          results[1],
-        );
-      }
+      up = results[0];
+      down = results[1];
+      rankingsErr = null;
     } catch (e) {
       if (!mounted || id != _rankingRequestId) {
         _logRankings('request #$id error ignored (stale or unmounted): $e');
         return;
       }
       _logRankings('request #$id error: $e');
-      setState(() {
-        _rankingsError = e;
-        _rankingsLoading = false;
-      });
+      rankingsErr = e;
+    }
+
+    List<InterestSurgeItem> surge = _interestSurgeItems ?? [];
+    try {
+      surge = await DopamineApi.fetchInterestSurge();
+    } catch (e) {
+      debugPrint('[Dopamine][interest-surge] fetch failed: $e');
+    }
+
+    if (!mounted || id != _rankingRequestId) return;
+
+    setState(() {
+      if (rankingsErr == null) {
+        _upItems = up;
+        _downItems = down;
+        _rankingsError = null;
+      } else {
+        _rankingsError = rankingsErr;
+      }
+      _interestSurgeItems = surge;
+      _rankingsLoading = false;
+    });
+    if (mounted) {
+      final sug = context.read<HomeAssetSuggestions>();
+      if (rankingsErr == null) {
+        sug.setFromRankings(up, down);
+      }
+      sug.mergeInterestSurgeItems(surge);
     }
   }
 
@@ -367,62 +451,128 @@ class _HomeScreenState extends State<HomeScreen> {
               key: ValueKey<String>(switcherKey),
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (var i = 0; i < visible.length; i++)
+                for (var i = 0; i < visible.length; i++) ...[
                   _GlassAssetRow(
                     rank: i + 1,
                     asset: visible[i],
                     locale: locale,
                     upList: up,
                   ),
+                  if (up && i == 3 && visible.length >= 5)
+                    const HomeRankingBannerAd(),
+                ],
                 if (canToggle)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
+                  _HomeExpandCollapsePill(
+                    accentColor: expandAccentColor,
+                    expanded: expanded,
+                    label: expanded
+                        ? l10n.homeRankingShowLessTooltip
+                        : l10n.homeRankingShowMoreTooltip,
+                    onTap: () {
+                      setState(() {
+                        if (up) {
+                          _rankingUpExpanded = !_rankingUpExpanded;
+                        } else {
+                          _rankingDownExpanded = !_rankingDownExpanded;
+                        }
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  List<InterestSurgeItem> _interestSurgeSlice() {
+    final raw = _interestSurgeItems;
+    if (raw == null || raw.isEmpty) return const [];
+    return raw.length > _interestSurgeMax
+        ? raw.sublist(0, _interestSurgeMax)
+        : raw;
+  }
+
+  List<Widget> _animatedInterestSurgeSlivers({
+    required AppLocalizations l10n,
+  }) {
+    final slice = _interestSurgeSlice();
+    if (slice.isEmpty) {
+      return const [SliverToBoxAdapter(child: SizedBox.shrink())];
+    }
+
+    final expanded = _interestSurgeExpanded;
+    final canToggle = slice.length > _interestSurgeCollapsedVisible;
+    final visible = !canToggle || expanded
+        ? slice
+        : slice.sublist(0, _interestSurgeCollapsedVisible);
+    final orderKey = slice.map((e) => e.symbol).join('\u241e');
+    final switcherKey = '$orderKey\u241f${expanded ? 'x' : 'c'}';
+    const accent = DopamineTheme.accentOrange;
+
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 20),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 380),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: Column(
+              key: ValueKey<String>(switcherKey),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final item in visible)
+                  _GlassInterestSurgeRow(
+                    item: item,
+                    trendLabel: l10n.homeTrendScoreLabel,
+                  ),
+                if (canToggle)
+                  _HomeExpandCollapsePill(
+                    accentColor: accent,
+                    expanded: expanded,
+                    label: expanded
+                        ? l10n.homeRankingShowLessTooltip
+                        : (InterestSurgeExpandAdGate.watchedAdThisSession
+                            ? l10n.homeRankingShowMoreTooltip
+                            : l10n.homeInterestSurgeShowMoreWithAd),
+                    adUnlockHint:
+                        !expanded &&
+                        !InterestSurgeExpandAdGate.watchedAdThisSession,
+                    onTap: () async {
+                      if (expanded) {
+                        setState(() {
+                          _interestSurgeExpanded = false;
+                        });
+                        return;
+                      }
+                      if (!InterestSurgeExpandAdGate.watchedAdThisSession) {
+                        setState(() {
+                          _interestSurgeAdLoading = true;
+                        });
+                        try {
+                          await InterestSurgeExpandAdGate
+                              .runAdBeforeFirstExpandIfNeeded();
+                        } catch (e, st) {
+                          debugPrint(
+                            '[InterestSurge] ad gate error: $e\n$st',
+                          );
+                          InterestSurgeExpandAdGate.watchedAdThisSession = true;
+                        } finally {
+                          if (mounted) {
                             setState(() {
-                              if (up) {
-                                _rankingUpExpanded = !_rankingUpExpanded;
-                              } else {
-                                _rankingDownExpanded = !_rankingDownExpanded;
-                              }
+                              _interestSurgeAdLoading = false;
+                              _interestSurgeExpanded = true;
                             });
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 10,
-                              horizontal: 12,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  expanded
-                                      ? l10n.homeRankingShowLessTooltip
-                                      : l10n.homeRankingShowMoreTooltip,
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    color: expandAccentColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  expanded
-                                      ? Icons.keyboard_arrow_up_rounded
-                                      : Icons.keyboard_arrow_down_rounded,
-                                  color: expandAccentColor,
-                                  size: 26,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                          }
+                        }
+                        return;
+                      }
+                      setState(() {
+                        _interestSurgeExpanded = true;
+                      });
+                    },
                   ),
               ],
             ),
@@ -443,6 +593,24 @@ class _HomeScreenState extends State<HomeScreen> {
         Positioned.fill(
           child: IgnorePointer(child: const _PurpleGradientBackground()),
         ),
+        if (_interestSurgeAdLoading)
+          Positioned.fill(
+            child: AbsorbPointer(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.45),
+                child: Center(
+                  child: SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: DopamineTheme.accentOrange,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         Positioned.fill(
           child: RefreshIndicator(
             color: DopamineTheme.neonGreen,
@@ -564,6 +732,40 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
+                if (_interestSurgeSlice().isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        _kHomeGutter,
+                        0,
+                        _kHomeGutter,
+                        8,
+                      ),
+                      child: _SectionTitle(
+                        icon: Icons.bolt_rounded,
+                        iconColor: DopamineTheme.accentOrange,
+                        title: l10n.homeInterestSurgeTitle,
+                        trailing: IconButton(
+                          tooltip: l10n.homeInterestSurgeInfoIconTooltip,
+                          onPressed: () => _showInterestSurgeInfoDialog(context),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          icon: Icon(
+                            Icons.info_outline_rounded,
+                            color: DopamineTheme.accentOrange.withValues(
+                              alpha: 0.92,
+                            ),
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  ..._animatedInterestSurgeSlivers(l10n: l10n),
+                ],
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -945,6 +1147,126 @@ class _HomeSectionProgressLine extends StatelessWidget {
   }
 }
 
+/// 랭킹·관심 급등 리스트 하단 — 글래스 카드 톤에 맞춘 풀폭 토글(더보기/접기·광고 안내).
+class _HomeExpandCollapsePill extends StatelessWidget {
+  const _HomeExpandCollapsePill({
+    required this.accentColor,
+    required this.expanded,
+    required this.label,
+    required this.onTap,
+    this.adUnlockHint = false,
+  });
+
+  final Color accentColor;
+  final bool expanded;
+  final String label;
+  final VoidCallback onTap;
+
+  /// 접힌 상태에서 첫 확장에 광고가 필요할 때(재생 아이콘 + 살짝 다른 글로우).
+  final bool adUnlockHint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderGlow = adUnlockHint && !expanded
+        ? accentColor.withValues(alpha: 0.72)
+        : accentColor.withValues(alpha: 0.52);
+    final fillTop = accentColor.withValues(alpha: adUnlockHint && !expanded ? 0.22 : 0.14);
+    final fillBottom = Colors.black.withValues(alpha: 0.4);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: accentColor.withValues(alpha: 0.18),
+          highlightColor: accentColor.withValues(alpha: 0.08),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [fillTop, fillBottom],
+                  ),
+                  border: Border.all(color: borderGlow, width: 1.35),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(
+                        alpha: adUnlockHint && !expanded ? 0.28 : 0.18,
+                      ),
+                      blurRadius: adUnlockHint && !expanded ? 18 : 12,
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 13,
+                    horizontal: 14,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (adUnlockHint && !expanded) ...[
+                        Icon(
+                          Icons.play_circle_filled_rounded,
+                          color: accentColor.withValues(alpha: 0.95),
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.96),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: expanded ? -0.2 : -0.35,
+                            height: 1.2,
+                            shadows: [
+                              Shadow(
+                                color: accentColor.withValues(alpha: 0.45),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        expanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: accentColor.withValues(alpha: 0.98),
+                        size: 26,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GlassPanel extends StatelessWidget {
   const _GlassPanel({required this.child});
 
@@ -1046,49 +1368,64 @@ class _SectionTitle extends StatelessWidget {
     required this.iconColor,
     required this.title,
     this.emphasize = false,
+    this.trailing,
   });
 
   final IconData icon;
   final Color iconColor;
   final String title;
   final bool emphasize;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final titleStyle =
+        (emphasize
+                ? theme.textTheme.headlineSmall
+                : theme.textTheme.titleLarge)
+            ?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: emphasize ? -0.6 : -0.3,
+              height: 1.15,
+              color: DopamineTheme.textPrimary,
+              shadows: emphasize
+                  ? [
+                      Shadow(
+                        color: DopamineTheme.neonGreen.withValues(
+                          alpha: 0.35,
+                        ),
+                        blurRadius: 18,
+                      ),
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.85),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ]
+                  : null,
+            );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(icon, color: iconColor, size: emphasize ? 28 : 24),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(
-            title,
-            style:
-                (emphasize
-                        ? theme.textTheme.headlineSmall
-                        : theme.textTheme.titleLarge)
-                    ?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: emphasize ? -0.6 : -0.3,
-                      height: 1.15,
-                      color: DopamineTheme.textPrimary,
-                      shadows: emphasize
-                          ? [
-                              Shadow(
-                                color: DopamineTheme.neonGreen.withValues(
-                                  alpha: 0.35,
-                                ),
-                                blurRadius: 18,
-                              ),
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.85),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                              ),
-                            ]
-                          : null,
-                    ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  style: titleStyle,
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 2),
+                trailing!,
+              ],
+            ],
           ),
         ),
       ],
@@ -1245,12 +1582,17 @@ class _FirstPlacePulsingShell extends StatefulWidget {
     required this.blurSigma,
     required this.podium,
     required this.child,
+    this.contentPadding = const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 16,
+    ),
   });
 
   final double borderRadius;
   final double blurSigma;
   final _PodiumStyle podium;
   final Widget child;
+  final EdgeInsetsGeometry contentPadding;
 
   @override
   State<_FirstPlacePulsingShell> createState() =>
@@ -1298,7 +1640,7 @@ class _FirstPlacePulsingShellState extends State<_FirstPlacePulsingShell>
               t,
             )!;
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: widget.contentPadding,
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.42 + 0.04 * t),
                 borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -1528,6 +1870,282 @@ class _GlassAssetRow extends StatelessWidget {
                     ),
                   ),
                 ),
+        ),
+      ),
+    );
+  }
+}
+
+String _formatInterestScoreForDisplay(double v) {
+  if ((v - v.roundToDouble()).abs() < 1e-6) {
+    return '${v.round()}';
+  }
+  return v.toStringAsFixed(1);
+}
+
+String _formatInterestDeltaForDisplay(double v) {
+  if ((v - v.roundToDouble()).abs() < 1e-6) {
+    final i = v.round();
+    if (i > 0) return '+$i';
+    if (i < 0) return '$i';
+    return '0';
+  }
+  final t = v.toStringAsFixed(1);
+  if (v > 0) return '+$t';
+  return t;
+}
+
+class _GlassInterestSurgeRow extends StatelessWidget {
+  const _GlassInterestSurgeRow({
+    required this.item,
+    required this.trendLabel,
+  });
+
+  final InterestSurgeItem item;
+  final String trendLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final badgeLabel = _assetClassBadgeLabel(l10n, item.category);
+    final assetClassColor = _assetClassBadgeColor(item.category);
+    const accent = DopamineTheme.accentOrange;
+
+    /// 1~3위: 순위 뱃지 금·은·동 + 카드 포디엄 테두리·글로우(타이포·38 뱃지는 4위 이하와 동일)
+    final podium = _PodiumStyle.forRank(item.rank, true);
+    final isPodium = podium != null;
+    final isFirstPlace = item.rank == 1 && isPodium;
+    final cardBorderRadius = isPodium ? 18.0 : 16.0;
+    final cardBlur = isPodium ? 16.0 : 14.0;
+    final defaultRankColor = accent;
+
+    final nameStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: DopamineTheme.textPrimary,
+    );
+    final scoreStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w900,
+      color: accent,
+      letterSpacing: -0.3,
+    );
+    final symStyle = theme.textTheme.bodySmall?.copyWith(
+      color: DopamineTheme.textSecondary,
+    );
+
+    final delta = item.scoreDelta;
+    Color? deltaColor;
+    IconData? deltaIcon;
+    if (delta != null) {
+      if (delta > 0) {
+        deltaColor = DopamineTheme.neonGreen;
+        deltaIcon = Icons.trending_up_rounded;
+      } else if (delta < 0) {
+        deltaColor = DopamineTheme.accentRed;
+        deltaIcon = Icons.trending_down_rounded;
+      } else {
+        deltaColor = DopamineTheme.textSecondary;
+        deltaIcon = Icons.trending_flat_rounded;
+      }
+    }
+
+    final shell = RankedAsset.communityShell(
+      symbol: item.symbol,
+      assetClass: item.category,
+      displayName: item.name,
+    );
+
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: isPodium
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: podium.rankGradient,
+                  )
+                : null,
+            color: isPodium ? null : defaultRankColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: (isPodium ? podium.accent : defaultRankColor).withValues(
+                  alpha: 0.55,
+                ),
+                blurRadius: 10,
+              ),
+            ],
+          ),
+          child: Text(
+            '${item.rank}',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: isPodium ? podium.rankTextColor : const Color(0xFF0A0A0A),
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (badgeLabel != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: assetClassColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: assetClassColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          badgeLabel,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: assetClassColor,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(child: Text(item.name, style: nameStyle)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(item.symbol, style: symStyle),
+            ],
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              _formatInterestScoreForDisplay(item.score),
+              style: scoreStyle,
+            ),
+            Text(
+              trendLabel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: DopamineTheme.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (delta != null && deltaColor != null && deltaIcon != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(deltaIcon, size: 16, color: deltaColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatInterestDeltaForDisplay(delta),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: deltaColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+
+    const innerPad = EdgeInsets.symmetric(horizontal: 14, vertical: 14);
+
+    Widget cardShell() {
+      if (isFirstPlace) {
+        return _FirstPlacePulsingShell(
+          borderRadius: cardBorderRadius,
+          blurSigma: cardBlur,
+          podium: podium,
+          contentPadding: innerPad,
+          child: row,
+        );
+      }
+      if (isPodium) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(cardBorderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: cardBlur,
+              sigmaY: cardBlur,
+            ),
+            child: Container(
+              padding: innerPad,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.42),
+                borderRadius: BorderRadius.circular(cardBorderRadius),
+                border: Border.all(
+                  color: podium.accent.withValues(alpha: 0.92),
+                  width: 2.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: podium.accent.withValues(alpha: 0.42),
+                    blurRadius: 22,
+                    spreadRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: podium.accent.withValues(alpha: 0.18),
+                    blurRadius: 6,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: row,
+            ),
+          ),
+        );
+      }
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(cardBorderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: cardBlur,
+            sigmaY: cardBlur,
+          ),
+          child: Container(
+            padding: innerPad,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(cardBorderRadius),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.12),
+              ),
+            ),
+            child: row,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: isPodium ? 14 : 10),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => AssetDetailScreen.open(context, shell),
+          borderRadius: BorderRadius.circular(cardBorderRadius),
+          child: cardShell(),
         ),
       ),
     );

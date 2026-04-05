@@ -1028,11 +1028,53 @@ abstract class AppLocalizations {
   /// **'오늘 가장 크게 박살난 것'**
   String get rankingsDownTitle;
 
+  /// No description provided for @homeInterestSurgeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 관심 폭주'**
+  String get homeInterestSurgeTitle;
+
+  /// No description provided for @homeInterestSurgeInfoIconTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'데이터 안내'**
+  String get homeInterestSurgeInfoIconTooltip;
+
+  /// No description provided for @homeInterestSurgeInfoTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'오늘 관심 폭주 안내'**
+  String get homeInterestSurgeInfoTitle;
+
+  /// No description provided for @homeInterestSurgeInfoBody.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 목록은 AI가 최근 시장 이슈·뉴스·투자자 관심 흐름 등을 바탕으로, 미국·한국 주식, 암호화폐, 원자재 중에서 주목할 만한 자산을 고르고 0~100 사이의 \'트렌드\' 상대 점수를 추정해 만듭니다.\n\n점수는 서버에서 하루 단위로 정리·저장되며, 앱은 그 결과를 보여 줍니다.\n\n참고용 정보일 뿐이며 투자 권유나 수익을 보장하지 않습니다.'**
+  String get homeInterestSurgeInfoBody;
+
+  /// No description provided for @homeInterestSurgeInfoDismiss.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인'**
+  String get homeInterestSurgeInfoDismiss;
+
+  /// No description provided for @homeTrendScoreLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'트렌드'**
+  String get homeTrendScoreLabel;
+
   /// No description provided for @homeRankingShowMoreTooltip.
   ///
   /// In ko, this message translates to:
   /// **'더 보기'**
   String get homeRankingShowMoreTooltip;
+
+  /// No description provided for @homeInterestSurgeShowMoreWithAd.
+  ///
+  /// In ko, this message translates to:
+  /// **'광고 보고 더 보기'**
+  String get homeInterestSurgeShowMoreWithAd;
 
   /// No description provided for @homeRankingShowLessTooltip.
   ///

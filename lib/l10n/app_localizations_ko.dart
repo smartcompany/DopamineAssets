@@ -496,7 +496,29 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rankingsDownTitle => '오늘 가장 크게 박살난 것';
 
   @override
+  String get homeInterestSurgeTitle => '오늘 관심 폭주';
+
+  @override
+  String get homeInterestSurgeInfoIconTooltip => '데이터 안내';
+
+  @override
+  String get homeInterestSurgeInfoTitle => '오늘 관심 폭주 안내';
+
+  @override
+  String get homeInterestSurgeInfoBody =>
+      '이 목록은 AI가 최근 시장 이슈·뉴스·투자자 관심 흐름 등을 바탕으로, 미국·한국 주식, 암호화폐, 원자재 중에서 주목할 만한 자산을 고르고 0~100 사이의 \'트렌드\' 상대 점수를 추정해 만듭니다.\n\n점수는 서버에서 하루 단위로 정리·저장되며, 앱은 그 결과를 보여 줍니다.\n\n참고용 정보일 뿐이며 투자 권유나 수익을 보장하지 않습니다.';
+
+  @override
+  String get homeInterestSurgeInfoDismiss => '확인';
+
+  @override
+  String get homeTrendScoreLabel => '트렌드';
+
+  @override
   String get homeRankingShowMoreTooltip => '더 보기';
+
+  @override
+  String get homeInterestSurgeShowMoreWithAd => '광고 보고 더 보기';
 
   @override
   String get homeRankingShowLessTooltip => '접기';
