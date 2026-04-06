@@ -593,24 +593,6 @@ class _HomeScreenState extends State<HomeScreen> {
         Positioned.fill(
           child: IgnorePointer(child: const _PurpleGradientBackground()),
         ),
-        if (_interestSurgeAdLoading)
-          Positioned.fill(
-            child: AbsorbPointer(
-              child: ColoredBox(
-                color: Colors.black.withValues(alpha: 0.45),
-                child: Center(
-                  child: SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: DopamineTheme.accentOrange,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
         Positioned.fill(
           child: RefreshIndicator(
             color: DopamineTheme.neonGreen,
@@ -903,6 +885,24 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+        if (_interestSurgeAdLoading)
+          Positioned.fill(
+            child: AbsorbPointer(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.45),
+                child: Center(
+                  child: SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: DopamineTheme.accentOrange,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
