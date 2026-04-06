@@ -18,9 +18,31 @@ Uri? yahooChartPageUri({
   );
 }
 
+/// 서버 `commodity-fx-yahoo`와 동일 — FX 코드로 열릴 때 Yahoo 선물 티커로 연결.
+String? _commoditySpotToYahooTicker(String raw) {
+  final u = raw.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+  const m = <String, String>{
+    'XAUUSD': 'GC=F',
+    'XAU=X': 'GC=F',
+    'XAGUSD': 'SI=F',
+    'XAG=X': 'SI=F',
+    'XPTUSD': 'PL=F',
+    'XPDUSD': 'PA=F',
+    'USOIL': 'CL=F',
+    'UKOIL': 'BZ=F',
+    'WTICOUSD': 'CL=F',
+    'BRENTUSD': 'BZ=F',
+  };
+  return m[u];
+}
+
 String _yahooChartSymbol(String assetClass, String raw) {
   final t = raw.trim();
   if (t.isEmpty) return '';
+  final spotYahoo = _commoditySpotToYahooTicker(raw);
+  if (spotYahoo != null) {
+    return spotYahoo;
+  }
   final u = t.toUpperCase();
   switch (assetClass) {
     case 'crypto':
