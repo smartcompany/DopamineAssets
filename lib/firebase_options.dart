@@ -8,9 +8,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions are not configured for web — run FlutterFire CLI.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -39,6 +37,16 @@ class DefaultFirebaseOptions {
     projectId: 'dopamineassets',
     storageBucket: 'dopamineassets.firebasestorage.app',
     iosBundleId: 'com.smartcompany.dopamineAssets',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBfEIccUG3s7fTTThg-dTdO-ClaSUWdg_U',
+    appId: '1:312575797891:web:49d88703637ddb9f1f49b6',
+    messagingSenderId: '312575797891',
+    projectId: 'dopamineassets',
+    authDomain: 'dopamineassets.firebaseapp.com',
+    storageBucket: 'dopamineassets.firebasestorage.app',
+    measurementId: 'G-SZKFH7QV91',
   );
 
 }
