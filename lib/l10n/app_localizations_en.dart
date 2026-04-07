@@ -228,12 +228,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDisplayNameDuplicateFromSocialOk => 'OK';
 
   @override
-  String get privacyProcessingConsentTitle =>
-      'Personal data processing consent';
+  String get privacyProcessingConsentTitle => 'Terms, community & privacy';
 
   @override
   String get privacyProcessingConsentLead =>
-      'Please review and accept the following to continue using the service.';
+      'To use the service—including community and other user-generated content—please read and accept the following before continuing.';
+
+  @override
+  String get privacyProcessingConsentSectionPrivacy => 'Personal data';
+
+  @override
+  String get privacyProcessingConsentSectionCommunity =>
+      'Community & user-generated content (UGC)';
+
+  @override
+  String get privacyProcessingConsentUgcIntro =>
+      'These rules apply before you access posts, comments, and other UGC:';
 
   @override
   String get privacyProcessingConsentBullet1 =>
@@ -248,8 +258,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Retention: we delete or anonymize data when you delete your account, except where law requires longer retention.';
 
   @override
-  String get privacyProcessingConsentCheckbox =>
-      'I agree to the collection and use of my personal data as described above.';
+  String get privacyProcessingConsentUgcBullet1 =>
+      'Zero tolerance: objectionable content is not allowed. This includes unlawful material, harassment, hate, non-consensual sexual content, violence, threats, spam, scams, and similar abuse.';
+
+  @override
+  String get privacyProcessingConsentUgcBullet2 =>
+      'Abusive users are not tolerated. We may remove content, limit features, or suspend or terminate accounts that break these rules.';
+
+  @override
+  String get privacyProcessingConsentUgcBullet3 =>
+      'You can report objectionable posts and block users from the menus on posts and in profiles. Please use report and block if you see harmful content or behavior.';
+
+  @override
+  String get privacyProcessingConsentCheckboxPrivacy =>
+      'I agree to the collection and use of my personal data as described in the Personal data section above.';
+
+  @override
+  String get privacyProcessingConsentCheckboxCommunity =>
+      'I agree to the community and UGC rules above, including zero tolerance for objectionable content and abusive users.';
 
   @override
   String get privacyProcessingConsentAgree => 'Agree and continue';
@@ -807,4 +833,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get themeDetailChartFootnote =>
       'Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice.';
+
+  @override
+  String get accountSuspendedBanner =>
+      'Your account cannot post, edit, delete, or reply in the community right now.';
+
+  @override
+  String get accountSuspendedSnack =>
+      'This account is restricted from community activity.';
 }

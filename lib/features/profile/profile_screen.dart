@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
@@ -290,6 +291,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             uid: current.uid,
             displayName: current.displayName,
             photoUrl: url,
+            suspendedUntil: current.suspendedUntil,
           ),
         );
       }
@@ -324,6 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             uid: current.uid,
             displayName: current.displayName,
             photoUrl: null,
+            suspendedUntil: current.suspendedUntil,
           ),
         );
       }
@@ -359,6 +362,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
     try {
+      final me = await DopamineApi.fetchProfileMe(idToken: token);
+      if (me != null && mounted) {
+        context.read<AuthProvider<DopamineUser>>().setUserProfile(me);
+        _syncNameField(me.displayName);
+      }
       final results = await Future.wait<dynamic>([
         DopamineApi.fetchProfileStats(idToken: token),
         DopamineApi.fetchProfileActivity(idToken: token),
@@ -613,6 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           uid: fb.uid,
           displayName: text,
           photoUrl: current?.photoUrl,
+          suspendedUntil: current?.suspendedUntil,
         ),
       );
       if (!mounted) return;
@@ -840,6 +849,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
     if (!await ensureCommunityIdentity(context)) return;
     if (!context.mounted) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
     final result = await Navigator.of(context).push<Object?>(
@@ -911,6 +923,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ProfileActivityItem item,
   ) async {
     final l10n = AppLocalizations.of(context)!;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) {
@@ -1135,8 +1150,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool profileSaved,
     String? profilePhotoUrl,
     String locale,
-    String committedDisplayNameTrimmed,
-  ) {
+    String committedDisplayNameTrimmed, {
+    required bool showSuspensionBanner,
+  }) {
     return NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) {
         return [
@@ -1180,6 +1196,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
+                  if (showSuspensionBanner) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                      decoration: BoxDecoration(
+                        color: DopamineTheme.accentRed.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: DopamineTheme.accentRed.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 22,
+                            color: DopamineTheme.accentRed.withValues(alpha: 0.95),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              l10n.accountSuspendedBanner,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: DopamineTheme.textPrimary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   _AccountProfilePhotoCard(
                     theme: theme,
@@ -1709,6 +1759,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     profilePhotoUrl,
                     locale,
                     committedName,
+                    showSuspensionBanner:
+                        isDopamineUserSuspended(auth.userProfile),
                   );
                 },
               )

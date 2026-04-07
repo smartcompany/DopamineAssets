@@ -197,12 +197,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _reportCommunityPost(CommunityPost p) async {
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (fb == null) return;
     final reasonText = await showCommunityReportSheet(context);
     if (reasonText == null || !mounted) return;
     final token = await fb.getIdToken();
@@ -465,7 +464,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   );
                 }
                 final myUid = FirebaseAuth.instance.currentUser?.uid;
-                final showModeration =
+                final canReportPost =
+                    myUid == null || myUid != widget.authorUid;
+                final canBlockAuthor =
                     myUid != null && myUid != widget.authorUid;
                 return ListView.separated(
                   padding: EdgeInsets.fromLTRB(
@@ -485,9 +486,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       onToggleLike: _togglePostLike,
                       onOpenPostDetail: _openPostDetail,
                       onReportPost:
-                          showModeration ? _reportCommunityPost : null,
+                          canReportPost ? _reportCommunityPost : null,
                       onBlockAuthor:
-                          showModeration ? _blockAuthorFromPost : null,
+                          canBlockAuthor ? _blockAuthorFromPost : null,
                     );
                   },
                 );

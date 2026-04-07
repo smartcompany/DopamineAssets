@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:share_lib/share_lib.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
+import '../../auth/dopamine_user.dart';
 import '../../core/favorites/favorites_catalog.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../core/navigation/home_shell_navigation.dart';
@@ -331,6 +334,11 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                     return;
                                   }
                                   if (!context.mounted) return;
+                                  if (!await ensureNotSuspendedWithRefresh(
+                                    context,
+                                  )) {
+                                    return;
+                                  }
                                   Navigator.of(context).push<void>(
                                     MaterialPageRoute<void>(
                                       builder: (_) => CommunityComposeScreen(

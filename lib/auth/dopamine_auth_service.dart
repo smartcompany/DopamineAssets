@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:share_lib/share_lib.dart';
 import 'package:http/http.dart' as http;
 
@@ -17,7 +18,12 @@ final class DopamineAuthService implements AuthServiceInterface {
 
   @override
   Future<dynamic> getCurrentUser() async {
-    if (_token.isEmpty) return null;
+    if (_token.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('[AuthService][profile/me] skip: empty token');
+      }
+      return null;
+    }
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/profile/me');
     final response = await http.get(
       uri,
@@ -26,26 +32,60 @@ final class DopamineAuthService implements AuthServiceInterface {
         'Authorization': 'Bearer $_token',
       },
     );
+    if (kDebugMode) {
+      debugPrint('[AuthService][profile/me] GET $uri status=${response.statusCode}');
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (kDebugMode) {
+        debugPrint('[AuthService][profile/me] non-2xx -> null');
+      }
       return null;
     }
     final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) return null;
+    if (decoded is! Map<String, dynamic>) {
+      if (kDebugMode) {
+        debugPrint('[AuthService][profile/me] invalid payload -> null');
+      }
+      return null;
+    }
     final profile = decoded['profile'];
-    if (profile == null) return null;
+    if (profile == null) {
+      if (kDebugMode) {
+        debugPrint('[AuthService][profile/me] profile is null');
+      }
+      return null;
+    }
     if (profile is! Map<String, dynamic>) {
+      if (kDebugMode) {
+        debugPrint('[AuthService][profile/me] profile shape invalid -> null');
+      }
       return null;
     }
     final uid = profile['uid'] as String?;
-    if (uid == null || uid.isEmpty) return null;
+    if (uid == null || uid.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('[AuthService][profile/me] missing uid -> null');
+      }
+      return null;
+    }
     final displayName = (profile['displayName'] as String?)?.trim() ?? '';
     final rawPhoto = profile['photoUrl'] as String?;
     final photoUrl =
         rawPhoto != null && rawPhoto.trim().isNotEmpty ? rawPhoto.trim() : null;
+    final rawSus = profile['suspendedUntil'] as String?;
+    final suspendedUntil = rawSus != null && rawSus.trim().isNotEmpty
+        ? DateTime.tryParse(rawSus.trim())
+        : null;
+    if (kDebugMode) {
+      debugPrint(
+        '[AuthService][profile/me] ok uid=$uid suspendedUntil=${suspendedUntil?.toIso8601String() ?? "null"}',
+      );
+    }
     return DopamineUser(
       uid: uid,
       displayName: displayName,
       photoUrl: photoUrl,
+      suspendedUntil: suspendedUntil,
     );
   }
 

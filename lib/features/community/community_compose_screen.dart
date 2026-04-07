@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../core/feed/home_asset_suggestions.dart';
@@ -516,6 +517,9 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     if (!mounted) return;
     final auth = context.read<AuthProvider<DopamineUser>>();
     if (!auth.isLoggedIn()) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
 
     final body = _bodyController.text.trim();
     if (body.isEmpty) {
@@ -632,7 +636,11 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      final msg = e is ApiException ? e.message : l10n.assetPostsSendError;
+      final msg = e is ApiException
+          ? (e.message == 'user_suspended'
+              ? l10n.accountSuspendedSnack
+              : e.message)
+          : l10n.assetPostsSendError;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _submitting = false);

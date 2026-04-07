@@ -6,7 +6,7 @@ import '../../theme/dopamine_theme.dart';
 
 const privacyProcessingConsentRouteName = 'privacy_processing_consent';
 
-const _prefsKey = 'dopamine_privacy_processing_consent_v1';
+const _prefsKey = 'dopamine_privacy_and_community_terms_v1';
 
 Future<bool> isPrivacyProcessingConsentAccepted() async {
   final prefs = await SharedPreferences.getInstance();
@@ -55,7 +55,10 @@ class _PrivacyProcessingConsentPage extends StatefulWidget {
 
 class _PrivacyProcessingConsentPageState
     extends State<_PrivacyProcessingConsentPage> {
-  bool _agreed = false;
+  bool _agreedPrivacy = false;
+  bool _agreedCommunity = false;
+
+  bool get _canContinue => _agreedPrivacy && _agreedCommunity;
 
   Future<void> _accept() async {
     await setPrivacyProcessingConsentAccepted();
@@ -98,29 +101,38 @@ class _PrivacyProcessingConsentPageState
                         l10n.privacyProcessingConsentLead,
                         style: theme.textTheme.bodyLarge,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
+                      _SectionTitle(l10n.privacyProcessingConsentSectionPrivacy),
+                      const SizedBox(height: 8),
                       _Bullet(l10n.privacyProcessingConsentBullet1),
                       _Bullet(l10n.privacyProcessingConsentBullet2),
                       _Bullet(l10n.privacyProcessingConsentBullet3),
-                      const SizedBox(height: 20),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Checkbox(
-                            value: _agreed,
-                            onChanged: (v) =>
-                                setState(() => _agreed = v ?? false),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: Text(
-                                l10n.privacyProcessingConsentCheckbox,
-                              ),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 12),
+                      _ConsentCheckboxRow(
+                        value: _agreedPrivacy,
+                        label: l10n.privacyProcessingConsentCheckboxPrivacy,
+                        onChanged: (v) =>
+                            setState(() => _agreedPrivacy = v ?? false),
                       ),
+                      const SizedBox(height: 20),
+                      _SectionTitle(l10n.privacyProcessingConsentSectionCommunity),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.privacyProcessingConsentUgcIntro,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      _Bullet(l10n.privacyProcessingConsentUgcBullet1),
+                      _Bullet(l10n.privacyProcessingConsentUgcBullet2),
+                      _Bullet(l10n.privacyProcessingConsentUgcBullet3),
+                      const SizedBox(height: 12),
+                      _ConsentCheckboxRow(
+                        value: _agreedCommunity,
+                        label: l10n.privacyProcessingConsentCheckboxCommunity,
+                        onChanged: (v) =>
+                            setState(() => _agreedCommunity = v ?? false),
+                      ),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
@@ -129,7 +141,7 @@ class _PrivacyProcessingConsentPageState
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _agreed ? _accept : null,
+                  onPressed: _canContinue ? _accept : null,
                   style: FilledButton.styleFrom(
                     backgroundColor: DopamineTheme.neonGreen,
                     foregroundColor: Colors.black,
@@ -148,6 +160,54 @@ class _PrivacyProcessingConsentPageState
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ConsentCheckboxRow extends StatelessWidget {
+  const _ConsentCheckboxRow({
+    required this.value,
+    required this.label,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final String label;
+  final ValueChanged<bool?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged,
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Text(label),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Text(
+      text,
+      style: theme.textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w800,
+        color: DopamineTheme.textPrimary,
       ),
     );
   }

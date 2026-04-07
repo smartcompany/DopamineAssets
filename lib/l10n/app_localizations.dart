@@ -521,14 +521,32 @@ abstract class AppLocalizations {
   /// No description provided for @privacyProcessingConsentTitle.
   ///
   /// In ko, this message translates to:
-  /// **'개인정보 수집·이용 동의'**
+  /// **'이용약관·커뮤니티 규칙 및 개인정보 동의'**
   String get privacyProcessingConsentTitle;
 
   /// No description provided for @privacyProcessingConsentLead.
   ///
   /// In ko, this message translates to:
-  /// **'서비스 이용을 위해 아래 내용을 확인하신 뒤 동의해 주세요.'**
+  /// **'커뮤니티 등 사용자 생성 콘텐츠(UGC)를 포함한 서비스를 이용하시려면 아래를 확인하신 뒤 동의해 주세요.'**
   String get privacyProcessingConsentLead;
+
+  /// No description provided for @privacyProcessingConsentSectionPrivacy.
+  ///
+  /// In ko, this message translates to:
+  /// **'개인정보'**
+  String get privacyProcessingConsentSectionPrivacy;
+
+  /// No description provided for @privacyProcessingConsentSectionCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티 및 사용자 생성 콘텐츠(UGC)'**
+  String get privacyProcessingConsentSectionCommunity;
+
+  /// No description provided for @privacyProcessingConsentUgcIntro.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시글·댓글 등 UGC를 보거나 작성하기 전에 적용됩니다.'**
+  String get privacyProcessingConsentUgcIntro;
 
   /// No description provided for @privacyProcessingConsentBullet1.
   ///
@@ -548,11 +566,35 @@ abstract class AppLocalizations {
   /// **'보관 및 파기: 탈퇴 시 관련 법령에 따른 보관 의무가 없는 한 지체 없이 삭제·처리합니다.'**
   String get privacyProcessingConsentBullet3;
 
-  /// No description provided for @privacyProcessingConsentCheckbox.
+  /// No description provided for @privacyProcessingConsentUgcBullet1.
   ///
   /// In ko, this message translates to:
-  /// **'위 개인정보 수집·이용에 동의합니다.'**
-  String get privacyProcessingConsentCheckbox;
+  /// **'무관용 원칙: 타인에게 불쾌하거나 부적절한 콘텐츠는 허용하지 않습니다. 불법 정보, 괴롭힘·혐오 표현, 동의 없는 성적 콘텐츠, 폭력·위협, 스팸·사기 등이 이에 해당합니다.'**
+  String get privacyProcessingConsentUgcBullet1;
+
+  /// No description provided for @privacyProcessingConsentUgcBullet2.
+  ///
+  /// In ko, this message translates to:
+  /// **'가해·악성 이용자에 대해서도 용납하지 않으며, 위반 시 콘텐츠 삭제, 기능 제한, 계정 정지 또는 해지 등 조치를 할 수 있습니다.'**
+  String get privacyProcessingConsentUgcBullet2;
+
+  /// No description provided for @privacyProcessingConsentUgcBullet3.
+  ///
+  /// In ko, this message translates to:
+  /// **'부적절한 글은 게시글 메뉴에서 신고할 수 있고, 다른 사용자는 차단할 수 있습니다(게시글·프로필). 피해가 있다면 신고·차단 기능을 이용해 주세요.'**
+  String get privacyProcessingConsentUgcBullet3;
+
+  /// No description provided for @privacyProcessingConsentCheckboxPrivacy.
+  ///
+  /// In ko, this message translates to:
+  /// **'위 개인정보 항목에 기재된 수집·이용에 동의합니다.'**
+  String get privacyProcessingConsentCheckboxPrivacy;
+
+  /// No description provided for @privacyProcessingConsentCheckboxCommunity.
+  ///
+  /// In ko, this message translates to:
+  /// **'위 커뮤니티 및 UGC 규칙(부적절 콘텐츠·가해 이용자에 대한 무관용 포함)에 동의합니다.'**
+  String get privacyProcessingConsentCheckboxCommunity;
 
   /// No description provided for @privacyProcessingConsentAgree.
   ///
@@ -1603,6 +1645,18 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'구성 종목별로 구간 첫 종가를 100으로 맞춘 뒤, 같은 날짜의 값을 평균한 합성 지수입니다. Yahoo 일봉 · 서버 집계. 투자 권유가 아닙니다.'**
   String get themeDetailChartFootnote;
+
+  /// No description provided for @accountSuspendedBanner.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 계정은 커뮤니티 사용이 제한된 상태입니다. 글 작성·수정·삭제·답글을 할 수 없습니다.'**
+  String get accountSuspendedBanner;
+
+  /// No description provided for @accountSuspendedSnack.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티 사용이 제한된 계정입니다.'**
+  String get accountSuspendedSnack;
 }
 
 class _AppLocalizationsDelegate

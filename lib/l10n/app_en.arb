@@ -84,12 +84,19 @@
     }
   },
   "profileDisplayNameDuplicateFromSocialOk": "OK",
-  "privacyProcessingConsentTitle": "Personal data processing consent",
-  "privacyProcessingConsentLead": "Please review and accept the following to continue using the service.",
+  "privacyProcessingConsentTitle": "Terms, community & privacy",
+  "privacyProcessingConsentLead": "To use the service—including community and other user-generated content—please read and accept the following before continuing.",
+  "privacyProcessingConsentSectionPrivacy": "Personal data",
+  "privacyProcessingConsentSectionCommunity": "Community & user-generated content (UGC)",
+  "privacyProcessingConsentUgcIntro": "These rules apply before you access posts, comments, and other UGC:",
   "privacyProcessingConsentBullet1": "Data collected: account identifier (Firebase UID), email if provided, display name and profile photo, and information generated through use such as posts, comments, and watchlists.",
   "privacyProcessingConsentBullet2": "Purposes: identification, community and feed features, support, abuse prevention, and service improvement.",
   "privacyProcessingConsentBullet3": "Retention: we delete or anonymize data when you delete your account, except where law requires longer retention.",
-  "privacyProcessingConsentCheckbox": "I agree to the collection and use of my personal data as described above.",
+  "privacyProcessingConsentUgcBullet1": "Zero tolerance: objectionable content is not allowed. This includes unlawful material, harassment, hate, non-consensual sexual content, violence, threats, spam, scams, and similar abuse.",
+  "privacyProcessingConsentUgcBullet2": "Abusive users are not tolerated. We may remove content, limit features, or suspend or terminate accounts that break these rules.",
+  "privacyProcessingConsentUgcBullet3": "You can report objectionable posts and block users from the menus on posts and in profiles. Please use report and block if you see harmful content or behavior.",
+  "privacyProcessingConsentCheckboxPrivacy": "I agree to the collection and use of my personal data as described in the Personal data section above.",
+  "privacyProcessingConsentCheckboxCommunity": "I agree to the community and UGC rules above, including zero tolerance for objectionable content and abusive users.",
   "privacyProcessingConsentAgree": "Agree and continue",
   "privacyProcessingConsentDecline": "Decline",
   "profileFollowUnfollow": "Unfollow",
@@ -320,5 +327,7 @@
   "assetChartRange1y": "1Y",
   "assetChartFootnote": "Daily candles via Yahoo (server). Not investment advice.",
   "themeDetailChartTitle": "Theme average (normalized)",
-  "themeDetailChartFootnote": "Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice."
+  "themeDetailChartFootnote": "Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice.",
+  "accountSuspendedBanner": "Your account cannot post, edit, delete, or reply in the community right now.",
+  "accountSuspendedSnack": "This account is restricted from community activity."
 }

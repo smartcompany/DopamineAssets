@@ -4,6 +4,7 @@ import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
@@ -286,7 +287,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _openCompose(BuildContext context) async {
     if (!await ensureCommunityIdentity(context)) return;
     if (!context.mounted) return;
-    if (!context.read<AuthProvider<DopamineUser>>().isLoggedIn()) return;
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    if (!auth.isLoggedIn()) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute<Object?>(
         builder: (ctx) => CommunityComposeScreen(
@@ -303,7 +308,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _openEditCompose(CommunityPost p) async {
     if (!await ensureCommunityIdentity(context)) return;
     if (!mounted) return;
-    if (!context.read<AuthProvider<DopamineUser>>().isLoggedIn()) return;
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    if (!auth.isLoggedIn()) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute<Object?>(
         builder: (_) => CommunityComposeScreen(editPrefill: p),
@@ -315,12 +324,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _reportCommunityPost(CommunityPost p) async {
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final auth = context.read<AuthProvider<DopamineUser>>();
-    if (!auth.isLoggedIn()) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (!auth.isLoggedIn()) return;
     final reasonText = await showCommunityReportSheet(context);
     if (reasonText == null || !mounted) return;
     final token = await auth.getIdToken();
@@ -343,12 +351,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _blockAuthorFromPost(CommunityPost p) async {
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final auth = context.read<AuthProvider<DopamineUser>>();
-    if (!auth.isLoggedIn()) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (!auth.isLoggedIn()) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -404,6 +411,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _deleteCommunityPost(CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) {

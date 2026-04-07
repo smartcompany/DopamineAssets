@@ -63,15 +63,18 @@ class CommunityPostCard extends StatelessWidget {
     final timeStr = DateFormat.yMMMd(
       l10n.localeName,
     ).add_jm().format(post.createdAt.toLocal());
+    final isOwnPost = myUid != null && post.authorUid == myUid;
     final showOwnMenu =
-        myUid != null &&
-        post.authorUid == myUid &&
+        isOwnPost &&
         (onEditOwnPost != null || onDeleteOwnPost != null);
-    final showOtherMenu =
+    final showLoggedInOtherMenu =
         myUid != null &&
-        post.authorUid != myUid &&
+        !isOwnPost &&
         (onReportPost != null || onBlockAuthor != null);
-    final showOverflowMenu = showOwnMenu || showOtherMenu;
+    final showGuestReportMenu =
+        myUid == null && onReportPost != null;
+    final showOverflowMenu =
+        showOwnMenu || showLoggedInOtherMenu || showGuestReportMenu;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -216,6 +219,24 @@ class CommunityPostCard extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                          ];
+                        }
+                        if (showGuestReportMenu) {
+                          return [
+                            PopupMenuItem(
+                              value: 'report',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.flag_outlined,
+                                    size: 20,
+                                    color: DopamineTheme.textSecondary,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(l10n.communityReportPostShort),
+                                ],
+                              ),
+                            ),
                           ];
                         }
                         return [

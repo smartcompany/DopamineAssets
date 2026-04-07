@@ -780,14 +780,29 @@ abstract final class DopamineApi {
       _uri('/api/profile/me'),
       headers: _bearerHeaders(idToken),
     );
+    if (kDebugMode) {
+      debugPrint(
+        '[DopamineApi][profile/me] status=${response.statusCode}',
+      );
+    }
     _ensureOk(response);
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic>) {
       throw ApiException('Invalid profile response');
     }
     final profile = decoded['profile'];
-    if (profile == null) return null;
-    if (profile is! Map<String, dynamic>) return null;
+    if (profile == null) {
+      if (kDebugMode) {
+        debugPrint('[DopamineApi][profile/me] profile is null');
+      }
+      return null;
+    }
+    if (profile is! Map<String, dynamic>) {
+      if (kDebugMode) {
+        debugPrint('[DopamineApi][profile/me] profile shape invalid');
+      }
+      return null;
+    }
     final uid = profile['uid'] as String?;
     if (uid == null || uid.isEmpty) return null;
     final displayName = (profile['displayName'] as String?)?.trim() ?? '';
@@ -795,7 +810,21 @@ abstract final class DopamineApi {
     final photoUrl = rawPhoto != null && rawPhoto.trim().isNotEmpty
         ? rawPhoto.trim()
         : null;
-    return DopamineUser(uid: uid, displayName: displayName, photoUrl: photoUrl);
+    final rawSus = profile['suspendedUntil'] as String?;
+    final suspendedUntil = rawSus != null && rawSus.trim().isNotEmpty
+        ? DateTime.tryParse(rawSus.trim())
+        : null;
+    if (kDebugMode) {
+      debugPrint(
+        '[DopamineApi][profile/me] uid=$uid suspendedUntil=${suspendedUntil?.toIso8601String() ?? "null"}',
+      );
+    }
+    return DopamineUser(
+      uid: uid,
+      displayName: displayName,
+      photoUrl: photoUrl,
+      suspendedUntil: suspendedUntil,
+    );
   }
 
   static Future<void> patchProfileDisplayName({

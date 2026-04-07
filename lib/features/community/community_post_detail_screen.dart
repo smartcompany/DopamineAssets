@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
@@ -97,6 +98,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   bool get _showOtherPostMenu =>
       _effectiveMyUid != null && _effectiveMyUid != _post.authorUid;
+
+  /// 비로그인: 타인 글만 신고 메뉴(…). 본인 글 판별은 uid 필요.
+  bool get _showGuestPostReportMenu => _effectiveMyUid == null;
 
   @override
   void initState() {
@@ -264,6 +268,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   Future<void> _openEditFromDetail() async {
     if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null || !mounted) return;
     final result = await Navigator.of(context).push<Object?>(
@@ -302,6 +310,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       ),
     );
     if (ok != true || !mounted) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     setState(() => _deleting = true);
     try {
       final fb = FirebaseAuth.instance.currentUser;
@@ -325,12 +336,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 
   Future<void> _reportPostFromDetail() async {
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (fb == null) return;
     final reasonText = await showCommunityReportSheet(context);
     if (reasonText == null || !mounted) return;
     final token = await fb.getIdToken();
@@ -413,6 +423,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   Future<void> _openEditComment(AssetComment c) async {
     if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null || !mounted) return;
     final result = await Navigator.of(context).push<Object?>(
@@ -450,6 +464,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       ),
     );
     if (ok != true || !mounted) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     setState(() => _deleting = true);
     try {
       final fb = FirebaseAuth.instance.currentUser;
@@ -471,12 +488,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 
   Future<void> _reportComment(AssetComment c) async {
+    if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final fb = FirebaseAuth.instance.currentUser;
-    if (fb == null) {
-      await presentDopamineAuthScreen(context);
-      return;
-    }
+    if (fb == null) return;
     final reasonText = await showCommunityReportSheet(context);
     if (reasonText == null || !mounted) return;
     final token = await fb.getIdToken();
@@ -570,6 +586,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       return;
     }
     if (!await ensureCommunityIdentity(context)) return;
+    if (!mounted) return;
+    if (!await ensureNotSuspendedWithRefresh(context)) {
+      return;
+    }
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null || !mounted) return;
     final token = await fb.getIdToken();
@@ -595,7 +615,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       await _loadThread();
     } catch (e) {
       if (!mounted) return;
-      final msg = e is ApiException ? e.message : l10n.assetPostsSendError;
+      final msg = e is ApiException
+          ? (e.message == 'user_suspended'
+              ? l10n.accountSuspendedSnack
+              : e.message)
+          : l10n.assetPostsSendError;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -669,6 +693,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final myUid = _effectiveMyUid;
     final showOwnMenu = myUid != null && c.authorUid == myUid;
     final showOtherMenu = myUid != null && c.authorUid != myUid;
+    final showGuestCommentMenu = myUid == null;
     final relativeTime =
         formatRelativeCommentTime(c.createdAt, l10n.localeName);
 
@@ -734,7 +759,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                                 ),
                               ),
                             ),
-                            if (showOwnMenu || showOtherMenu)
+                            if (showOwnMenu || showOtherMenu || showGuestCommentMenu)
                               PopupMenuButton<String>(
                                 tooltip: l10n.communityMoreMenu,
                                 icon: Icon(
@@ -773,6 +798,27 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                                               ctx,
                                             ).colorScheme.error,
                                           ),
+                                        ),
+                                      ),
+                                    ];
+                                  }
+                                  if (showGuestCommentMenu) {
+                                    return [
+                                      PopupMenuItem(
+                                        value: 'report',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.flag_outlined,
+                                              size: 20,
+                                              color:
+                                                  DopamineTheme.textSecondary,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              l10n.communityReportPostShort,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ];
@@ -1268,7 +1314,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                 );
               },
             ),
-            if (_showOwnPostMenu || _showOtherPostMenu)
+            if (_showOwnPostMenu ||
+                _showOtherPostMenu ||
+                _showGuestPostReportMenu)
               PopupMenuButton<String>(
                 tooltip: l10n.communityMoreMenu,
                 icon: Icon(
@@ -1301,6 +1349,24 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                           style: TextStyle(
                             color: Theme.of(ctx).colorScheme.error,
                           ),
+                        ),
+                      ),
+                    ];
+                  }
+                  if (_showGuestPostReportMenu) {
+                    return [
+                      PopupMenuItem(
+                        value: 'report',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.flag_outlined,
+                              size: 20,
+                              color: DopamineTheme.textSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(l10n.communityReportPostShort),
+                          ],
                         ),
                       ),
                     ];
