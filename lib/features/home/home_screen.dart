@@ -273,7 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     List<InterestSurgeItem> surge = _interestSurgeItems ?? [];
     try {
-      surge = await DopamineApi.fetchInterestSurge();
+      final locale = Localizations.localeOf(context).languageCode;
+      surge = await DopamineApi.fetchInterestSurge(locale: locale);
     } catch (e) {
       debugPrint('[Dopamine][interest-surge] fetch failed: $e');
     }

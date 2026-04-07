@@ -1155,9 +1155,16 @@ abstract final class DopamineApi {
   }
 
   /// Supabase `dopamine_interest_asset_scores` 기반 홈 「오늘 관심 폭주」.
-  static Future<List<InterestSurgeItem>> fetchInterestSurge() async {
+  static Future<List<InterestSurgeItem>> fetchInterestSurge({
+    String? locale,
+  }) async {
+    final uri = _uri('/api/feed/interest-surge').replace(
+      queryParameters: locale != null && locale.trim().isNotEmpty
+          ? {'locale': locale.trim()}
+          : null,
+    );
     final response = await _client.get(
-      _uri('/api/feed/interest-surge'),
+      uri,
       headers: _jsonHeaders,
     );
     _ensureOk(response);
