@@ -55,22 +55,24 @@ class CommunityPostCard extends StatelessWidget {
     final assetLine = assetName.isNotEmpty
         ? '$assetName (${p.assetSymbol})'
         : p.assetSymbol;
-    final webUrl =
-        'https://dopamine-assets.vercel.app/?from=community_share&postId=${Uri.encodeComponent(p.id)}';
     return [
       headline,
       if (clipped.isNotEmpty) clipped,
       '',
       'Asset: $assetLine',
       'Open in Dopamine Assets',
-      webUrl,
     ].join('\n');
   }
+
+  Uri _shareUrl(CommunityPost p) => Uri.parse(
+    'https://dopamine-assets.vercel.app/_ul/${Uri.encodeComponent(p.id)}',
+  );
 
   Future<void> _sharePost(BuildContext context, CommunityPost p) async {
     await CommonShareUI.showShareOptionsDialog(
       context: context,
       shareText: _shareText(p),
+      linkUrl: _shareUrl(p),
     );
   }
 

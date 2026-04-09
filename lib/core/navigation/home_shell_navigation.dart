@@ -62,6 +62,7 @@ class HomeShellNavigation extends ChangeNotifier {
   void openCommunitySharedPost({
     required String rootCommentId,
   }) {
+    debugPrint('[UL] nav openCommunitySharedPost id=$rootCommentId');
     _pendingFilter = null;
     _pendingCommunityRootCommentId = rootCommentId;
     tabIndex = 2;
@@ -78,6 +79,7 @@ class HomeShellNavigation extends ChangeNotifier {
   /// [openCommunityHotDiscussion]와 함께 쓰입니다. 한 번만 소비합니다.
   String? takePendingCommunityRootCommentId() {
     final id = _pendingCommunityRootCommentId;
+    debugPrint('[UL] nav takePendingCommunityRootCommentId id=$id');
     _pendingCommunityRootCommentId = null;
     return id;
   }

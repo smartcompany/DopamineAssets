@@ -14,6 +14,7 @@ abstract final class CommonShareUI {
   static Future<void> showShareOptionsDialog({
     required BuildContext context,
     required String shareText,
+    Uri? linkUrl,
   }) async {
     final shareOrigin = _shareOriginFromContext(context);
     await showModalBottomSheet<void>(
@@ -47,11 +48,12 @@ abstract final class CommonShareUI {
                   title: Text('카카오톡 공유', style: textTheme.titleMedium),
                   onTap: () async {
                     Navigator.of(ctx).pop();
-                    await ShareService.shareToKakao(
+                    await _shareToKakaoCompat(
                       shareText,
+                      linkUrl: linkUrl,
                       onKakaoNotInstalled: () async {
                         await _shareTextCompat(
-                          shareText,
+                          _mergeTextAndUrl(shareText, linkUrl),
                           sharePositionOrigin: shareOrigin,
                         );
                       },
@@ -67,7 +69,7 @@ abstract final class CommonShareUI {
                   onTap: () async {
                     Navigator.of(ctx).pop();
                     await _shareTextCompat(
-                      shareText,
+                      _mergeTextAndUrl(shareText, linkUrl),
                       sharePositionOrigin: shareOrigin,
                     );
                   },
@@ -77,7 +79,9 @@ abstract final class CommonShareUI {
                   title: Text('링크 복사', style: textTheme.titleMedium),
                   onTap: () async {
                     Navigator.of(ctx).pop();
-                    await ShareService.copyToClipboard(shareText);
+                    await ShareService.copyToClipboard(
+                      _mergeTextAndUrl(shareText, linkUrl),
+                    );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('복사되었습니다')),
@@ -111,6 +115,40 @@ abstract final class CommonShareUI {
     } catch (_) {
       await ShareService.shareText(shareText);
     }
+  }
+
+  static Future<void> _shareToKakaoCompat(
+    String shareText, {
+    Uri? linkUrl,
+    VoidCallback? onSuccess,
+    Function(String error)? onError,
+    VoidCallback? onKakaoNotInstalled,
+  }) async {
+    try {
+      await Function.apply(
+        ShareService.shareToKakao,
+        [shareText],
+        {
+          if (linkUrl != null) #linkUrl: linkUrl,
+          if (onSuccess != null) #onSuccess: onSuccess,
+          if (onError != null) #onError: onError,
+          if (onKakaoNotInstalled != null)
+            #onKakaoNotInstalled: onKakaoNotInstalled,
+        },
+      );
+    } catch (_) {
+      await ShareService.shareToKakao(
+        shareText,
+        onSuccess: onSuccess,
+        onError: onError,
+        onKakaoNotInstalled: onKakaoNotInstalled,
+      );
+    }
+  }
+
+  static String _mergeTextAndUrl(String shareText, Uri? linkUrl) {
+    if (linkUrl == null) return shareText;
+    return '$shareText\n${linkUrl.toString()}';
   }
 }
 

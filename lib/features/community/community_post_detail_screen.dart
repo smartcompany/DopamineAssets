@@ -699,22 +699,24 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final assetLine = assetName.isNotEmpty
         ? '$assetName (${_post.assetSymbol})'
         : _post.assetSymbol;
-    final webUrl =
-        'https://dopamine-assets.vercel.app/?from=community_share&postId=${Uri.encodeComponent(_post.id)}';
     return [
       headline,
       if (clipped.isNotEmpty) clipped,
       '',
       'Asset: $assetLine',
       'Open in Dopamine Assets',
-      webUrl,
     ].join('\n');
   }
+
+  Uri _shareUrl() => Uri.parse(
+    'https://dopamine-assets.vercel.app/_ul/${Uri.encodeComponent(_post.id)}',
+  );
 
   Future<void> _sharePost() async {
     await CommonShareUI.showShareOptionsDialog(
       context: context,
       shareText: _shareText(),
+      linkUrl: _shareUrl(),
     );
   }
 

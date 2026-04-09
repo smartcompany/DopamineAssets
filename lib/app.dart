@@ -6,6 +6,32 @@ import 'package:share_lib/share_lib.dart';
 import 'features/home/home_shell.dart';
 import 'theme/dopamine_theme.dart';
 
+class _RouteLogObserver extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    debugPrint(
+      '[UL][route] push name=${route.settings.name} from=${previousRoute?.settings.name}',
+    );
+    super.didPush(route, previousRoute);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    debugPrint(
+      '[UL][route] pop name=${route.settings.name} to=${previousRoute?.settings.name}',
+    );
+    super.didPop(route, previousRoute);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    debugPrint(
+      '[UL][route] replace old=${oldRoute?.settings.name} new=${newRoute?.settings.name}',
+    );
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+  }
+}
+
 class DopamineApp extends StatefulWidget {
   const DopamineApp({super.key, required this.navigatorKey});
 
@@ -17,6 +43,7 @@ class DopamineApp extends StatefulWidget {
 
 class _DopamineAppState extends State<DopamineApp> {
   bool _initialized = false;
+  final _routeObserver = _RouteLogObserver();
 
   @override
   void initState() {
@@ -39,6 +66,7 @@ class _DopamineAppState extends State<DopamineApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: widget.navigatorKey,
+      navigatorObservers: [_routeObserver],
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         final mq = MediaQuery.of(context);

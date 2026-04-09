@@ -110,6 +110,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _openPushedThread(String rootCommentId) async {
+    debugPrint('[UL] community _openPushedThread start id=$rootCommentId');
     final l10n = AppLocalizations.of(context)!;
     String? idToken;
     if (mounted) {
@@ -123,6 +124,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         id: rootCommentId,
         idToken: idToken,
       );
+      debugPrint('[UL] community fetched root comment id=${c.id}');
       if (!mounted) return;
       final sym = c.assetSymbol?.trim() ?? '';
       final cls = c.assetClass?.trim() ?? '';
@@ -157,9 +159,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
         },
       );
       if (changed && mounted) {
+        debugPrint('[UL] community detail changed=true refetch');
         _scheduleFetch();
       }
     } catch (e) {
+      debugPrint('[UL] community _openPushedThread error=$e');
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(
@@ -243,6 +247,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (nav == null || !mounted) return;
 
     final pendingRootId = nav.takePendingCommunityRootCommentId();
+    debugPrint('[UL] community _handleNav pendingRootId=$pendingRootId');
 
     final f = nav.takePendingFilter();
     if (f != null) {
@@ -257,6 +262,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
 
     if (pendingRootId != null && pendingRootId.isNotEmpty) {
+      debugPrint('[UL] community schedule open pushed thread id=$pendingRootId');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_openPushedThread(pendingRootId));
       });
