@@ -58,6 +58,16 @@ class HomeShellNavigation extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 웹 공유 링크 진입: 특정 커뮤니티 루트 글 상세를 바로 엽니다.
+  void openCommunitySharedPost({
+    required String rootCommentId,
+  }) {
+    _pendingFilter = null;
+    _pendingCommunityRootCommentId = rootCommentId;
+    tabIndex = 2;
+    notifyListeners();
+  }
+
   /// 한 번만 소비합니다. 리스너에서 호출하세요.
   CommunityNavFilter? takePendingFilter() {
     final f = _pendingFilter;

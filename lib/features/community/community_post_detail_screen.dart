@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
@@ -21,6 +23,7 @@ import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/dopamine_theme.dart';
+import '../../widgets/common_share_ui.dart';
 import '../asset/asset_detail_screen.dart';
 import 'community_compose_screen.dart';
 import 'community_report_sheet.dart';
@@ -682,6 +685,39 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     }
   }
 
+  String _shareText() {
+    final title = (_post.title ?? '').trim();
+    final body = _post.body.trim();
+    final assetName = (_post.assetDisplayName ?? '').trim();
+    final headline = title.isNotEmpty
+        ? title
+        : (body.isNotEmpty ? body.split('\n').first : _post.assetSymbol);
+    final summary = body.isNotEmpty ? body.replaceAll('\n', ' ').trim() : '';
+    final clipped = summary.length > 120
+        ? '${summary.substring(0, 120)}...'
+        : summary;
+    final assetLine = assetName.isNotEmpty
+        ? '$assetName (${_post.assetSymbol})'
+        : _post.assetSymbol;
+    final webUrl =
+        'https://dopamine-assets.vercel.app/?from=community_share&postId=${Uri.encodeComponent(_post.id)}';
+    return [
+      headline,
+      if (clipped.isNotEmpty) clipped,
+      '',
+      'Asset: $assetLine',
+      'Open in Dopamine Assets',
+      webUrl,
+    ].join('\n');
+  }
+
+  Future<void> _sharePost() async {
+    await CommonShareUI.showShareOptionsDialog(
+      context: context,
+      shareText: _shareText(),
+    );
+  }
+
   Widget _commentNode(
     AssetComment c,
     int depth,
@@ -1250,9 +1286,15 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     String timeStr,
     bool showFollow,
   ) {
+    final showShareEntryBanner =
+        kIsWeb && Uri.base.queryParameters['from'] == 'community_share';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (showShareEntryBanner) ...[
+          _ShareEntryBanner(),
+          const SizedBox(height: 10),
+        ],
         if (_post.moderationHiddenFromPublic &&
             _effectiveMyUid != null &&
             _effectiveMyUid == _post.authorUid) ...[
@@ -1590,6 +1632,16 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(width: 14),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _sharePost,
+                  child: Icon(
+                    Icons.share_outlined,
+                    size: 22,
+                    color: DopamineTheme.textSecondary,
+                  ),
+                ),
               ],
             ),
           ],
@@ -1880,6 +1932,58 @@ class _DetailAvatar extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: DopamineTheme.textSecondary,
         ),
+      ),
+    );
+  }
+}
+
+class _ShareEntryBanner extends StatelessWidget {
+  final Uri _applinkUri =
+      Uri.parse('https://dopamine-assets-server.vercel.app/applink');
+  final Uri _appStoreUri = Uri.parse(
+    'https://apps.apple.com/us/app/dopamine-assets/id6761470158',
+  );
+
+  _ShareEntryBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '앱으로 더 빠르게 볼 수 있어요',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              FilledButton(
+                onPressed: () => launchUrl(_applinkUri),
+                style: FilledButton.styleFrom(
+                  backgroundColor: DopamineTheme.neonGreen,
+                  foregroundColor: const Color(0xFF0A0A0A),
+                ),
+                child: const Text('앱으로 열기'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: () => launchUrl(_appStoreUri),
+                child: const Text('앱 다운로드'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

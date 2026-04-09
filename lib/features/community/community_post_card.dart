@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
+import '../../widgets/common_share_ui.dart';
 import '../asset/asset_detail_screen.dart';
 
 /// 커뮤니티 피드·프로필 활동 등에서 동일한 게시 카드 UI
@@ -37,6 +38,41 @@ class CommunityPostCard extends StatelessWidget {
   final void Function(CommunityPost p)? onOpenAuthorProfile;
   final void Function(CommunityPost p)? onOpenPostDetail;
   final bool showLikeButton;
+
+  String _shareText(CommunityPost p) {
+    final title = (p.title ?? '').trim();
+    final body = p.body.trim();
+    final assetName = (p.assetDisplayName ?? '').trim();
+    final headline = title.isNotEmpty
+        ? title
+        : (body.isNotEmpty ? body.split('\n').first : p.assetSymbol);
+    final summary = body.isNotEmpty
+        ? body.replaceAll('\n', ' ').trim()
+        : '';
+    final clipped = summary.length > 120
+        ? '${summary.substring(0, 120)}...'
+        : summary;
+    final assetLine = assetName.isNotEmpty
+        ? '$assetName (${p.assetSymbol})'
+        : p.assetSymbol;
+    final webUrl =
+        'https://dopamine-assets.vercel.app/?from=community_share&postId=${Uri.encodeComponent(p.id)}';
+    return [
+      headline,
+      if (clipped.isNotEmpty) clipped,
+      '',
+      'Asset: $assetLine',
+      'Open in Dopamine Assets',
+      webUrl,
+    ].join('\n');
+  }
+
+  Future<void> _sharePost(BuildContext context, CommunityPost p) async {
+    await CommonShareUI.showShareOptionsDialog(
+      context: context,
+      shareText: _shareText(p),
+    );
+  }
 
   String _classBadge(String assetClass, AppLocalizations l10n) {
     switch (assetClass) {
@@ -447,6 +483,16 @@ class CommunityPostCard extends StatelessWidget {
                                           ),
                                     ),
                                   ],
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _sharePost(context, post),
+                                child: Icon(
+                                  Icons.share_outlined,
+                                  size: 20,
+                                  color: DopamineTheme.textSecondary,
                                 ),
                               ),
                             ],

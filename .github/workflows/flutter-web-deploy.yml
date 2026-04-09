@@ -41,6 +41,12 @@ jobs:
       - name: Copy vercel.json for routing
         run: cp vercel.json build/web/
 
+      - name: Copy universal link well-known files
+        run: |
+          mkdir -p build/web/.well-known
+          cp web/.well-known/apple-app-site-association build/web/.well-known/
+          cp web/.well-known/assetlinks.json build/web/.well-known/
+
       # secret 미설정 시 amondnet/vercel-action 은 "vercel-token not supplied" 만 던져서 원인 파악이 어렵다.
       - name: Check Vercel secrets
         env:

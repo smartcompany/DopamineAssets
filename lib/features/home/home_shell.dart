@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,17 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !kIsWeb) return;
+      final q = Uri.base.queryParameters;
+      final from = q['from']?.trim();
+      final postId = q['postId']?.trim();
+      if (from == 'community_share' && postId != null && postId.isNotEmpty) {
+        context.read<HomeShellNavigation>().openCommunitySharedPost(
+          rootCommentId: postId,
+        );
+      }
+    });
   }
 
   @override
