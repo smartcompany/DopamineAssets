@@ -709,7 +709,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 
   Uri _shareUrl() => Uri.parse(
-    'https://dopamine-assets.vercel.app/_ul/${Uri.encodeComponent(_post.id)}',
+    'https://dopamine-assets.vercel.app/communityPost?postId=${Uri.encodeComponent(_post.id)}',
   );
 
   Future<void> _sharePost() async {

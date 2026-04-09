@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:share_lib/share_lib.dart';
@@ -44,6 +45,43 @@ class DopamineApp extends StatefulWidget {
 class _DopamineAppState extends State<DopamineApp> {
   bool _initialized = false;
   final _routeObserver = _RouteLogObserver();
+  late final GoRouter _router = GoRouter(
+    navigatorKey: widget.navigatorKey,
+    observers: [_routeObserver],
+    redirect: (context, state) {
+      final uri = state.uri;
+      final scheme = uri.scheme.toLowerCase();
+      debugPrint('[UL][router] redirect check uri=$uri matched=${state.matchedLocation}');
+      if (scheme == 'dopamineassets') {
+        // 표준 스킴: dopamineassets://communityPost?postId=<id>
+        if (uri.host.toLowerCase() == 'communitypost') {
+          final postId = uri.queryParameters['postId']?.trim();
+          if (postId != null && postId.isNotEmpty) {
+            debugPrint('[UL][router] scheme redirect communityPost postId=$postId');
+            return '/communityPost?postId=$postId';
+          }
+        }
+      }
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) {
+          debugPrint('[UL][router] build / uri=${state.uri}');
+          return const HomeShell();
+        },
+      ),
+      GoRoute(
+        path: '/communityPost',
+        builder: (_, state) {
+          final postId = state.uri.queryParameters['postId'];
+          debugPrint('[UL][router] build /communityPost query postId=$postId uri=${state.uri}');
+          return HomeShell(initialSharedPostId: postId);
+        },
+      ),
+    ],
+  );
 
   @override
   void initState() {
@@ -64,9 +102,14 @@ class _DopamineAppState extends State<DopamineApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: widget.navigatorKey,
-      navigatorObservers: [_routeObserver],
+    if (!_initialized) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return MaterialApp.router(
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         final mq = MediaQuery.of(context);
@@ -83,9 +126,6 @@ class _DopamineAppState extends State<DopamineApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       theme: DopamineTheme.dopamine,
       themeMode: ThemeMode.dark,
-      home: _initialized
-          ? const HomeShell()
-          : const Center(child: CircularProgressIndicator()),
     );
   }
 }

@@ -39,6 +39,13 @@
                     android:scheme="https"
                     android:host="dopamine-assets.vercel.app"/>
             </intent-filter>
+            <!-- Custom scheme deep link: dopamineassets://communityPost?postId=<postId> -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="dopamineassets"/>
+            </intent-filter>
             <!-- Kakao 로그인: 카카오톡·브라우저에서 인증 후 앱으로 복귀 (KakaoSdk.init 네이티브 앱 키와 동일) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

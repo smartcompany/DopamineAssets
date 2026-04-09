@@ -110,6 +110,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _openPushedThread(String rootCommentId) async {
+    _nav?.consumePendingCommunityRootCommentId(rootCommentId);
     debugPrint('[UL] community _openPushedThread start id=$rootCommentId');
     final l10n = AppLocalizations.of(context)!;
     String? idToken;
@@ -125,10 +126,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
         idToken: idToken,
       );
       debugPrint('[UL] community fetched root comment id=${c.id}');
-      if (!mounted) return;
+      if (!mounted) {
+        debugPrint('[UL] community abort: not mounted after fetch');
+        return;
+      }
       final sym = c.assetSymbol?.trim() ?? '';
       final cls = c.assetClass?.trim() ?? '';
-      if (sym.isEmpty || cls.isEmpty) return;
+      if (sym.isEmpty || cls.isEmpty) {
+        debugPrint('[UL] community root has empty symbol/class sym="$sym" cls="$cls"');
+      }
       final post = CommunityPost.fromRootAssetComment(
         id: c.id,
         body: c.body,
@@ -138,8 +144,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
         authorDisplayName: c.authorDisplayName,
         authorPhotoUrl: c.authorPhotoUrl,
         createdAt: c.createdAt,
-        assetSymbol: sym,
-        assetClass: cls,
+        assetSymbol: sym.isEmpty ? '-' : sym,
+        assetClass: cls.isEmpty ? 'unknown' : cls,
         assetDisplayName: c.assetDisplayName,
         replyCount: 0,
         likeCount: c.likeCount,
@@ -147,6 +153,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         moderationHiddenFromPublic: c.moderationHiddenFromPublic,
       );
       final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
+      debugPrint('[UL] community opening detail id=${post.id} myUid=$myUid');
       final changed = await CommunityPostDetailScreen.open(
         context,
         post: post,
@@ -158,6 +165,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           }
         },
       );
+      debugPrint('[UL] community detail returned changed=$changed');
       if (changed && mounted) {
         debugPrint('[UL] community detail changed=true refetch');
         _scheduleFetch();
@@ -246,7 +254,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final nav = _nav;
     if (nav == null || !mounted) return;
 
-    final pendingRootId = nav.takePendingCommunityRootCommentId();
+    final pendingRootId = nav.peekPendingCommunityRootCommentId();
     debugPrint('[UL] community _handleNav pendingRootId=$pendingRootId');
 
     final f = nav.takePendingFilter();
@@ -510,6 +518,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _nav = nav;
       _lastCommunityFeedEpoch = nav.communityFeedEpoch;
       _nav!.addListener(_handleNav);
+      // 딥링크 알림이 리스너 등록보다 먼저 왔을 수 있어 최초 1회 즉시 소비한다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _handleNav();
+      });
     }
   }
 

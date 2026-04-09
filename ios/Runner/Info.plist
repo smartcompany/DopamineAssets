@@ -21,7 +21,7 @@
 		<key>CFBundleSignature</key>
 		<string>????</string>
 		<key>CFBundleVersion</key>
-		<string>10</string>
+		<string>11</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UILaunchStoryboardName</key>
@@ -71,6 +71,14 @@
 					<string>kakaobb1d3f08a1446fbcbe02b73dc9c2ce4f</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>dopamineAssets</string>
+				</array>
+			</dict>
 		</array>
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
@@ -80,9 +88,9 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
-		<!-- app_links 단일 경로 사용: Flutter 기본 딥링크 핸들러와 중복 처리 방지 -->
+		<!-- go_router 기본 딥링크 경로 사용 -->
 		<key>FlutterDeepLinkingEnabled</key>
-		<false/>
+		<true/>
 
 		<!--
 		App Store Export Compliance 문서(암호/비암호 해당 여부) 판단용.

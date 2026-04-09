@@ -65,7 +65,7 @@ class CommunityPostCard extends StatelessWidget {
   }
 
   Uri _shareUrl(CommunityPost p) => Uri.parse(
-    'https://dopamine-assets.vercel.app/_ul/${Uri.encodeComponent(p.id)}',
+    'https://dopamine-assets.vercel.app/communityPost?postId=${Uri.encodeComponent(p.id)}',
   );
 
   Future<void> _sharePost(BuildContext context, CommunityPost p) async {

@@ -84,6 +84,20 @@ class HomeShellNavigation extends ChangeNotifier {
     return id;
   }
 
+  /// pending 값을 조회만 하고 지우지 않습니다.
+  String? peekPendingCommunityRootCommentId() {
+    final id = _pendingCommunityRootCommentId;
+    debugPrint('[UL] nav peekPendingCommunityRootCommentId id=$id');
+    return id;
+  }
+
+  /// 특정 id를 실제 처리한 뒤 확정 소비합니다.
+  void consumePendingCommunityRootCommentId(String id) {
+    if (_pendingCommunityRootCommentId != id) return;
+    debugPrint('[UL] nav consumePendingCommunityRootCommentId id=$id');
+    _pendingCommunityRootCommentId = null;
+  }
+
   void setTabIndex(int index) {
     if (tabIndex == index) return;
     tabIndex = index;

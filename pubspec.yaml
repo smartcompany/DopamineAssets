@@ -2,7 +2,7 @@ name: dopamine_assets
 description: "Dopamine Assets — volatile-asset feed (US/KR stocks, crypto, commodities)."
 publish_to: "none"
 
-version: 1.0.0+1
+version: 1.0.1+1
 
 environment:
   sdk: ^3.10.7
@@ -34,7 +34,7 @@ dependencies:
   firebase_crashlytics: ^5.1.0
   crypto: ^3.0.7
   kakao_flutter_sdk_common: ^1.10.0
-  app_links: ^7.0.0
+  go_router: ^16.0.0
 
 dev_dependencies:
   flutter_test:
