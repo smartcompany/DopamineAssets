@@ -48,12 +48,13 @@ abstract final class CommonShareUI {
                   title: Text('카카오톡 공유', style: textTheme.titleMedium),
                   onTap: () async {
                     Navigator.of(ctx).pop();
+                          final kakaoText = _mergeTextAndUrl(shareText, linkUrl);
                     await _shareToKakaoCompat(
-                      shareText,
+                            kakaoText,
                       linkUrl: linkUrl,
                       onKakaoNotInstalled: () async {
                         await _shareTextCompat(
-                          _mergeTextAndUrl(shareText, linkUrl),
+                                kakaoText,
                           sharePositionOrigin: shareOrigin,
                         );
                       },
