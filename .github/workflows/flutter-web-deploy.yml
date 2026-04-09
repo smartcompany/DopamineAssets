@@ -1,0 +1,52 @@
+# Git 저장소 루트 = 이 client 폴더 일 때 사용합니다.
+# Flutter 웹은 Actions 에서 빌드 후 `build/web` 만 Vercel 에 배포합니다.
+#
+# GitHub Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+#
+# Vercel 이 Git 푸시로 별도 빌드까지 돌리면 이중 배포될 수 있으니,
+# 이 워크플로만 쓸 경우 해당 프로젝트의 자동 Git 빌드 끄는 것을 권장합니다.
+name: Flutter Web Deploy
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Deploy Flutter Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies (git share_lib, no local overrides)
+        run: |
+          rm -f pubspec_overrides.yaml
+          flutter pub get
+
+      - name: Build Flutter Web
+        run: flutter build web --release
+
+      - name: Copy vercel.json for routing
+        run: cp vercel.json build/web/
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-args: "build/web --prod"
+          vercel-project-name: dopamine-assets
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
