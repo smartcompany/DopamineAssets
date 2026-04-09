@@ -47,3 +47,4 @@ android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 ios/Runner.app.dSYM.zip
 ios/Runner.ipa
+pubspec_overrides.yaml

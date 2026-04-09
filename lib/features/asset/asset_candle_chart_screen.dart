@@ -223,7 +223,9 @@ class _AssetCandleChartScreenState extends State<AssetCandleChartScreen> {
                                   const SizedBox(height: 16),
                                   FilledButton(
                                     onPressed: () {
-                                      setState(() => _future = _load());
+                                      setState(() {
+                                        _future = _load();
+                                      });
                                     },
                                     child: Text(l10n.retry),
                                   ),

@@ -1,5 +1,5 @@
 {
-  "buildCommand": "git clone https://github.com/flutter/flutter.git -b stable --depth 1 /tmp/flutter-sdk && export PATH=\"/tmp/flutter-sdk/bin:$PATH\" && flutter config --no-analytics --enable-web && flutter pub get && flutter build web --release",
+  "buildCommand": "bash scripts/vercel-build.sh",
   "outputDirectory": "build/web",
   "rewrites": [
     {
