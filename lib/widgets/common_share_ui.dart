@@ -50,7 +50,7 @@ abstract final class CommonShareUI {
                     await ShareService.shareToKakao(
                       shareText,
                       onKakaoNotInstalled: () async {
-                        await ShareService.shareText(
+                        await _shareTextCompat(
                           shareText,
                           sharePositionOrigin: shareOrigin,
                         );
@@ -66,7 +66,7 @@ abstract final class CommonShareUI {
                   title: Text('기본 공유', style: textTheme.titleMedium),
                   onTap: () async {
                     Navigator.of(ctx).pop();
-                    await ShareService.shareText(
+                    await _shareTextCompat(
                       shareText,
                       sharePositionOrigin: shareOrigin,
                     );
@@ -91,6 +91,26 @@ abstract final class CommonShareUI {
         );
       },
     );
+  }
+
+  /// share_lib 버전 호환:
+  /// - 최신: sharePositionOrigin 지원
+  /// - 구버전: 미지원 (기본 시그니처로 폴백)
+  static Future<void> _shareTextCompat(
+    String shareText, {
+    Rect? sharePositionOrigin,
+  }) async {
+    try {
+      await Function.apply(
+        ShareService.shareText,
+        [shareText],
+        {
+          if (sharePositionOrigin != null) #sharePositionOrigin: sharePositionOrigin,
+        },
+      );
+    } catch (_) {
+      await ShareService.shareText(shareText);
+    }
   }
 }
 
