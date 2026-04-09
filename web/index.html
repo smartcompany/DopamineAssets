@@ -51,7 +51,25 @@
         var scheme =
           'dopamineassets://communityPost?postId=' +
           encodeURIComponent(postId);
-        window.location.href = scheme;
+        var switchedToApp = false;
+        var onHidden = function () {
+          if (document.visibilityState === 'hidden') {
+            switchedToApp = true;
+          }
+        };
+        document.addEventListener('visibilitychange', onHidden, { passive: true });
+
+        // 설치 여부 사전 체크 API는 없다.
+        // 따라서 스킴을 시도하고, 앱 전환(페이지 hidden)되지 않으면 웹에 그대로 남긴다.
+        window.location.assign(scheme);
+
+        // 앱 미설치/차단 시 현재 URL(웹)에 머무른다. 추가 리다이렉트는 하지 않는다.
+        setTimeout(function () {
+          document.removeEventListener('visibilitychange', onHidden);
+          if (!switchedToApp) {
+            // no-op: stay on web page
+          }
+        }, 1200);
       } catch (_) {}
     })();
   </script>
