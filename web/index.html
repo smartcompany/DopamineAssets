@@ -33,6 +33,28 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    (function () {
+      try {
+        var url = new URL(window.location.href);
+        if (url.pathname !== '/communityPost') return;
+
+        var postId = (url.searchParams.get('postId') || '').trim();
+        if (!postId) return;
+
+        // 모바일 웹 진입 시 앱 스킴으로 우선 시도.
+        // 앱 미설치/차단 시에는 현재 웹 URL에 그대로 머무르며 Flutter 페이지가 로드된다.
+        var ua = navigator.userAgent || '';
+        var isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+        if (!isMobile) return;
+
+        var scheme =
+          'dopamineassets://communityPost?postId=' +
+          encodeURIComponent(postId);
+        window.location.href = scheme;
+      } catch (_) {}
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
