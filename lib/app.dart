@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
@@ -6,6 +7,7 @@ import 'package:share_lib/share_lib.dart';
 
 import 'features/home/home_shell.dart';
 import 'theme/dopamine_theme.dart';
+import 'widgets/web_share_download_banner.dart';
 
 class _RouteLogObserver extends NavigatorObserver {
   @override
@@ -44,6 +46,8 @@ class DopamineApp extends StatefulWidget {
 
 class _DopamineAppState extends State<DopamineApp> {
   bool _initialized = false;
+  /// 웹: 이번 페이지 로드(탭)에서만 "웹으로 계속 보기"로 배너를 숨김. 새로 `from=share`로 들어오면 다시 표시.
+  bool _webShareBannerDismissedThisLoad = false;
   final _routeObserver = _RouteLogObserver();
   late final GoRouter _router = GoRouter(
     navigatorKey: widget.navigatorKey,
@@ -119,9 +123,51 @@ class _DopamineAppState extends State<DopamineApp> {
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         final mq = MediaQuery.of(context);
+        var body = child ?? const SizedBox.shrink();
+        if (kIsWeb &&
+            WebShareDownloadBannerLogic.shouldShow &&
+            !_webShareBannerDismissedThisLoad) {
+          body = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ColoredBox(
+                color: DopamineTheme.scaffoldBase,
+                child: SafeArea(
+                  bottom: false,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.10),
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                      child: WebShareDownloadBanner(
+                        onContinueOnWeb: () {
+                          if (!mounted) return;
+                          setState(() => _webShareBannerDismissedThisLoad = true);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(child: body),
+            ],
+          );
+        }
         return MediaQuery(
           data: mq.copyWith(textScaler: const TextScaler.linear(1.0)),
-          child: child ?? const SizedBox.shrink(),
+          child: body,
         );
       },
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,

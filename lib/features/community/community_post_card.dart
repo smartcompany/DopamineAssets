@@ -60,9 +60,15 @@ class CommunityPostCard extends StatelessWidget {
     ].join('\n');
   }
 
-  Uri _shareUrl(CommunityPost p) => Uri.parse(
-    'https://dopamine-assets.vercel.app/communityPost?postId=${Uri.encodeComponent(p.id)}',
-  );
+  Uri _shareUrl(CommunityPost p) => Uri(
+        scheme: 'https',
+        host: 'dopamine-assets.vercel.app',
+        path: '/communityPost',
+        queryParameters: {
+          'postId': p.id,
+          'from': 'share',
+        },
+      );
 
   Future<void> _sharePost(BuildContext context, CommunityPost p) async {
     await CommonShareUI.showShareOptionsDialog(

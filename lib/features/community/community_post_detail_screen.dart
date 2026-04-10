@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
@@ -704,9 +702,15 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     ].join('\n');
   }
 
-  Uri _shareUrl() => Uri.parse(
-    'https://dopamine-assets.vercel.app/communityPost?postId=${Uri.encodeComponent(_post.id)}',
-  );
+  Uri _shareUrl() => Uri(
+        scheme: 'https',
+        host: 'dopamine-assets.vercel.app',
+        path: '/communityPost',
+        queryParameters: {
+          'postId': _post.id,
+          'from': 'share',
+        },
+      );
 
   Future<void> _sharePost() async {
     await CommonShareUI.showShareOptionsDialog(
@@ -1282,15 +1286,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     String timeStr,
     bool showFollow,
   ) {
-    final showShareEntryBanner =
-        kIsWeb && Uri.base.queryParameters['from'] == 'community_share';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showShareEntryBanner) ...[
-          _ShareEntryBanner(),
-          const SizedBox(height: 10),
-        ],
         if (_post.moderationHiddenFromPublic &&
             _effectiveMyUid != null &&
             _effectiveMyUid == _post.authorUid) ...[
@@ -1928,58 +1926,6 @@ class _DetailAvatar extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: DopamineTheme.textSecondary,
         ),
-      ),
-    );
-  }
-}
-
-class _ShareEntryBanner extends StatelessWidget {
-  final Uri _applinkUri =
-      Uri.parse('https://dopamine-assets-server.vercel.app/applink');
-  final Uri _appStoreUri = Uri.parse(
-    'https://apps.apple.com/us/app/dopamine-assets/id6761470158',
-  );
-
-  _ShareEntryBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '앱으로 더 빠르게 볼 수 있어요',
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              FilledButton(
-                onPressed: () => launchUrl(_applinkUri),
-                style: FilledButton.styleFrom(
-                  backgroundColor: DopamineTheme.neonGreen,
-                  foregroundColor: const Color(0xFF0A0A0A),
-                ),
-                child: const Text('앱으로 열기'),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => launchUrl(_appStoreUri),
-                child: const Text('앱 다운로드'),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

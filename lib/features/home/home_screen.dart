@@ -427,7 +427,12 @@ class _HomeScreenState extends State<HomeScreen> {
     buf.writeln();
     buf.writeln('Open in Dopamine Assets');
     final shareText = buf.toString().trimRight();
-    final linkUrl = Uri.parse('https://dopamine-assets.vercel.app/');
+    final linkUrl = Uri(
+      scheme: 'https',
+      host: 'dopamine-assets.vercel.app',
+      path: '/',
+      queryParameters: const {'from': 'share'},
+    );
     await CommonShareUI.showShareOptionsDialog(
       context: context,
       shareText: shareText,
