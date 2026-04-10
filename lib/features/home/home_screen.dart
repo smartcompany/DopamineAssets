@@ -17,6 +17,7 @@ import '../../data/models/interest_surge_item.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../theme/dopamine_theme.dart';
+import '../../widgets/common_share_ui.dart';
 import '../asset/asset_detail_screen.dart';
 
 /// 홈 본문·섹션 제목과 동일한 좌우 여백(랭킹 카드 리스트와 정렬).
@@ -380,6 +381,60 @@ class _HomeScreenState extends State<HomeScreen> {
     return items.length > _rankingTopN ? items.sublist(0, _rankingTopN) : items;
   }
 
+  void _appendShareRankingBlock(
+    StringBuffer buf,
+    String sectionTitle,
+    List<RankedAsset> items,
+    String locale,
+  ) {
+    if (items.isEmpty) return;
+    buf.writeln(sectionTitle);
+    final cap = _rankingCollapsedVisible;
+    final visible = items.length <= cap ? items : items.sublist(0, cap);
+    for (var i = 0; i < visible.length; i++) {
+      final a = visible[i];
+      buf.writeln(
+        '${i + 1}. ${a.name} (${a.symbol}) '
+        '${PercentFormat.signedPercent(a.priceChangePct, locale)}',
+      );
+    }
+    if (items.length > cap) {
+      buf.writeln('…');
+    }
+    buf.writeln();
+  }
+
+  Future<void> _shareHomeRankings() async {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final up = _topRankings(_upItems);
+    final down = _topRankings(_downItems);
+    if (up.isEmpty && down.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.homeRankingsShareEmptySnack)),
+      );
+      return;
+    }
+    final applied = _rankingClasses ?? _pendingFilter;
+    final filterLabels = applied
+        .map((k) => _assetClassBadgeLabel(l10n, k) ?? k)
+        .join(', ');
+    final buf = StringBuffer();
+    _appendShareRankingBlock(buf, l10n.rankingsUpTitle, up, locale);
+    _appendShareRankingBlock(buf, l10n.rankingsDownTitle, down, locale);
+    buf.writeln(l10n.homeRankingsShareFiltersLine(filterLabels));
+    buf.writeln();
+    buf.writeln('Open in Dopamine Assets');
+    final shareText = buf.toString().trimRight();
+    final linkUrl = Uri.parse('https://dopamine-assets.vercel.app/');
+    await CommonShareUI.showShareOptionsDialog(
+      context: context,
+      shareText: shareText,
+      linkUrl: linkUrl,
+    );
+  }
+
   List<Widget> _animatedRankingSlivers({
     required bool up,
     required AppLocalizations l10n,
@@ -670,6 +725,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       iconColor: DopamineTheme.neonGreen,
                       title: l10n.rankingsUpTitle,
                       emphasize: true,
+                      trailing: IconButton(
+                        tooltip: l10n.homeRankingsShareTooltip,
+                        onPressed: _shareHomeRankings,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        icon: Icon(
+                          Icons.ios_share_outlined,
+                          color: DopamineTheme.textPrimary,
+                          size: 22,
+                        ),
+                      ),
                     ),
                   ),
                 ),

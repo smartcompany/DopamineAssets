@@ -524,6 +524,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rankingsDownTitle => '오늘 가장 크게 박살난 것';
 
   @override
+  String get homeRankingsShareTooltip => '랭킹 공유';
+
+  @override
+  String get homeRankingsShareEmptySnack => '공유할 랭킹이 없습니다.';
+
+  @override
+  String homeRankingsShareFiltersLine(String filters) {
+    return '필터: $filters';
+  }
+
+  @override
   String get homeInterestSurgeTitle => '오늘 관심 폭주';
 
   @override

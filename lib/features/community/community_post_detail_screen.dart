@@ -688,9 +688,6 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final title = (_post.title ?? '').trim();
     final body = _post.body.trim();
     final assetName = (_post.assetDisplayName ?? '').trim();
-    final headline = title.isNotEmpty
-        ? title
-        : (body.isNotEmpty ? body.split('\n').first : _post.assetSymbol);
     final summary = body.isNotEmpty ? body.replaceAll('\n', ' ').trim() : '';
     final clipped = summary.length > 120
         ? '${summary.substring(0, 120)}...'
@@ -699,7 +696,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         ? '$assetName (${_post.assetSymbol})'
         : _post.assetSymbol;
     return [
-      headline,
+      if (title.isNotEmpty) title,
       if (clipped.isNotEmpty) clipped,
       '',
       'Asset: $assetLine',

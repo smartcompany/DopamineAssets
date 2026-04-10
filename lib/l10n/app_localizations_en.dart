@@ -531,6 +531,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankingsDownTitle => 'Biggest losers today';
 
   @override
+  String get homeRankingsShareTooltip => 'Share rankings';
+
+  @override
+  String get homeRankingsShareEmptySnack => 'No rankings to share yet.';
+
+  @override
+  String homeRankingsShareFiltersLine(String filters) {
+    return 'Filters: $filters';
+  }
+
+  @override
   String get homeInterestSurgeTitle => 'Today\'s interest surge';
 
   @override

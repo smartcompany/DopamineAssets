@@ -1070,6 +1070,24 @@ abstract class AppLocalizations {
   /// **'오늘 가장 크게 박살난 것'**
   String get rankingsDownTitle;
 
+  /// No description provided for @homeRankingsShareTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'랭킹 공유'**
+  String get homeRankingsShareTooltip;
+
+  /// No description provided for @homeRankingsShareEmptySnack.
+  ///
+  /// In ko, this message translates to:
+  /// **'공유할 랭킹이 없습니다.'**
+  String get homeRankingsShareEmptySnack;
+
+  /// No description provided for @homeRankingsShareFiltersLine.
+  ///
+  /// In ko, this message translates to:
+  /// **'필터: {filters}'**
+  String homeRankingsShareFiltersLine(String filters);
+
   /// No description provided for @homeInterestSurgeTitle.
   ///
   /// In ko, this message translates to:

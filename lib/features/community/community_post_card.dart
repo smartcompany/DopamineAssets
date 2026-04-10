@@ -42,9 +42,6 @@ class CommunityPostCard extends StatelessWidget {
     final title = (p.title ?? '').trim();
     final body = p.body.trim();
     final assetName = (p.assetDisplayName ?? '').trim();
-    final headline = title.isNotEmpty
-        ? title
-        : (body.isNotEmpty ? body.split('\n').first : p.assetSymbol);
     final summary = body.isNotEmpty
         ? body.replaceAll('\n', ' ').trim()
         : '';
@@ -55,7 +52,7 @@ class CommunityPostCard extends StatelessWidget {
         ? '$assetName (${p.assetSymbol})'
         : p.assetSymbol;
     return [
-      headline,
+      if (title.isNotEmpty) title,
       if (clipped.isNotEmpty) clipped,
       '',
       'Asset: $assetLine',

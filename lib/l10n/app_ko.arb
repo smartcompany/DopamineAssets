@@ -204,6 +204,16 @@
   "rankingsDownTab": "하락 💀",
   "rankingsUpTitle": "오늘 가장 미친 상승",
   "rankingsDownTitle": "오늘 가장 크게 박살난 것",
+  "homeRankingsShareTooltip": "랭킹 공유",
+  "homeRankingsShareEmptySnack": "공유할 랭킹이 없습니다.",
+  "homeRankingsShareFiltersLine": "필터: {filters}",
+  "@homeRankingsShareFiltersLine": {
+    "placeholders": {
+      "filters": {
+        "type": "String"
+      }
+    }
+  },
   "homeInterestSurgeTitle": "오늘 관심 폭주",
   "homeInterestSurgeInfoIconTooltip": "데이터 안내",
   "homeInterestSurgeInfoTitle": "오늘 관심 폭주 안내",

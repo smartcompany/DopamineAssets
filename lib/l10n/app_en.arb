@@ -204,6 +204,16 @@
   "rankingsDownTab": "Crashing 💀",
   "rankingsUpTitle": "Wildest gainers today",
   "rankingsDownTitle": "Biggest losers today",
+  "homeRankingsShareTooltip": "Share rankings",
+  "homeRankingsShareEmptySnack": "No rankings to share yet.",
+  "homeRankingsShareFiltersLine": "Filters: {filters}",
+  "@homeRankingsShareFiltersLine": {
+    "placeholders": {
+      "filters": {
+        "type": "String"
+      }
+    }
+  },
   "homeInterestSurgeTitle": "Today's interest surge",
   "homeInterestSurgeInfoIconTooltip": "How this list is built",
   "homeInterestSurgeInfoTitle": "About today's interest surge",
