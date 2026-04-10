@@ -28,7 +28,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _consumeInitialSharedPostIfNeeded();
+      _focusCommunityTabIfNeeded();
     });
   }
 
@@ -41,21 +41,19 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (oldWidget.initialSharedPostId != widget.initialSharedPostId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _consumeInitialSharedPostIfNeeded();
+        _focusCommunityTabIfNeeded();
       });
     }
   }
 
-  void _consumeInitialSharedPostIfNeeded() {
+  void _focusCommunityTabIfNeeded() {
     final postId = widget.initialSharedPostId?.trim();
     debugPrint(
-      '[UL][home] consume check initialSharedPostId=${widget.initialSharedPostId} normalized=$postId',
+      '[UL][home] focus check initialSharedPostId=${widget.initialSharedPostId} normalized=$postId',
     );
     if (postId == null || postId.isEmpty) return;
-    debugPrint('[UL][home] dispatch openCommunitySharedPost id=$postId');
-    context.read<HomeShellNavigation>().openCommunitySharedPost(
-      rootCommentId: postId,
-    );
+    debugPrint('[UL][home] move to community tab for shared post id=$postId');
+    context.read<HomeShellNavigation>().setTabIndex(2);
   }
 
   @override
@@ -67,11 +65,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       body: IndexedStack(
         index: nav.tabIndex,
         sizing: StackFit.expand,
-        children: const [
-          HomeScreen(),
-          FavoritesScreen(),
-          CommunityScreen(),
-          ProfileScreen(),
+        children: [
+          const HomeScreen(),
+          const FavoritesScreen(),
+          CommunityScreen(initialSharedPostId: widget.initialSharedPostId),
+          const ProfileScreen(),
         ],
       ),
       extendBody: true,

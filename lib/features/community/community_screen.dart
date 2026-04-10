@@ -7,7 +7,6 @@ import 'package:share_lib/share_lib.dart';
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
-import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
@@ -25,7 +24,12 @@ import 'community_post_detail_screen.dart';
 import 'community_report_sheet.dart';
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({super.key});
+  const CommunityScreen({
+    super.key,
+    this.initialSharedPostId,
+  });
+
+  final String? initialSharedPostId;
 
   @override
   State<CommunityScreen> createState() => _CommunityScreenState();
@@ -58,14 +62,37 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   /// 좋아요 API 중인 게시글 id (하트 로딩 표시)
   final Set<String> _likeBusyIds = {};
+  String? _lastOpenedSharedPostId;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _scheduleFetch();
+      if (!mounted) return;
+      _scheduleFetch();
+      _openInitialSharedPostIfNeeded();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant CommunityScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSharedPostId != widget.initialSharedPostId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _openInitialSharedPostIfNeeded();
+      });
+    }
+  }
+
+  void _openInitialSharedPostIfNeeded() {
+    final postId = widget.initialSharedPostId?.trim();
+    if (postId == null || postId.isEmpty) return;
+    if (_lastOpenedSharedPostId == postId) return;
+    _lastOpenedSharedPostId = postId;
+    debugPrint('[UL] community direct open from route postId=$postId');
+    unawaited(_openPushedThread(postId));
   }
 
   void _onScroll() {
@@ -191,7 +218,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _openPushedThread(String rootCommentId) async {
-    _nav?.consumePendingCommunityRootCommentId(rootCommentId);
     debugPrint('[UL] community _openPushedThread start id=$rootCommentId');
     final l10n = AppLocalizations.of(context)!;
     String? idToken;
@@ -335,7 +361,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final nav = _nav;
     if (nav == null || !mounted) return;
 
-    final pendingRootId = nav.peekPendingCommunityRootCommentId();
+    final pendingRootId = nav.takePendingCommunityRootCommentId();
     debugPrint('[UL] community _handleNav pendingRootId=$pendingRootId');
 
     final f = nav.takePendingFilter();
@@ -631,20 +657,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!auth.isLoggedIn())
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => presentDopamineAuthScreen(context),
-                  child: Text(
-                    l10n.actionLogin,
-                    style: const TextStyle(
-                      color: DopamineTheme.neonGreen,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Column(
