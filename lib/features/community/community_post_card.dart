@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
-
+import '../../core/time/relative_time_format.dart';
 import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
@@ -98,9 +97,7 @@ class CommunityPostCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final assetName = post.assetDisplayName?.trim();
-    final timeStr = DateFormat.yMMMd(
-      l10n.localeName,
-    ).add_jm().format(post.createdAt.toLocal());
+    final timeStr = formatRelativePostTime(post.createdAt, l10n.localeName);
     final isOwnPost = myUid != null && post.authorUid == myUid;
     final showOwnMenu =
         isOwnPost &&

@@ -33,12 +33,17 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
   var _sort = 'latest';
+  static const int _pageSize = 20;
 
   /// [FutureBuilder] 대신 사용: 연속 검색 시 늦게 도착한 응답이 최신 칩/쿼리를 덮어쓰지 않게 함.
   int _fetchGen = 0;
   bool _loading = true;
   Object? _fetchError;
   List<CommunityPost> _posts = const [];
+  int _page = 0;
+  bool _hasMore = true;
+  bool _loadingMore = false;
+  final ScrollController _scrollController = ScrollController();
 
   HomeShellNavigation? _nav;
   int _lastCommunityFeedEpoch = 0;
@@ -57,9 +62,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _scheduleFetch();
     });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 240) {
+      _loadMore();
+    }
   }
 
   Future<void> _scheduleFetch() async {
@@ -67,6 +81,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
     setState(() {
       _loading = true;
       _fetchError = null;
+      _loadingMore = false;
+      _page = 0;
+      _hasMore = true;
     });
     String? idToken;
     if (mounted) {
@@ -76,8 +93,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       }
     }
     try {
-      final items = await DopamineApi.fetchCommunityPosts(
-        sort: _sort,
+      final result = await DopamineApi.fetchCommunityPostsPage(
+        sort: 'latest',
+        page: 0,
+        limit: _pageSize,
         symbol: _symbolFilterActive ? _symbolFilterSymbol : null,
         assetClass: _symbolFilterActive ? _symbolFilterClass : null,
         bodyTerms: _bodySearchTerms.isEmpty
@@ -87,7 +106,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
       );
       if (!mounted || gen != _fetchGen) return;
       setState(() {
-        _posts = items;
+        _posts = _applySort(result.items, _sort);
+        _page = result.page;
+        _hasMore = result.hasMore;
         _loading = false;
       });
     } catch (e) {
@@ -97,6 +118,66 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore || !_hasMore) return;
+    final gen = _fetchGen;
+    setState(() => _loadingMore = true);
+    String? idToken;
+    if (mounted) {
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      if (auth.isLoggedIn()) {
+        idToken = await auth.getIdToken();
+      }
+    }
+    try {
+      final result = await DopamineApi.fetchCommunityPostsPage(
+        sort: 'latest',
+        page: _page + 1,
+        limit: _pageSize,
+        symbol: _symbolFilterActive ? _symbolFilterSymbol : null,
+        assetClass: _symbolFilterActive ? _symbolFilterClass : null,
+        bodyTerms: _bodySearchTerms.isEmpty
+            ? null
+            : List<String>.from(_bodySearchTerms),
+        idToken: idToken,
+      );
+      if (!mounted || gen != _fetchGen) return;
+      final merged = <String, CommunityPost>{};
+      for (final p in _posts) {
+        merged[p.id] = p;
+      }
+      for (final p in result.items) {
+        merged[p.id] = p;
+      }
+      setState(() {
+        _posts = _applySort(merged.values.toList(), _sort);
+        _page = result.page;
+        _hasMore = result.hasMore;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted || gen != _fetchGen) return;
+      setState(() => _loadingMore = false);
+    }
+  }
+
+  List<CommunityPost> _applySort(List<CommunityPost> items, String sort) {
+    final sorted = List<CommunityPost>.from(items);
+    if (sort == 'popular') {
+      sorted.sort((a, b) {
+        final likeCmp = b.likeCount.compareTo(a.likeCount);
+        if (likeCmp != 0) return likeCmp;
+        final replyCmp = b.replyCount.compareTo(a.replyCount);
+        if (replyCmp != 0) return replyCmp;
+        return b.createdAt.compareTo(a.createdAt);
+      });
+      return sorted;
+    }
+    // latest
+    sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sorted;
   }
 
   /// `RefreshIndicator` 위쪽 스피너는 `_scheduleFetch()` 완료까지 유지됩니다.
@@ -246,8 +327,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (next == _sort) return;
     setState(() {
       _sort = next;
+      _posts = _applySort(_posts, next);
     });
-    _scheduleFetch();
   }
 
   void _handleNav() {
@@ -528,6 +609,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   void dispose() {
     _nav?.removeListener(_handleNav);
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -778,37 +861,35 @@ class _CommunityScreenState extends State<CommunityScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  IntrinsicWidth(
-                    child: SegmentedButton<String>(
-                      showSelectedIcon: false,
-                      style: ButtonStyle(
-                        visualDensity: VisualDensity.compact,
-                        foregroundColor: WidgetStateProperty.resolveWith((s) {
-                          if (s.contains(WidgetState.selected)) {
-                            return DopamineTheme.purpleBottom;
-                          }
-                          return DopamineTheme.textPrimary;
-                        }),
-                        backgroundColor: WidgetStateProperty.resolveWith((s) {
-                          if (s.contains(WidgetState.selected)) {
-                            return DopamineTheme.neonGreen;
-                          }
-                          return Colors.white.withValues(alpha: 0.08);
-                        }),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      _onSort(_sort == 'latest' ? 'popular' : 'latest');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: DopamineTheme.textPrimary,
+                      side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                      backgroundColor: Colors.white.withValues(alpha: 0.08),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                      segments: [
-                        ButtonSegment<String>(
-                          value: 'latest',
-                          label: Text(l10n.communitySortLatest),
-                        ),
-                        ButtonSegment<String>(
-                          value: 'popular',
-                          label: Text(l10n.communitySortPopular),
-                        ),
-                      ],
-                      selected: <String>{_sort},
-                      onSelectionChanged: (s) => _onSort(s.first),
                     ),
+                    label: Text(
+                      _sort == 'latest'
+                          ? l10n.communitySortLatest
+                          : l10n.communitySortPopular,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: DopamineTheme.textPrimary,
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.bar_chart_rounded,
+                      size: 18,
+                      color: DopamineTheme.neonGreen,
+                    ),
+                    iconAlignment: IconAlignment.end,
                   ),
                   const Spacer(),
                   FilledButton.icon(
@@ -911,7 +992,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         ],
                       );
                     }
+                    final itemCount = items.length + (_loadingMore ? 1 : 0);
                     return ListView.separated(
+                      controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(
                         16,
@@ -919,9 +1002,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         16,
                         24 + homeShellBottomInset(context),
                       ),
-                      itemCount: items.length,
+                      itemCount: itemCount,
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, i) {
+                        if (i >= items.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          );
+                        }
                         final p = items[i];
                         return CommunityPostCard(
                           post: p,

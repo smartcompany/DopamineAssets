@@ -60,12 +60,20 @@
         document.addEventListener('visibilitychange', onHidden, { passive: true });
 
         // 설치 여부 사전 체크 API는 없다.
-        // 따라서 스킴을 시도하고, 앱 전환(페이지 hidden)되지 않으면 웹에 그대로 남긴다.
-        window.location.assign(scheme);
+        // 페이지를 이동시키는 assign/location 방식은 미설치 시 에러 페이지(흰화면)로 갈 수 있어
+        // 숨김 iframe으로 앱 스킴만 "시도"한다. 실패하면 현재 웹 URL에 그대로 머문다.
+        var iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.src = scheme;
+        document.body.appendChild(iframe);
 
         // 앱 미설치/차단 시 현재 URL(웹)에 머무른다. 추가 리다이렉트는 하지 않는다.
         setTimeout(function () {
           document.removeEventListener('visibilitychange', onHidden);
+          if (iframe && iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
           if (!switchedToApp) {
             // no-op: stay on web page
           }

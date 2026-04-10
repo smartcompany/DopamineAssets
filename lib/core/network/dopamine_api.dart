@@ -355,9 +355,11 @@ abstract final class DopamineApi {
     return MarketSummary.fromJson(decoded);
   }
 
-  /// [sort]: `latest` | `popular` — 루트 게시글만(답글 제외).
-  static Future<List<CommunityPost>> fetchCommunityPosts({
+  static Future<({List<CommunityPost> items, bool hasMore, int page, int limit})>
+  fetchCommunityPostsPage({
     required String sort,
+    int page = 0,
+    int limit = 20,
     String? symbol,
     String? assetClass,
     String? authorUid,
@@ -366,6 +368,8 @@ abstract final class DopamineApi {
   }) async {
     final q = <String, String>{
       'sort': sort,
+      'page': page.toString(),
+      'limit': limit.toString(),
       if (symbol != null &&
           symbol.isNotEmpty &&
           assetClass != null &&
@@ -393,9 +397,36 @@ abstract final class DopamineApi {
     if (items is! List<dynamic>) {
       throw ApiException('Invalid community posts items');
     }
-    return items
-        .map((e) => CommunityPost.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return (
+      items: items
+          .map((e) => CommunityPost.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: decoded['hasMore'] == true,
+      page: (decoded['page'] as num?)?.toInt() ?? page,
+      limit: (decoded['limit'] as num?)?.toInt() ?? limit,
+    );
+  }
+
+  /// [sort]: `latest` | `popular` — 루트 게시글만(답글 제외).
+  static Future<List<CommunityPost>> fetchCommunityPosts({
+    required String sort,
+    String? symbol,
+    String? assetClass,
+    String? authorUid,
+    List<String>? bodyTerms,
+    String? idToken,
+  }) async {
+    final page = await fetchCommunityPostsPage(
+      sort: sort,
+      page: 0,
+      limit: 50,
+      symbol: symbol,
+      assetClass: assetClass,
+      authorUid: authorUid,
+      bodyTerms: bodyTerms,
+      idToken: idToken,
+    );
+    return page.items;
   }
 
   static Future<Map<String, dynamic>> fetchPublicProfile({

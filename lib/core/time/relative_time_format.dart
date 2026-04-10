@@ -23,9 +23,10 @@ String formatRelativeCommentTime(DateTime createdAt, String localeTag) {
   if (hours < 24) {
     return isKo ? '$hours시간 전' : '${hours}h ago';
   }
-  final days = diff.inDays;
-  if (days < 7) {
-    return isKo ? '$days일 전' : '${days}d ago';
-  }
-  return DateFormat.yMMMd(localeTag).format(local);
+  return DateFormat.yMMMd(localeTag).add_jm().format(local);
+}
+
+/// 게시글·피드 카드 등 본문 작성 시각 표시용 ([formatRelativeCommentTime] 와 동일 규칙).
+String formatRelativePostTime(DateTime createdAt, String localeTag) {
+  return formatRelativeCommentTime(createdAt, localeTag);
 }

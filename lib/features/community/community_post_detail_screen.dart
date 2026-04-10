@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -999,9 +998,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final timeStr = DateFormat.yMMMd(
-      l10n.localeName,
-    ).add_jm().format(_post.createdAt.toLocal());
+    final timeStr = formatRelativePostTime(_post.createdAt, l10n.localeName);
     final assetName = _post.assetDisplayName?.trim();
     final showFollow =
         widget.onToggleFollow != null &&
