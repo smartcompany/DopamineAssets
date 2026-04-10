@@ -11,10 +11,7 @@ import '../profile/profile_screen.dart';
 import 'home_screen.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({
-    super.key,
-    this.initialSharedPostId,
-  });
+  const HomeShell({super.key, this.initialSharedPostId});
 
   final String? initialSharedPostId;
 
@@ -26,7 +23,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    debugPrint('[UL][home] initState initialSharedPostId=${widget.initialSharedPostId}');
+    debugPrint(
+      '[UL][home] initState initialSharedPostId=${widget.initialSharedPostId}',
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _consumeInitialSharedPostIfNeeded();
@@ -55,8 +54,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (postId == null || postId.isEmpty) return;
     debugPrint('[UL][home] dispatch openCommunitySharedPost id=$postId');
     context.read<HomeShellNavigation>().openCommunitySharedPost(
-          rootCommentId: postId,
-        );
+      rootCommentId: postId,
+    );
   }
 
   @override

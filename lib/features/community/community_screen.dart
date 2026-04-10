@@ -214,7 +214,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
       final sym = c.assetSymbol?.trim() ?? '';
       final cls = c.assetClass?.trim() ?? '';
       if (sym.isEmpty || cls.isEmpty) {
-        debugPrint('[UL] community root has empty symbol/class sym="$sym" cls="$cls"');
+        debugPrint(
+          '[UL] community root has empty symbol/class sym="$sym" cls="$cls"',
+        );
       }
       final post = CommunityPost.fromRootAssetComment(
         id: c.id,
@@ -255,9 +257,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       debugPrint('[UL] community _openPushedThread error=$e');
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -351,7 +351,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
 
     if (pendingRootId != null && pendingRootId.isNotEmpty) {
-      debugPrint('[UL] community schedule open pushed thread id=$pendingRootId');
+      debugPrint(
+        '[UL] community schedule open pushed thread id=$pendingRootId',
+      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) unawaited(_openPushedThread(pendingRootId));
       });
@@ -868,7 +870,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                       foregroundColor: DopamineTheme.textPrimary,
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.25),
+                      ),
                       backgroundColor: Colors.white.withValues(alpha: 0.08),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -1012,7 +1016,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                               child: SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             ),
                           );

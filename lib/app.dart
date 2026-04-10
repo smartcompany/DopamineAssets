@@ -51,13 +51,17 @@ class _DopamineAppState extends State<DopamineApp> {
     redirect: (context, state) {
       final uri = state.uri;
       final scheme = uri.scheme.toLowerCase();
-      debugPrint('[UL][router] redirect check uri=$uri matched=${state.matchedLocation}');
+      debugPrint(
+        '[UL][router] redirect check uri=$uri matched=${state.matchedLocation}',
+      );
       if (scheme == 'dopamineassets') {
         // 표준 스킴: dopamineassets://communityPost?postId=<id>
         if (uri.host.toLowerCase() == 'communitypost') {
           final postId = uri.queryParameters['postId']?.trim();
           if (postId != null && postId.isNotEmpty) {
-            debugPrint('[UL][router] scheme redirect communityPost postId=$postId');
+            debugPrint(
+              '[UL][router] scheme redirect communityPost postId=$postId',
+            );
             return '/communityPost?postId=$postId';
           }
         }
@@ -76,7 +80,9 @@ class _DopamineAppState extends State<DopamineApp> {
         path: '/communityPost',
         builder: (_, state) {
           final postId = state.uri.queryParameters['postId'];
-          debugPrint('[UL][router] build /communityPost query postId=$postId uri=${state.uri}');
+          debugPrint(
+            '[UL][router] build /communityPost query postId=$postId uri=${state.uri}',
+          );
           return HomeShell(initialSharedPostId: postId);
         },
       ),
