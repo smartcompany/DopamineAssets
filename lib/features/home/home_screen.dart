@@ -1356,7 +1356,8 @@ class _FilterToggleChip extends StatelessWidget {
 }
 
 /// 도파민 자산 블록 — 상승·하락·관심·테마·시장 요약 가로 탭 (필터 아래 고정).
-/// 선택 변경 시 해당 탭이 가로 리스트의 맨 왼쪽에 오도록 스크롤한다.
+/// 부모 `Padding` 좌우 마진 안에서만 그려지도록 클립한다.
+/// 첫 탭은 스크롤 맨 앞, 그 외는 가능한 한 가운데(막히면 이전 탭이 보이도록 최소 스크롤).
 class _HomeDopamineSectionTabStrip extends StatefulWidget {
   const _HomeDopamineSectionTabStrip({
     required this.sections,
@@ -1379,29 +1380,72 @@ class _HomeDopamineSectionTabStripState extends State<_HomeDopamineSectionTabStr
   GlobalKey _keyForSectionId(String id) =>
       _tabItemKeys.putIfAbsent(id, GlobalKey.new);
 
+  static const Duration _kTabScrollDuration = Duration(milliseconds: 260);
+  static const Curve _kTabScrollCurve = Curves.easeOutCubic;
+
   @override
   void didUpdateWidget(covariant _HomeDopamineSectionTabStrip oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedId != oldWidget.selectedId) {
-      _scheduleScrollSelectedTabToStart();
+      _scheduleScrollSelectedTabIntoView();
     }
   }
 
-  void _scheduleScrollSelectedTabToStart() {
+  void _scheduleScrollSelectedTabIntoView() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final id = widget.selectedId;
-      final key = _tabItemKeys[id];
-      final ctx = key?.currentContext;
-      if (ctx == null) return;
-      Scrollable.ensureVisible(
+      unawaited(_runScrollSelectedTabIntoView());
+    });
+  }
+
+  Future<void> _runScrollSelectedTabIntoView() async {
+    if (!mounted) return;
+    final id = widget.selectedId;
+    final key = _tabItemKeys[id];
+    final ctx = key?.currentContext;
+    if (ctx == null) return;
+
+    final scrollable = Scrollable.maybeOf(ctx);
+    final position = scrollable?.position;
+    if (position == null) return;
+
+    final isFirst =
+        widget.sections.isNotEmpty && widget.sections.first.id == id;
+
+    if (isFirst) {
+      await position.animateTo(
+        position.minScrollExtent,
+        duration: _kTabScrollDuration,
+        curve: _kTabScrollCurve,
+      );
+      return;
+    }
+
+    try {
+      await Scrollable.ensureVisible(
         ctx,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-        alignment: 0.0,
+        duration: _kTabScrollDuration,
+        curve: _kTabScrollCurve,
+        alignment: 0.5,
         alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
       );
-    });
+    } catch (_) {
+      return;
+    }
+
+    if (!mounted) return;
+    if (!ctx.mounted) return;
+    final pos = Scrollable.maybeOf(ctx)?.position;
+    if (pos == null) return;
+
+    // 중앙 정렬이 minScroll(0)에 막힐 때만 이전 탭이 보이도록 살짝 스크롤 (마진은 hard clip 유지)
+    if (pos.pixels <= pos.minScrollExtent + 0.5 &&
+        pos.maxScrollExtent > pos.minScrollExtent + 1) {
+      await pos.animateTo(
+        (40.0).clamp(pos.minScrollExtent, pos.maxScrollExtent),
+        duration: _kTabScrollDuration,
+        curve: _kTabScrollCurve,
+      );
+    }
   }
 
   @override
@@ -1410,6 +1454,7 @@ class _HomeDopamineSectionTabStripState extends State<_HomeDopamineSectionTabStr
     return SizedBox(
       height: 40,
       child: ListView.separated(
+        clipBehavior: Clip.hardEdge,
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.zero,
