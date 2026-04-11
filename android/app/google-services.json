@@ -12,7 +12,28 @@
           "package_name": "com.smartcompany.dopamineAssets"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "312575797891-9ef2skpbv307qfevv9jca2fko4kjv0n4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smartcompany.dopamineAssets",
+            "certificate_hash": "7ef9759d9ef850bdf2161b570300c3968ae0027a"
+          }
+        },
+        {
+          "client_id": "312575797891-va154mo6dgcrhmaift0bumvt4q915v99.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smartcompany.dopamineAssets",
+            "certificate_hash": "3fcc84ac0fe233c3188a609b2ad2526442fe895d"
+          }
+        },
+        {
+          "client_id": "312575797891-32oqllsgnd6dcp9uhr85h9s7idsmlg6t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA6DHvnQ0kSt1bPbrctB-KEBvOtm-_b_qA"
@@ -20,7 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "312575797891-32oqllsgnd6dcp9uhr85h9s7idsmlg6t.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "312575797891-h2ruihb0cbk4t08q5puj261kgso2rp3e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.smartcompany.dopamineAssets"
+              }
+            }
+          ]
         }
       }
     }
