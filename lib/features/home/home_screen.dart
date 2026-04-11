@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -1735,7 +1736,65 @@ class _GlassPanel extends StatelessWidget {
   }
 }
 
-/// 상단 앱 타이틀 — 골드→오렌지 그라데이션 + 은은한 글로우(세로 점유 최소화).
+/// 홈 헤더 양옆 불꽃 — 살짝 스케일·흔들림으로 움직이는 느낌.
+class _AnimatedFireEmoji extends StatefulWidget {
+  const _AnimatedFireEmoji({required this.invertPhase});
+
+  /// true면 위상을 뒤집어 좌우 불꽃이 동시에 똑같이 튀지 않게.
+  final bool invertPhase;
+
+  @override
+  State<_AnimatedFireEmoji> createState() => _AnimatedFireEmojiState();
+}
+
+class _AnimatedFireEmojiState extends State<_AnimatedFireEmoji>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1300),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final raw = widget.invertPhase ? 1.0 - _controller.value : _controller.value;
+        final curved = Curves.easeInOut.transform(raw);
+        final scale = 0.88 + 0.14 * curved;
+        final dy = -1.8 * math.sin(curved * math.pi);
+        final rot = 0.11 * (curved - 0.5);
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: Transform.rotate(
+            angle: rot,
+            child: Transform.scale(
+              scale: scale,
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: const ExcludeSemantics(
+        child: Text(
+          '🔥',
+          style: TextStyle(
+            fontSize: 20,
+            height: 1.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 상단 앱 타이틀 — 양옆 애니 불꽃 + 골드→오렌지 그라데이션(글자 크기는 유지).
 class _HomeBlazingTitle extends StatelessWidget {
   const _HomeBlazingTitle({required this.text});
 
@@ -1757,6 +1816,40 @@ class _HomeBlazingTitle extends StatelessWidget {
       style: style,
     );
 
+    final gradientStack = Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Transform.translate(
+          offset: const Offset(0, 0.5),
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 9, sigmaY: 9),
+            child: titleText(
+              baseStyle.copyWith(
+                color: const Color(0xFFFF9100).withValues(alpha: 0.42),
+              ),
+            ),
+          ),
+        ),
+        ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFFF8E1),
+              Color(0xFFFFE082),
+              Color(0xFFFFCA28),
+              Color(0xFFFF9100),
+              Color(0xFFFF6D00),
+            ],
+            stops: [0.0, 0.25, 0.45, 0.72, 1.0],
+          ).createShader(bounds),
+          child: titleText(baseStyle.copyWith(color: Colors.white)),
+        ),
+      ],
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         return SizedBox(
@@ -1764,37 +1857,15 @@ class _HomeBlazingTitle extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.center,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Transform.translate(
-                  offset: const Offset(0, 0.5),
-                  child: ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 9, sigmaY: 9),
-                    child: titleText(
-                      baseStyle.copyWith(
-                        color: const Color(0xFFFF9100).withValues(alpha: 0.42),
-                      ),
-                    ),
-                  ),
-                ),
-                ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (bounds) => const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFFFF8E1),
-                      Color(0xFFFFE082),
-                      Color(0xFFFFCA28),
-                      Color(0xFFFF9100),
-                      Color(0xFFFF6D00),
-                    ],
-                    stops: [0.0, 0.25, 0.45, 0.72, 1.0],
-                  ).createShader(bounds),
-                  child: titleText(baseStyle.copyWith(color: Colors.white)),
-                ),
+                const _AnimatedFireEmoji(invertPhase: false),
+                const SizedBox(width: 5),
+                gradientStack,
+                const SizedBox(width: 5),
+                const _AnimatedFireEmoji(invertPhase: true),
               ],
             ),
           ),
