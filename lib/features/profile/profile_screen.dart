@@ -224,12 +224,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // 기존 authStateChanges 콜백에서 동기화가 먼저 끝나서 이름이 안 보일 수 있습니다.
     // provider 업데이트를 감지해서 컨트롤러를 다시 채웁니다. (빈 닉네임도 반영)
     final normalized = p.displayName.trim();
-    if (_nameController.text.trim() != normalized) {
-      setState(() {
+    final nameChanged = _nameController.text.trim() != normalized;
+    // 닉네임만 바뀔 때만 setState 하면 photoUrl 만 갱신될 때 화면이 안 돌아가
+    // (앱 재시작 후에는 정상) — 프로필 사진 표시 누락 원인.
+    setState(() {
+      if (nameChanged) {
         _nameController.text = normalized;
         _verifiedTrimmedName = null;
-      });
-    }
+      }
+    });
   }
 
   void _syncNameField(String? displayName) {
@@ -285,16 +288,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       final auth = context.read<AuthProvider<DopamineUser>>();
       final current = auth.userProfile;
-      if (current != null) {
-        auth.setUserProfile(
-          DopamineUser(
-            uid: current.uid,
-            displayName: current.displayName,
-            photoUrl: url,
-            suspendedUntil: current.suspendedUntil,
-          ),
-        );
-      }
+      auth.setUserProfile(
+        DopamineUser(
+          uid: current?.uid ?? fb.uid,
+          displayName: current?.displayName ?? (fb.displayName?.trim() ?? ''),
+          photoUrl: url,
+          suspendedUntil: current?.suspendedUntil,
+        ),
+      );
       if (!mounted) return;
       setState(() {});
       ScaffoldMessenger.of(
@@ -320,16 +321,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       final auth = context.read<AuthProvider<DopamineUser>>();
       final current = auth.userProfile;
-      if (current != null) {
-        auth.setUserProfile(
-          DopamineUser(
-            uid: current.uid,
-            displayName: current.displayName,
-            photoUrl: null,
-            suspendedUntil: current.suspendedUntil,
-          ),
-        );
-      }
+      auth.setUserProfile(
+        DopamineUser(
+          uid: current?.uid ?? fb.uid,
+          displayName: current?.displayName ?? (fb.displayName?.trim() ?? ''),
+          photoUrl: null,
+          suspendedUntil: current?.suspendedUntil,
+        ),
+      );
       if (!mounted) return;
       setState(() {});
       ScaffoldMessenger.of(
@@ -415,8 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       PushPrefsKeys.socialReply: reply ?? _pushSocialReply,
       PushPrefsKeys.socialLike: like ?? _pushSocialLike,
       PushPrefsKeys.marketDailyBrief: daily ?? _pushMarketDaily,
-      PushPrefsKeys.hotMoverDiscussion:
-          hotMover ?? _pushHotMoverDiscussion,
+      PushPrefsKeys.hotMoverDiscussion: hotMover ?? _pushHotMoverDiscussion,
     };
   }
 
@@ -1205,7 +1203,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: DopamineTheme.accentRed.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: DopamineTheme.accentRed.withValues(alpha: 0.35),
+                          color: DopamineTheme.accentRed.withValues(
+                            alpha: 0.35,
+                          ),
                         ),
                       ),
                       child: Row(
@@ -1214,7 +1214,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icon(
                             Icons.info_outline_rounded,
                             size: 22,
-                            color: DopamineTheme.accentRed.withValues(alpha: 0.95),
+                            color: DopamineTheme.accentRed.withValues(
+                              alpha: 0.95,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -1610,8 +1612,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: DopamineTheme.textSecondary,
                           ),
                           onTap: () {
-                            final lang =
-                                Localizations.localeOf(context).languageCode;
+                            final lang = Localizations.localeOf(
+                              context,
+                            ).languageCode;
                             final hash = lang == 'ko' ? 'ko' : 'en';
                             final uri = Uri.parse(
                               '${ApiConfig.baseUrl}/legal/app-disclosures.html#$hash',
@@ -1740,7 +1743,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final appSignedIn = _isAppSignedIn(auth);
     final locale = l10n.localeName;
     final profileSaved = appSignedIn;
-    final profilePhotoUrl = auth.userProfile?.photoUrl;
 
     return Scaffold(
       body: SafeArea(
@@ -1750,17 +1752,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 builder: (context, _) {
                   final committedName = (auth.userProfile?.displayName ?? '')
                       .trim();
+                  // displayName 과 같이 Provider 에서 매번 읽는다. 상위 build 의
+                  // profilePhotoUrl 스냅샷을 넘기면 StatsStore 알림만 올 때
+                  // 부모가 안 돌아 아바타 URL 이 갱신되지 않을 수 있다.
+                  final livePhotoUrl = auth.userProfile?.photoUrl;
                   return _buildSignedInBody(
                     context,
                     theme,
                     l10n,
                     fb!,
                     profileSaved,
-                    profilePhotoUrl,
+                    livePhotoUrl,
                     locale,
                     committedName,
-                    showSuspensionBanner:
-                        isDopamineUserSuspended(auth.userProfile),
+                    showSuspensionBanner: isDopamineUserSuspended(
+                      auth.userProfile,
+                    ),
                   );
                 },
               )
@@ -1974,9 +1981,11 @@ class _AccountProfilePhotoCard extends StatelessWidget {
     if (normalizedPhotoUrl != null && normalizedPhotoUrl.isNotEmpty) {
       return Image.network(
         normalizedPhotoUrl,
+        key: ValueKey<String>(normalizedPhotoUrl),
         width: 100,
         height: 100,
         fit: BoxFit.cover,
+        gaplessPlayback: false,
         errorBuilder: (context, error, stackTrace) => Icon(
           Icons.person_rounded,
           size: 52,
