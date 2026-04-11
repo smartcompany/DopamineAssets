@@ -33,6 +33,7 @@ class HomeAssetSuggestions extends ChangeNotifier {
           assetClass: ac,
           commodityKind: a.commodityKind,
           summaryLine: a.summaryLine,
+          coingeckoId: a.coingeckoId,
         ),
       );
     }

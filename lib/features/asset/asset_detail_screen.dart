@@ -407,6 +407,8 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                         assetClass: d.assetClass,
                                         title: l10n.assetDetailOpenChart,
                                         assetName: d.name,
+                                        coingeckoId:
+                                            widget.rankedAsset.coingeckoId,
                                       );
                                     }
                                   },

@@ -12,6 +12,8 @@ final class RankedAsset {
     this.summaryLine,
     this.themeId,
     this.themeSymbols,
+    /// 서버 `RankedAssetDto.id` — CoinGecko coin id (차트 `?id=`).
+    this.coingeckoId,
   });
 
   final String symbol;
@@ -26,8 +28,10 @@ final class RankedAsset {
   final String? themeId;
   /// 테마 구성 Yahoo 티커 — 뉴스 검색용.
   final List<String>? themeSymbols;
+  final String? coingeckoId;
 
   factory RankedAsset.fromJson(Map<String, dynamic> json) {
+    final idRaw = json['id'];
     return RankedAsset(
       symbol: json['symbol'] as String,
       name: json['name'] as String,
@@ -39,6 +43,7 @@ final class RankedAsset {
       summaryLine: json['summaryLine'] as String?,
       themeId: json['themeId'] as String?,
       themeSymbols: null,
+      coingeckoId: idRaw is String && idRaw.trim().isNotEmpty ? idRaw.trim() : null,
     );
   }
 

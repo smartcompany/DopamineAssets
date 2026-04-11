@@ -139,13 +139,15 @@ abstract final class DopamineApi {
     return AssetDetail.fromJson(decoded);
   }
 
-  /// 일봉 OHLC (서버 → Yahoo, 크립토는 Yahoo 실패 시 CoinGecko 폴백).
-  /// [assetName]: 크립토 차트 검색 정확도용(선택).
+  /// 일봉 OHLC (서버 → Yahoo, 크립토는 CoinGecko).
+  /// [assetName]: 크립토에서 `id` 없을 때 검색 보조(선택).
+  /// [coingeckoId]: CoinGecko coin `id` — 있으면 차트가 `id` 기준 OHLC.
   static Future<List<AssetChartBar>> fetchAssetChartBars({
     required String symbol,
     required String assetClass,
     String range = '3mo',
     String? assetName,
+    String? coingeckoId,
   }) async {
     final qp = <String, String>{
       'symbol': symbol,
@@ -155,6 +157,10 @@ abstract final class DopamineApi {
     final n = assetName?.trim();
     if (n != null && n.isNotEmpty) {
       qp['assetName'] = n;
+    }
+    final cg = coingeckoId?.trim();
+    if (cg != null && cg.isNotEmpty) {
+      qp['id'] = cg;
     }
     final uri = _uri('/api/feed/asset-chart').replace(queryParameters: qp);
     final response = await _client.get(uri, headers: _jsonHeaders);

@@ -18,6 +18,7 @@ class AssetCandleChartScreen extends StatefulWidget {
     this.title,
     this.themeId,
     this.assetName,
+    this.coingeckoId,
   });
 
   final String symbol;
@@ -27,6 +28,8 @@ class AssetCandleChartScreen extends StatefulWidget {
   final String? assetName;
   /// 설정 시 [fetchThemeChartBars] 로 테마 평균 추이 (심볼 일봉 무시).
   final String? themeId;
+  /// CoinGecko coin `id` — 피드와 동일하면 차트 API `?id=` 로 전달.
+  final String? coingeckoId;
 
   static Future<void> open(
     BuildContext context, {
@@ -35,6 +38,7 @@ class AssetCandleChartScreen extends StatefulWidget {
     String? title,
     String? themeId,
     String? assetName,
+    String? coingeckoId,
   }) {
     return Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -44,6 +48,7 @@ class AssetCandleChartScreen extends StatefulWidget {
           title: title,
           themeId: themeId,
           assetName: assetName,
+          coingeckoId: coingeckoId,
         ),
       ),
     );
@@ -68,6 +73,7 @@ class _AssetCandleChartScreenState extends State<AssetCandleChartScreen> {
       assetClass: widget.assetClass,
       range: _range,
       assetName: widget.assetName,
+      coingeckoId: widget.coingeckoId,
     );
   }
 
