@@ -812,9 +812,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
                     _kHomeGutter,
-                    16,
+                    10,
                     _kHomeGutter,
-                    _kHomeGutter,
+                    10,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -834,7 +834,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
-                                      const SizedBox(width: 48),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Center(
                                           child: _HomeBlazingTitle(
@@ -843,10 +843,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 48),
+                                      const SizedBox(width: 8),
                                     ],
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 8),
                                 ],
                               ),
                       ),
@@ -1735,7 +1735,7 @@ class _GlassPanel extends StatelessWidget {
   }
 }
 
-/// 상단 앱 타이틀 — 골드→오렌지 그라데이션 + 네온 글로우
+/// 상단 앱 타이틀 — 골드→오렌지 그라데이션 + 은은한 글로우(세로 점유 최소화).
 class _HomeBlazingTitle extends StatelessWidget {
   const _HomeBlazingTitle({required this.text});
 
@@ -1744,10 +1744,10 @@ class _HomeBlazingTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const baseStyle = TextStyle(
-      fontSize: 27,
-      height: 1.05,
+      fontSize: 22,
+      height: 1.0,
       fontWeight: FontWeight.w900,
-      letterSpacing: -0.9,
+      letterSpacing: -0.65,
     );
     Text titleText(TextStyle style) => Text(
       text,
@@ -1769,12 +1769,12 @@ class _HomeBlazingTitle extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Transform.translate(
-                  offset: const Offset(0, 1),
+                  offset: const Offset(0, 0.5),
                   child: ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                    imageFilter: ImageFilter.blur(sigmaX: 9, sigmaY: 9),
                     child: titleText(
                       baseStyle.copyWith(
-                        color: const Color(0xFFFF9100).withValues(alpha: 0.55),
+                        color: const Color(0xFFFF9100).withValues(alpha: 0.42),
                       ),
                     ),
                   ),

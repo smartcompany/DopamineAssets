@@ -12,7 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Dopamine Assets';
 
   @override
-  String get homeHeaderTitleDecorated => '🔥 Dopamine Assets 🔥';
+  String get homeHeaderTitleDecorated => 'Dopamine Assets';
 
   @override
   String get navHome => 'Home';

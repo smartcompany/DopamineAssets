@@ -12,7 +12,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appTitle => '도파민 자산';
 
   @override
-  String get homeHeaderTitleDecorated => '🔥 도파민 자산 🔥';
+  String get homeHeaderTitleDecorated => '도파민 자산';
 
   @override
   String get navHome => '홈';

@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeHeaderTitleDecorated.
   ///
   /// In ko, this message translates to:
-  /// **'🔥 도파민 자산 🔥'**
+  /// **'도파민 자산'**
   String get homeHeaderTitleDecorated;
 
   /// No description provided for @navHome.
