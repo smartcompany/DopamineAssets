@@ -7,8 +7,9 @@
       "namespace": "android_app",
       "package_name": "com.smartcompany.dopamineAssets",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_RELEASE_UPLOAD_CERT_SHA256",
-        "REPLACE_WITH_DEBUG_CERT_SHA256_FOR_LOCAL_TEST"
+        "82:E3:AA:87:F7:1E:D0:F2:EA:A2:AC:31:F3:AF:6C:7E:1A:A4:A1:C3:0F:CE:5E:1B:97:CB:14:68:F6:D2:37:63",
+        "D9:15:FD:1C:A4:51:0E:C6:CF:01:EE:A7:04:6F:88:BC:09:FE:74:C6:85:A5:84:74:04:35:C3:E8:C8:66:D1:95",
+        "C9:39:6A:49:F7:F8:DE:A1:56:6A:35:A6:49:27:59:1A:EC:46:AB:46:00:8E:49:08:82:C9:65:24:E9:1E:E7:07"
       ]
     }
   }
