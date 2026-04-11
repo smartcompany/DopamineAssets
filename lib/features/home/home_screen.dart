@@ -101,6 +101,10 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Duration _rankingPollInterval = Duration(seconds: 5);
   static const Duration _filterApplyDebounce = Duration(milliseconds: 600);
 
+  /// 리스트를 이만큼 내리면 블레이징 타이틀 접기, 이만큼 올리면 다시 펼침(히스테리시스).
+  static const double _kHomeTitleCollapseScrollPx = 36;
+  static const double _kHomeTitleExpandScrollPx = 10;
+
   final ScrollController _homeScrollController = ScrollController();
   final GlobalKey _homeScrollableAreaKey = GlobalKey();
   final GlobalKey _keySectionUp = GlobalKey();
@@ -112,6 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// `up` | `down` | `interest` | `themes` | `market` — 관심 폭주 미노출 시 `interest` 제외.
   String _selectedDopamineSectionId = 'up';
   bool _programmaticDopamineSectionScroll = false;
+
+  /// 세로 스크롤 시 접힘 — 필터·섹션 탭은 유지.
+  bool _homeBlazingTitleCollapsed = false;
 
   Set<String>? _rankingClasses;
 
@@ -141,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _homeScrollController.addListener(_onHomeScrollForSectionTabs);
+    _homeScrollController.addListener(_onHomeScrollChanged);
     _pendingFilter = Set<String>.from(RankingFilterPrefs.allKeys);
     _marketFuture = DopamineApi.fetchMarketSummary();
     _bootstrapRankings();
@@ -212,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     _rankingPollTimer?.cancel();
     _filterApplyTimer?.cancel();
-    _homeScrollController.removeListener(_onHomeScrollForSectionTabs);
+    _homeScrollController.removeListener(_onHomeScrollChanged);
     _homeScrollController.dispose();
     super.dispose();
   }
@@ -262,6 +269,21 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectedDopamineSectionId = sections.any((e) => e.id == 'themes')
         ? 'themes'
         : sections.first.id;
+  }
+
+  void _onHomeScrollChanged() {
+    _syncHomeTitleCollapseFromScroll();
+    _onHomeScrollForSectionTabs();
+  }
+
+  void _syncHomeTitleCollapseFromScroll() {
+    if (!_homeScrollController.hasClients || !mounted) return;
+    final px = _homeScrollController.offset;
+    if (px >= _kHomeTitleCollapseScrollPx && !_homeBlazingTitleCollapsed) {
+      setState(() => _homeBlazingTitleCollapsed = true);
+    } else if (px <= _kHomeTitleExpandScrollPx && _homeBlazingTitleCollapsed) {
+      setState(() => _homeBlazingTitleCollapsed = false);
+    }
   }
 
   void _onHomeScrollForSectionTabs() {
@@ -797,21 +819,37 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(width: 48),
-                          Expanded(
-                            child: Center(
-                              child: _HomeBlazingTitle(
-                                text: l10n.homeHeaderTitleDecorated,
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 240),
+                        curve: Curves.easeOutCubic,
+                        alignment: Alignment.topCenter,
+                        clipBehavior: Clip.hardEdge,
+                        child: _homeBlazingTitleCollapsed
+                            ? const SizedBox.shrink()
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(width: 48),
+                                      Expanded(
+                                        child: Center(
+                                          child: _HomeBlazingTitle(
+                                            text: l10n
+                                                .homeHeaderTitleDecorated,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 48),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
                       ),
-                      const SizedBox(height: 12),
                       SizedBox(
                         height: 36,
                         width: double.infinity,
