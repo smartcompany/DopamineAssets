@@ -34,11 +34,7 @@ void _showInterestSurgeInfoDialog(BuildContext context) {
       title: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.bolt_rounded,
-            color: DopamineTheme.accentOrange,
-            size: 26,
-          ),
+          Icon(Icons.bolt_rounded, color: DopamineTheme.accentOrange, size: 26),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -85,6 +81,18 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+class _DopamineSectionSpec {
+  const _DopamineSectionSpec({
+    required this.id,
+    required this.label,
+    required this.key,
+  });
+
+  final String id;
+  final String label;
+  final GlobalKey key;
+}
+
 class _HomeScreenState extends State<HomeScreen> {
   static const int _rankingTopN = 10;
   static const int _rankingCollapsedVisible = 3;
@@ -92,6 +100,18 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _interestSurgeCollapsedVisible = 3;
   static const Duration _rankingPollInterval = Duration(seconds: 5);
   static const Duration _filterApplyDebounce = Duration(milliseconds: 600);
+
+  final ScrollController _homeScrollController = ScrollController();
+  final GlobalKey _homeScrollableAreaKey = GlobalKey();
+  final GlobalKey _keySectionUp = GlobalKey();
+  final GlobalKey _keySectionDown = GlobalKey();
+  final GlobalKey _keySectionInterest = GlobalKey();
+  final GlobalKey _keySectionThemes = GlobalKey();
+  final GlobalKey _keySectionMarket = GlobalKey();
+
+  /// `up` | `down` | `interest` | `themes` | `market` — 관심 폭주 미노출 시 `interest` 제외.
+  String _selectedDopamineSectionId = 'up';
+  bool _programmaticDopamineSectionScroll = false;
 
   Set<String>? _rankingClasses;
 
@@ -121,6 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _homeScrollController.addListener(_onHomeScrollForSectionTabs);
     _pendingFilter = Set<String>.from(RankingFilterPrefs.allKeys);
     _marketFuture = DopamineApi.fetchMarketSummary();
     _bootstrapRankings();
@@ -191,7 +212,115 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     _rankingPollTimer?.cancel();
     _filterApplyTimer?.cancel();
+    _homeScrollController.removeListener(_onHomeScrollForSectionTabs);
+    _homeScrollController.dispose();
     super.dispose();
+  }
+
+  List<_DopamineSectionSpec> _dopamineSections(AppLocalizations l10n) {
+    final s = <_DopamineSectionSpec>[
+      _DopamineSectionSpec(
+        id: 'up',
+        label: l10n.rankingsUpTitle,
+        key: _keySectionUp,
+      ),
+      _DopamineSectionSpec(
+        id: 'down',
+        label: l10n.rankingsDownTitle,
+        key: _keySectionDown,
+      ),
+    ];
+    if (_interestSurgeSlice().isNotEmpty) {
+      s.add(
+        _DopamineSectionSpec(
+          id: 'interest',
+          label: l10n.homeInterestSurgeTitle,
+          key: _keySectionInterest,
+        ),
+      );
+    }
+    s.add(
+      _DopamineSectionSpec(
+        id: 'themes',
+        label: l10n.sectionThemes,
+        key: _keySectionThemes,
+      ),
+    );
+    s.add(
+      _DopamineSectionSpec(
+        id: 'market',
+        label: l10n.marketSummaryTitle,
+        key: _keySectionMarket,
+      ),
+    );
+    return s;
+  }
+
+  void _repairDopamineSectionSelection(List<_DopamineSectionSpec> sections) {
+    if (sections.isEmpty) return;
+    if (sections.any((e) => e.id == _selectedDopamineSectionId)) return;
+    _selectedDopamineSectionId = sections.any((e) => e.id == 'themes')
+        ? 'themes'
+        : sections.first.id;
+  }
+
+  void _onHomeScrollForSectionTabs() {
+    if (!_homeScrollController.hasClients) return;
+    if (_programmaticDopamineSectionScroll) return;
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return;
+    final sections = _dopamineSections(l10n);
+    if (sections.isEmpty) return;
+
+    final vpCtx = _homeScrollableAreaKey.currentContext;
+    if (vpCtx == null) return;
+    final vp = vpCtx.findRenderObject() as RenderBox?;
+    if (vp == null || !vp.attached) return;
+    final vpTop = vp.localToGlobal(Offset.zero).dy;
+
+    var best = 0;
+    for (var i = 0; i < sections.length; i++) {
+      final hCtx = sections[i].key.currentContext;
+      if (hCtx == null) continue;
+      final box = hCtx.findRenderObject() as RenderBox?;
+      if (box == null || !box.attached) continue;
+      final top = box.localToGlobal(Offset.zero).dy;
+      if (top <= vpTop + 10) {
+        best = i;
+      }
+    }
+
+    final newId = sections[best].id;
+    if (newId != _selectedDopamineSectionId) {
+      setState(() => _selectedDopamineSectionId = newId);
+    }
+  }
+
+  void _onDopamineSectionTabTap(int index, List<_DopamineSectionSpec> sections) {
+    if (index < 0 || index >= sections.length) return;
+    final id = sections[index].id;
+    final key = sections[index].key;
+    setState(() {
+      _selectedDopamineSectionId = id;
+      _programmaticDopamineSectionScroll = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = key.currentContext;
+      if (ctx != null && mounted) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeOutCubic,
+          alignment: 0.0,
+        );
+      }
+      Future<void>.delayed(const Duration(milliseconds: 450), () {
+        if (mounted) {
+          setState(() => _programmaticDopamineSectionScroll = false);
+        }
+      });
+    });
   }
 
   void _logRankings(String message) {
@@ -411,9 +540,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final up = _topRankings(_upItems);
     final down = _topRankings(_downItems);
     if (up.isEmpty && down.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.homeRankingsShareEmptySnack)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.homeRankingsShareEmptySnack)));
       return;
     }
     final applied = _rankingClasses ?? _pendingFilter;
@@ -497,8 +626,9 @@ class _HomeScreenState extends State<HomeScreen> {
         : slice.sublist(0, _rankingCollapsedVisible);
     final orderKey = slice.map((e) => e.symbol).join('\u241e');
     final switcherKey = '$orderKey\u241f${expanded ? 'x' : 'c'}';
-    final expandAccentColor =
-        up ? DopamineTheme.neonGreen : DopamineTheme.accentRed;
+    final expandAccentColor = up
+        ? DopamineTheme.neonGreen
+        : DopamineTheme.accentRed;
 
     return [
       SliverToBoxAdapter(
@@ -555,9 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
         : raw;
   }
 
-  List<Widget> _animatedInterestSurgeSlivers({
-    required AppLocalizations l10n,
-  }) {
+  List<Widget> _animatedInterestSurgeSlivers({required AppLocalizations l10n}) {
     final slice = _interestSurgeSlice();
     if (slice.isEmpty) {
       return const [SliverToBoxAdapter(child: SizedBox.shrink())];
@@ -596,8 +724,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: expanded
                         ? l10n.homeRankingShowLessTooltip
                         : (InterestSurgeExpandAdGate.watchedAdThisSession
-                            ? l10n.homeRankingShowMoreTooltip
-                            : l10n.homeInterestSurgeShowMoreWithAd),
+                              ? l10n.homeRankingShowMoreTooltip
+                              : l10n.homeInterestSurgeShowMoreWithAd),
                     adUnlockHint:
                         !expanded &&
                         !InterestSurgeExpandAdGate.watchedAdThisSession,
@@ -613,12 +741,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           _interestSurgeAdLoading = true;
                         });
                         try {
-                          await InterestSurgeExpandAdGate
-                              .runAdBeforeFirstExpandIfNeeded();
+                          await InterestSurgeExpandAdGate.runAdBeforeFirstExpandIfNeeded();
                         } catch (e, st) {
-                          debugPrint(
-                            '[InterestSurge] ad gate error: $e\n$st',
-                          );
+                          debugPrint('[InterestSurge] ad gate error: $e\n$st');
                           InterestSurgeExpandAdGate.watchedAdThisSession = true;
                         } finally {
                           if (mounted) {
@@ -647,6 +772,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sections = _dopamineSections(l10n);
+    _repairDopamineSectionSelection(sections);
 
     return Stack(
       fit: StackFit.expand,
@@ -655,309 +782,349 @@ class _HomeScreenState extends State<HomeScreen> {
           child: IgnorePointer(child: const _PurpleGradientBackground()),
         ),
         Positioned.fill(
-          child: RefreshIndicator(
-            color: DopamineTheme.neonGreen,
-            onRefresh: _pullRefreshHomeForRefreshIndicator,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        _kHomeGutter,
-                        16,
-                        _kHomeGutter,
-                        _kHomeGutter,
-                      ),
-                      child: Column(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    _kHomeGutter,
+                    16,
+                    _kHomeGutter,
+                    _kHomeGutter,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const SizedBox(width: 48),
-                              Expanded(
-                                child: Center(
-                                  child: _HomeBlazingTitle(
-                                    text: l10n.homeHeaderTitleDecorated,
-                                  ),
-                                ),
+                          const SizedBox(width: 48),
+                          Expanded(
+                            child: Center(
+                              child: _HomeBlazingTitle(
+                                text: l10n.homeHeaderTitleDecorated,
                               ),
-                              const SizedBox(width: 48),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: 36,
-                            width: double.infinity,
-                            child: _HomeFilterScrollStrip(
-                              itemCount: RankingFilterPrefs.orderedKeys.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 8),
-                              itemBuilder: (context, index) {
-                                final key =
-                                    RankingFilterPrefs.orderedKeys[index];
-                                final label =
-                                    _assetClassBadgeLabel(l10n, key) ?? key;
-                                final selected = _pendingFilter.contains(key);
-                                return _FilterToggleChip(
-                                  label: label,
-                                  selected: selected,
-                                  onTap: () => _togglePendingFilter(key),
-                                );
-                              },
                             ),
                           ),
+                          const SizedBox(width: 48),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      _kHomeGutter,
-                      0,
-                      _kHomeGutter,
-                      8,
-                    ),
-                    child: _SectionTitle(
-                      icon: Icons.trending_up_rounded,
-                      iconColor: DopamineTheme.neonGreen,
-                      title: l10n.rankingsUpTitle,
-                      emphasize: true,
-                      trailing: IconButton(
-                        tooltip: l10n.homeRankingsShareTooltip,
-                        onPressed: _shareHomeRankings,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
-                        ),
-                        icon: Icon(
-                          Icons.ios_share_outlined,
-                          color: DopamineTheme.textPrimary,
-                          size: 22,
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 36,
+                        width: double.infinity,
+                        child: _HomeFilterScrollStrip(
+                          itemCount: RankingFilterPrefs.orderedKeys.length,
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final key = RankingFilterPrefs.orderedKeys[index];
+                            final label =
+                                _assetClassBadgeLabel(l10n, key) ?? key;
+                            final selected = _pendingFilter.contains(key);
+                            return _FilterToggleChip(
+                              label: label,
+                              selected: selected,
+                              onTap: () => _togglePendingFilter(key),
+                            );
+                          },
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                // 필터 적용·당겨서 새로고침 시에도 이전 랭킹이 남아 있으므로 `items == null` 조건은 쓰지 않음.
-                if (_rankingsLoading)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        _kHomeGutter,
-                        0,
-                        _kHomeGutter,
-                        10,
-                      ),
-                      child: const _HomeSectionProgressLine(),
-                    ),
-                  ),
-                ..._animatedRankingSlivers(up: true, l10n: l10n, theme: theme),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      _kHomeGutter,
-                      0,
-                      _kHomeGutter,
-                      8,
-                    ),
-                    child: _SectionTitle(
-                      icon: Icons.trending_down_rounded,
-                      iconColor: DopamineTheme.accentRed,
-                      title: l10n.rankingsDownTitle,
-                    ),
-                  ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.fromLTRB(_kHomeGutter, 0, _kHomeGutter, 10),
+                child: _HomeDopamineSectionTabStrip(
+                  sections: sections,
+                  selectedId: _selectedDopamineSectionId,
+                  onTap: (i) => _onDopamineSectionTabTap(i, sections),
                 ),
-                if (_rankingsLoading)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        _kHomeGutter,
-                        0,
-                        _kHomeGutter,
-                        10,
+              ),
+              Expanded(
+                child: ColoredBox(
+                  key: _homeScrollableAreaKey,
+                  color: Colors.transparent,
+                  child: RefreshIndicator(
+                    color: DopamineTheme.neonGreen,
+                    onRefresh: _pullRefreshHomeForRefreshIndicator,
+                    child: CustomScrollView(
+                      controller: _homeScrollController,
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
                       ),
-                      child: const _HomeSectionProgressLine(),
-                    ),
-                  ),
-                ..._animatedRankingSlivers(up: false, l10n: l10n, theme: theme),
-                if (_interestSurgeSlice().isNotEmpty) ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        _kHomeGutter,
-                        0,
-                        _kHomeGutter,
-                        8,
-                      ),
-                      child: _SectionTitle(
-                        icon: Icons.bolt_rounded,
-                        iconColor: DopamineTheme.accentOrange,
-                        title: l10n.homeInterestSurgeTitle,
-                        trailing: IconButton(
-                          tooltip: l10n.homeInterestSurgeInfoIconTooltip,
-                          onPressed: () => _showInterestSurgeInfoDialog(context),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 40,
-                            minHeight: 40,
-                          ),
-                          icon: Icon(
-                            Icons.info_outline_rounded,
-                            color: DopamineTheme.accentOrange.withValues(
-                              alpha: 0.92,
-                            ),
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  ..._animatedInterestSurgeSlivers(l10n: l10n),
-                ],
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      _kHomeGutter,
-                      0,
-                      _kHomeGutter,
-                      8,
-                    ),
-                    child: _SectionTitle(
-                      icon: Icons.hub_rounded,
-                      iconColor: DopamineTheme.purpleTop,
-                      title: l10n.sectionThemes,
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: FutureBuilder<List<ThemeItem>>(
-                    future: _hotThemesFuture,
-                    builder: (context, hotSnap) {
-                      return FutureBuilder<List<ThemeItem>>(
-                        future: _crashedThemesFuture,
-                        builder: (context, crashSnap) {
-                          final hotWait =
-                              hotSnap.connectionState ==
-                              ConnectionState.waiting;
-                          final crashWait =
-                              crashSnap.connectionState ==
-                              ConnectionState.waiting;
-                          if (!hotWait && !crashWait) {
-                            return const SizedBox.shrink();
-                          }
-                          return Padding(
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            key: _keySectionUp,
                             padding: const EdgeInsets.fromLTRB(
                               _kHomeGutter,
                               0,
                               _kHomeGutter,
-                              12,
+                              8,
                             ),
-                            child: const _HomeSectionProgressLine(),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      _kHomeGutter,
-                      0,
-                      _kHomeGutter,
-                      20,
-                    ),
-                    child: _GlassPanel(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _SubsectionTitle(title: l10n.themesHotTitle),
-                          const SizedBox(height: 10),
-                          FutureBuilder<List<ThemeItem>>(
-                            future: _hotThemesFuture,
-                            builder: (context, snapshot) => _buildThemeList(
-                              snapshot,
-                              l10n,
-                              theme,
-                              up: true,
+                            child: _SectionTitle(
+                              icon: Icons.trending_up_rounded,
+                              iconColor: DopamineTheme.neonGreen,
+                              title: l10n.rankingsUpTitle,
+                              emphasize: true,
+                              trailing: IconButton(
+                                tooltip: l10n.homeRankingsShareTooltip,
+                                onPressed: _shareHomeRankings,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 40,
+                                  minHeight: 40,
+                                ),
+                                icon: Icon(
+                                  Icons.ios_share_outlined,
+                                  color: DopamineTheme.textPrimary,
+                                  size: 22,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 18),
-                          _SubsectionTitle(title: l10n.themesCrashedTitle),
-                          const SizedBox(height: 10),
-                          FutureBuilder<List<ThemeItem>>(
-                            future: _crashedThemesFuture,
-                            builder: (context, snapshot) => _buildThemeList(
-                              snapshot,
-                              l10n,
-                              theme,
-                              up: false,
+                        ),
+                        if (_rankingsLoading)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                _kHomeGutter,
+                                0,
+                                _kHomeGutter,
+                                10,
+                              ),
+                              child: const _HomeSectionProgressLine(),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      _kHomeGutter,
-                      0,
-                      _kHomeGutter,
-                      20,
-                    ),
-                    child: _GlassPanel(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.marketSummaryTitle,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              color: DopamineTheme.textPrimary,
+                        ..._animatedRankingSlivers(
+                          up: true,
+                          l10n: l10n,
+                          theme: theme,
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            key: _keySectionDown,
+                            padding: const EdgeInsets.fromLTRB(
+                              _kHomeGutter,
+                              0,
+                              _kHomeGutter,
+                              8,
+                            ),
+                            child: _SectionTitle(
+                              icon: Icons.trending_down_rounded,
+                              iconColor: DopamineTheme.accentRed,
+                              title: l10n.rankingsDownTitle,
                             ),
                           ),
-                          const SizedBox(height: 14),
-                          FutureBuilder<MarketSummary>(
-                            future: _marketFuture,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const SizedBox(height: 12);
-                              }
-                              if (snapshot.hasError) {
-                                return Text(
-                                  l10n.errorLoadFailed,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: DopamineTheme.accentRed,
+                        ),
+                        if (_rankingsLoading)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                _kHomeGutter,
+                                0,
+                                _kHomeGutter,
+                                10,
+                              ),
+                              child: const _HomeSectionProgressLine(),
+                            ),
+                          ),
+                        ..._animatedRankingSlivers(
+                          up: false,
+                          l10n: l10n,
+                          theme: theme,
+                        ),
+                        if (_interestSurgeSlice().isNotEmpty) ...[
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              key: _keySectionInterest,
+                              padding: const EdgeInsets.fromLTRB(
+                                _kHomeGutter,
+                                0,
+                                _kHomeGutter,
+                                8,
+                              ),
+                              child: _SectionTitle(
+                                icon: Icons.bolt_rounded,
+                                iconColor: DopamineTheme.accentOrange,
+                                title: l10n.homeInterestSurgeTitle,
+                                trailing: IconButton(
+                                  tooltip:
+                                      l10n.homeInterestSurgeInfoIconTooltip,
+                                  onPressed: () =>
+                                      _showInterestSurgeInfoDialog(context),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
                                   ),
-                                );
-                              }
-                              final s = snapshot.data;
-                              if (s == null) {
-                                return Text(l10n.emptyState);
-                              }
-                              return _MarketSummaryGrid(l10n: l10n, summary: s);
+                                  icon: Icon(
+                                    Icons.info_outline_rounded,
+                                    color: DopamineTheme.accentOrange.withValues(
+                                      alpha: 0.92,
+                                    ),
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          ..._animatedInterestSurgeSlivers(l10n: l10n),
+                        ],
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            key: _keySectionThemes,
+                            padding: const EdgeInsets.fromLTRB(
+                              _kHomeGutter,
+                              0,
+                              _kHomeGutter,
+                              8,
+                            ),
+                            child: _SectionTitle(
+                              icon: Icons.hub_rounded,
+                              iconColor: DopamineTheme.purpleTop,
+                              title: l10n.sectionThemes,
+                            ),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: FutureBuilder<List<ThemeItem>>(
+                            future: _hotThemesFuture,
+                            builder: (context, hotSnap) {
+                              return FutureBuilder<List<ThemeItem>>(
+                                future: _crashedThemesFuture,
+                                builder: (context, crashSnap) {
+                                  final hotWait =
+                                      hotSnap.connectionState ==
+                                      ConnectionState.waiting;
+                                  final crashWait =
+                                      crashSnap.connectionState ==
+                                      ConnectionState.waiting;
+                                  if (!hotWait && !crashWait) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      _kHomeGutter,
+                                      0,
+                                      _kHomeGutter,
+                                      12,
+                                    ),
+                                    child: const _HomeSectionProgressLine(),
+                                  );
+                                },
+                              );
                             },
                           ),
-                        ],
-                      ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              _kHomeGutter,
+                              0,
+                              _kHomeGutter,
+                              20,
+                            ),
+                            child: _GlassPanel(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _SubsectionTitle(title: l10n.themesHotTitle),
+                                  const SizedBox(height: 10),
+                                  FutureBuilder<List<ThemeItem>>(
+                                    future: _hotThemesFuture,
+                                    builder: (context, snapshot) =>
+                                        _buildThemeList(
+                                      snapshot,
+                                      l10n,
+                                      theme,
+                                      up: true,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  _SubsectionTitle(
+                                    title: l10n.themesCrashedTitle,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  FutureBuilder<List<ThemeItem>>(
+                                    future: _crashedThemesFuture,
+                                    builder: (context, snapshot) =>
+                                        _buildThemeList(
+                                      snapshot,
+                                      l10n,
+                                      theme,
+                                      up: false,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            key: _keySectionMarket,
+                            padding: const EdgeInsets.fromLTRB(
+                              _kHomeGutter,
+                              0,
+                              _kHomeGutter,
+                              20,
+                            ),
+                            child: _GlassPanel(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.marketSummaryTitle,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w900,
+                                      color: DopamineTheme.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  FutureBuilder<MarketSummary>(
+                                    future: _marketFuture,
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const SizedBox(height: 12);
+                                      }
+                                      if (snapshot.hasError) {
+                                        return Text(
+                                          l10n.errorLoadFailed,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                            color: DopamineTheme.accentRed,
+                                          ),
+                                        );
+                                      }
+                                      final s = snapshot.data;
+                                      if (s == null) {
+                                        return Text(l10n.emptyState);
+                                      }
+                                      return _MarketSummaryGrid(
+                                        l10n: l10n,
+                                        summary: s,
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                      ],
                     ),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         if (_interestSurgeAdLoading)
@@ -1188,6 +1355,121 @@ class _FilterToggleChip extends StatelessWidget {
   }
 }
 
+/// 도파민 자산 블록 — 상승·하락·관심·테마·시장 요약 가로 탭 (필터 아래 고정).
+/// 선택 변경 시 해당 탭이 가로 리스트의 맨 왼쪽에 오도록 스크롤한다.
+class _HomeDopamineSectionTabStrip extends StatefulWidget {
+  const _HomeDopamineSectionTabStrip({
+    required this.sections,
+    required this.selectedId,
+    required this.onTap,
+  });
+
+  final List<_DopamineSectionSpec> sections;
+  final String selectedId;
+  final ValueChanged<int> onTap;
+
+  @override
+  State<_HomeDopamineSectionTabStrip> createState() =>
+      _HomeDopamineSectionTabStripState();
+}
+
+class _HomeDopamineSectionTabStripState extends State<_HomeDopamineSectionTabStrip> {
+  final Map<String, GlobalKey> _tabItemKeys = {};
+
+  GlobalKey _keyForSectionId(String id) =>
+      _tabItemKeys.putIfAbsent(id, GlobalKey.new);
+
+  @override
+  void didUpdateWidget(covariant _HomeDopamineSectionTabStrip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedId != oldWidget.selectedId) {
+      _scheduleScrollSelectedTabToStart();
+    }
+  }
+
+  void _scheduleScrollSelectedTabToStart() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final id = widget.selectedId;
+      final key = _tabItemKeys[id];
+      final ctx = key?.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        alignment: 0.0,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.sections.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: widget.sections.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final spec = widget.sections[index];
+          final selected = spec.id == widget.selectedId;
+          return KeyedSubtree(
+            key: _keyForSectionId(spec.id),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => widget.onTap(index),
+                borderRadius: BorderRadius.circular(999),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: selected
+                          ? DopamineTheme.neonGreen.withValues(alpha: 0.85)
+                          : Colors.white.withValues(alpha: 0.18),
+                      width: selected ? 1.5 : 1,
+                    ),
+                    color: selected
+                        ? DopamineTheme.neonGreen.withValues(alpha: 0.14)
+                        : Colors.white.withValues(alpha: 0.06),
+                  ),
+                  child: Center(
+                    child: Text(
+                      spec.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            fontWeight: selected
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: selected
+                                ? DopamineTheme.textPrimary
+                                : DopamineTheme.textSecondary,
+                            height: 1.1,
+                          ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _PurpleGradientBackground extends StatelessWidget {
   const _PurpleGradientBackground();
 
@@ -1246,7 +1528,9 @@ class _HomeExpandCollapsePill extends StatelessWidget {
     final borderGlow = adUnlockHint && !expanded
         ? accentColor.withValues(alpha: 0.72)
         : accentColor.withValues(alpha: 0.52);
-    final fillTop = accentColor.withValues(alpha: adUnlockHint && !expanded ? 0.22 : 0.14);
+    final fillTop = accentColor.withValues(
+      alpha: adUnlockHint && !expanded ? 0.22 : 0.14,
+    );
     final fillBottom = Colors.black.withValues(alpha: 0.4);
 
     return Padding(
@@ -1383,12 +1667,12 @@ class _HomeBlazingTitle extends StatelessWidget {
       letterSpacing: -0.9,
     );
     Text titleText(TextStyle style) => Text(
-          text,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          softWrap: false,
-          style: style,
-        );
+      text,
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      softWrap: false,
+      style: style,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1456,9 +1740,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final titleStyle =
-        (emphasize
-                ? theme.textTheme.headlineSmall
-                : theme.textTheme.titleLarge)
+        (emphasize ? theme.textTheme.headlineSmall : theme.textTheme.titleLarge)
             ?.copyWith(
               fontWeight: FontWeight.w900,
               letterSpacing: emphasize ? -0.6 : -0.3,
@@ -1467,9 +1749,7 @@ class _SectionTitle extends StatelessWidget {
               shadows: emphasize
                   ? [
                       Shadow(
-                        color: DopamineTheme.neonGreen.withValues(
-                          alpha: 0.35,
-                        ),
+                        color: DopamineTheme.neonGreen.withValues(alpha: 0.35),
                         blurRadius: 18,
                       ),
                       Shadow(
@@ -1490,16 +1770,8 @@ class _SectionTitle extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Flexible(
-                child: Text(
-                  title,
-                  style: titleStyle,
-                ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 2),
-                trailing!,
-              ],
+              Flexible(child: Text(title, style: titleStyle)),
+              if (trailing != null) ...[const SizedBox(width: 2), trailing!],
             ],
           ),
         ),
@@ -1971,10 +2243,7 @@ String _formatInterestDeltaForDisplay(double v) {
 }
 
 class _GlassInterestSurgeRow extends StatelessWidget {
-  const _GlassInterestSurgeRow({
-    required this.item,
-    required this.trendLabel,
-  });
+  const _GlassInterestSurgeRow({required this.item, required this.trendLabel});
 
   final InterestSurgeItem item;
   final String trendLabel;
@@ -2111,10 +2380,7 @@ class _GlassInterestSurgeRow extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              _formatInterestScoreForDisplay(item.score),
-              style: scoreStyle,
-            ),
+            Text(_formatInterestScoreForDisplay(item.score), style: scoreStyle),
             Text(
               trendLabel,
               style: theme.textTheme.labelSmall?.copyWith(
@@ -2160,10 +2426,7 @@ class _GlassInterestSurgeRow extends StatelessWidget {
         return ClipRRect(
           borderRadius: BorderRadius.circular(cardBorderRadius),
           child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: cardBlur,
-              sigmaY: cardBlur,
-            ),
+            filter: ImageFilter.blur(sigmaX: cardBlur, sigmaY: cardBlur),
             child: Container(
               padding: innerPad,
               decoration: BoxDecoration(
@@ -2194,18 +2457,13 @@ class _GlassInterestSurgeRow extends StatelessWidget {
       return ClipRRect(
         borderRadius: BorderRadius.circular(cardBorderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: cardBlur,
-            sigmaY: cardBlur,
-          ),
+          filter: ImageFilter.blur(sigmaX: cardBlur, sigmaY: cardBlur),
           child: Container(
             padding: innerPad,
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(cardBorderRadius),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: row,
           ),
