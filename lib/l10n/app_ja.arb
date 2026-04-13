@@ -1,0 +1,353 @@
+{
+  "@@locale": "ja",
+  "appTitle": "ドーパミン資産",
+  "homeHeaderTitleDecorated": "ドーパミン資産",
+  "navHome": "ホーム",
+  "actionLogin": "ログイン",
+  "navCommunity": "コミュニティ",
+  "favoritesEmpty": "お気に入りはまだ保存されていません。",
+  "favoritesSignInToSave": "このデバイスでお気に入りを保存して表示するにはサインインしてください。",
+  "navProfile": "材料形状",
+  "profileSignedInSection": "アカウント",
+  "profileAccountRefreshTooltip": "プロフィールとアクティビティを更新する",
+  "profileDisplayName": "表示名",
+  "profilePhotoTitle": "プロフィール写真",
+  "profilePhotoRemove": "写真を削除",
+  "profilePhotoSaved": "プロフィール写真を保存しました。",
+  "profilePhotoRemoved": "プロフィール写真を削除しました。",
+  "profileEmail": "メール",
+  "profileUid": "ユーザーID",
+  "profileNoEmail": "設定されていません（ソーシャルログイン）",
+  "profileLogout": "ログアウト",
+  "profileLogoutDone": "ログアウトしました",
+  "profileDeleteAccount": "口座を削除",
+  "profileDeleteTitle": "口座を削除",
+  "profileDeleteMessage": "これは元に戻せません。Firebaseアカウントとサインインは削除されます。",
+  "profileDeleteCancel": "取り消す",
+  "profileDeleteConfirm": "削除",
+  "profileDeleteDone": "アカウントを削除しました",
+  "profileRequiresRecentLogin": "もう一度サインインして、もう一度お試しください（セキュリティ）。",
+  "profileNotSignedIn": "あなたのアカウントにサインイン",
+  "profileSaveDisplayName": "保存",
+  "profileDisplayNameHint": "投稿に名前が表示される仕組み",
+  "profileDisplayNameInputPlaceholder": "表示名を入力",
+  "profileCheckDisplayNameDuplicate": "空室状況を確認する",
+  "profileDisplayNameEmpty": "表示名を入力してください。",
+  "profileDisplayNameCheckFirst": "保存する前に予約可能状況をご確認ください。",
+  "profileNicknameRequiredForCommunity": "プロフィールで表示名を設定します。",
+  "profilePushTitle": "プッシュ通知",
+  "profileSettingsTitle": "設定",
+  "profileSettingsLegalDisclosures": "データソースと免責事項",
+  "profilePushMaster": "すべての通知",
+  "profilePushSocialReply": "投稿/コメントへの返信",
+  "profilePushSocialLike": "コメントへの「いいね」",
+  "profilePushMarketDaily": "デイリーマーケットサマリー",
+  "profilePushHotMoverDiscussion": "ホット・ムーバー—活発なディスカッション",
+  "profileStatPosts": "投稿",
+  "profileStatFollowing": "フォロー中",
+  "profileStatFollowers": "フォロワー",
+  "profileStatBlocked": "ブロック済",
+  "profileBlockedTitle": "ブロック中のユーザー",
+  "profileBlockedListEmpty": "誰もブロックしていません。",
+  "profileUnblockAction": "ブロック解除",
+  "profileUnblockedDone": "解除済み",
+  "profileActivityTitle": "Activity - アクティビティ",
+  "profileActivityMyPost": "あなたの投稿",
+  "profileActivityPostOnAsset": "{assetName}に投稿",
+  "@profileActivityPostOnAsset": {
+    "placeholders": {
+      "assetName": {
+        "type": "String"
+      }
+    }
+  },
+  "profileActivityMyReply": "あなたの返信",
+  "profileActivityReplyOnPost": "投稿に返信する",
+  "profileActivityLikeReceived": "あなたのコメントにいいねする",
+  "profileActivityLikeGiven": "コメントにいいねしました",
+  "profileActivityEditPost": "編集",
+  "profileActivityDeletePost": "削除",
+  "profileActivityEditDialogTitle": "投稿の編集",
+  "profileActivityDeleteDialogTitle": "投稿を削除",
+  "profileActivityPostDeleted": "削除しました。",
+  "profileActivityPostUpdated": "保存しました。",
+  "profileFollowListEmpty": "ユーザーはまだいません",
+  "profileDisplayNameSaved": "表示名が更新されました。",
+  "profileDisplayNameTaken": "この表示名は既に使用されています。",
+  "profileDisplayNameDuplicateFromSocialTitle": "表示名",
+  "profileDisplayNameDuplicateFromSocialMessage": "サインインプロバイダの名前「{name}」はすでに使用されています。下に新しい名前を入力し、「予約可能状況を確認」、「保存」の順にタップ",
+  "@profileDisplayNameDuplicateFromSocialMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profileDisplayNameDuplicateFromSocialOk": "OK",
+  "privacyProcessingConsentTitle": "利用規約、コミュニティ、プライバシー",
+  "privacyProcessingConsentLead": "コミュニティやその他のユーザー生成コンテンツを含むサービスを使用するには、続行する前に以下をお読みになり、同意してください。",
+  "privacyProcessingConsentSectionPrivacy": "個人データ",
+  "privacyProcessingConsentSectionCommunity": "コミュニティ＆ユーザー生成コンテンツ（ UGC ）",
+  "privacyProcessingConsentUgcIntro": "投稿、コメント、その他のUGCにアクセスする前に、次のルールが適用されます。",
+  "privacyProcessingConsentBullet1": "収集されたデータ：アカウント識別子（ Firebase UID ）、提供された場合は電子メール、表示名とプロフィール写真、および投稿、コメント、ウォッチリストなどの使用を通じて生成された情報。",
+  "privacyProcessingConsentBullet2": "目的：識別、コミュニティとフィードの機能、サポート、不正使用の防止、サービスの改善。",
+  "privacyProcessingConsentBullet3": "保持：お客様がアカウントを削除すると、当社はデータを削除または匿名化します。ただし、法律でより長期の保持が義務付けられている場合を除きます。",
+  "privacyProcessingConsentUgcBullet1": "ゼロトレランス：不快なコンテンツは許可されていません。これには、違法なコンテンツ、ハラスメント、憎悪、同意のない性的コンテンツ、暴力、脅迫、スパム、詐欺、および同様の虐待が含まれます。",
+  "privacyProcessingConsentUgcBullet2": "虐待的なユーザーは容認されません。当社は、これらの規則に違反するコンテンツの削除、機能の制限、アカウントの一時停止または終了を行う場合があります。",
+  "privacyProcessingConsentUgcBullet3": "不快な投稿を報告したり、投稿やプロフィールのメニューからユーザーをブロックしたりすることができます。有害なコンテンツや行動を見つけた場合は、レポートを使用してブロックしてください。",
+  "privacyProcessingConsentCheckboxPrivacy": "私は、上記の個人データセクションに記載されているように、私の個人データの収集と使用に同意します。",
+  "privacyProcessingConsentCheckboxCommunity": "私は、不快なコンテンツや虐待的なユーザーに対するゼロトレランスを含む、上記のコミュニティとUGCの規則に同意します。",
+  "privacyProcessingConsentAgree": "同意して続行",
+  "privacyProcessingConsentDecline": "拒否する",
+  "profileFollowUnfollow": "フォロー解除",
+  "profileFollowTitleFollowing": "フォロー中",
+  "profileFollowTitleFollowers": "フォロワー",
+  "communityFollow": "フォロー",
+  "communityUnfollow": "フォロー解除",
+  "communityOpenAssetDetail": "アセットの詳細",
+  "communityMoreMenu": "増加",
+  "communityPostSeeMore": "もっと見る",
+  "communityShowOriginal": "原文を表示",
+  "communityShowTranslated": "翻訳を表示",
+  "communityReportPost": "レポート",
+  "communityBlockAuthor": "ユーザーをブロック",
+  "communityPostHiddenByReportNotice": "レポートを確認した後、この投稿は他のユーザーには非表示になっています。",
+  "communityBlockAuthorHint": "ブロックすると、このユーザーのフォローが解除され、投稿が非表示になります。",
+  "communityBlockAuthorMenuSubtitle": "ユーザー",
+  "communityReportPostMenuSubtitle": "この投稿",
+  "communityBlockAuthorShort": "ブロック",
+  "communityReportPostShort": "レポート",
+  "communityReportDialogTitle": "この投稿を報告",
+  "communityReportReasonHint": "理由 (オプション)",
+  "communityReportSend": "レポート",
+  "communityReportSheetTitle": "レポート",
+  "communityReportSheetSubtitle": "レポートの理由を選択してください。",
+  "communityReportReasonSpam": "スパムまたは広告",
+  "communityReportReasonAbuse": "ハラスメントまたは憎悪",
+  "communityReportReasonSexual": "性的なコンテンツ",
+  "communityReportReasonViolence": "暴力または脅迫",
+  "communityReportReasonOther": "その他",
+  "communityReportDetailHint": "その他の詳細（オプション）",
+  "communityReportSubmitButton": "レポートを送信",
+  "communityReportSubmitted": "ありがとうございます。レポートが送信されました。",
+  "communityBlockAuthorTitle": "このユーザーをブロック",
+  "communityBlockAuthorMessage": "{authorName}以降の投稿やこのプロフィールは表示されなくなります。",
+  "@communityBlockAuthorMessage": {
+    "placeholders": {
+      "authorName": {
+        "type": "String"
+      }
+    }
+  },
+  "communityUserBlocked": "ユーザーがブロックされました",
+  "communityLikeLogin": "いいねするにはサインインしてください。",
+  "communityLikeCount": "{count}",
+  "@communityLikeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "communityCommentCount": "{count}",
+  "@communityCommentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "communityPostDetailTitle": "役職",
+  "communityCommentsTitle": "コメント",
+  "communityWrite": "書き込み",
+  "communityComposeTitle": "新しい投稿",
+  "communityComposeSubmit": "役職",
+  "communityComposeOptionalTitle": "タイトル （オプション）",
+  "communityComposeTitleHint": "タイトルを追加するか、空白のままにしてください",
+  "communityComposeSymbolLabel": "記号",
+  "communityComposeThemePickerLabel": "テーマ",
+  "communityComposePickTheme": "テーマを選択してください",
+  "communityComposeSymbolHint": "例： TSLA、IBRX",
+  "communityComposeAssetClassLabel": "資産種類",
+  "communityComposeBodyLabel": "ボディ",
+  "communityComposeBodyHint": "スパム、広告、ハラスメント、または悪用は削除される可能性があります。繰り返しの違反により、アカウントが制限される可能性があります。ディスカッションは敬意を持って行ってください。",
+  "communityComposePhotosLabel": "写真",
+  "communityComposeNeedSymbol": "シンボルを選択",
+  "communityComposeNeedBody": "本文テキストを入力します。",
+  "communityComposePickSymbol": "シンボルを選択",
+  "communityComposeNoRankedSymbols": "このアセットタイプのランク付けされたシンボルはありません。ホームを開いてランキングを読み込み、もう一度お試しください。",
+  "communityComposeAddPhotoShort": "写真",
+  "communityComposeAddGifShort": "GIF",
+  "communityComposeGiphySearchHint": "Giphyを検索",
+  "communityComposeGiphyPoweredBy": "Powered by GIPHY",
+  "communityComposeGiphyTooLarge": "このファイルは5 MBを超えています。別のGIFを選択してください。",
+  "communityComposeGiphyDownloadError": "GIFを読み込めませんでした。もう一度やり直してください。",
+  "communityComposeGiphyRateLimited": "しばらくしてからもう一度お試しください。（レート制限）",
+  "communityComposeGiphyLoadError": "リストを読み込めませんでした。",
+  "communityComposeGiphyRetry": "再試行",
+  "communityComposeGiphyEmpty": "結果がありません。",
+  "communityComposeGiphyThumbError": "プレビューは利用できません",
+  "communityComposeEditTitle": "投稿の編集",
+  "communityComposeSave": "保存",
+  "communityComposeEditReplyTitle": "返事を編集する",
+  "ugcBannedWordsMessage": "このテキストには、許可されていない文言が含まれています。{term}",
+  "@ugcBannedWordsMessage": {
+    "placeholders": {
+      "term": {
+        "type": "String"
+      }
+    }
+  },
+  "navRankings": "ランキング",
+  "navThemes": "テーマ",
+  "navMarket": "Market",
+  "homeRankingApplyFiltersTooltip": "選択したフィルターをランキングに適用",
+  "rankingsUpTab": "サージング 🔥",
+  "rankingsDownTab": "クラッシュしている",
+  "rankingsUpTitle": "今日最もワイルドな獲得者",
+  "rankingsDownTitle": "今日の最大の敗者",
+  "homeRankingsShareTooltip": "ランキングをシェアする",
+  "homeRankingsShareEmptySnack": "共有できるランキングはまだありません。",
+  "homeRankingsShareFiltersLine": "フィルター： {filters}",
+  "@homeRankingsShareFiltersLine": {
+    "placeholders": {
+      "filters": {
+        "type": "String"
+      }
+    }
+  },
+  "homeInterestSurgeTitle": "本日の金利の急騰",
+  "homeInterestSurgeInfoIconTooltip": "このリストの作成方法",
+  "homeInterestSurgeInfoTitle": "本日の金利上昇について",
+  "homeInterestSurgeInfoBody": "このリストはAIを使用して作成されています。最近の市場状況、ニュース、投資家の利益シグナルから注目に値すると思われる米国と韓国の株式、暗号通貨、および商品を選択し、それぞれの相対的な0〜100の「トレンド」スコアを推定します。\n\nスコアは1日に1回処理され、サーバーに保存されます。アプリには最新のスナップショットが表示されます。\n\n情報のみ-投資アドバイスではなく、リターンの保証ではありません。",
+  "homeInterestSurgeInfoDismiss": "OK",
+  "homeTrendScoreLabel": "トレンド",
+  "homeRankingShowMoreTooltip": "もっと表示",
+  "homeInterestSurgeShowMoreWithAd": "広告を視聴して詳細を表示",
+  "homeRankingShowLessTooltip": "簡易表示",
+  "themesHotTitle": "今日の最も人気のあるテーマ",
+  "themesCrashedTitle": "潰されたテーマ",
+  "themesEmergingTitle": "急上昇中のトレンドテーマ",
+  "marketSummaryTitle": "市場の概要",
+  "kimchiPremiumLabel": "キムチプレミアム",
+  "exchangeRateLabel": "換金率",
+  "marketStatusLabel": "市場の雰囲気",
+  "dopamineScoreLabel": "ドーパミンスコア",
+  "errorLoadFailed": "データを読み込めませんでした。",
+  "errorNoApi": "APIベースURLが設定されていません。実行時に-- dart - define = API_BASE_URL =...を渡します。",
+  "retry": "再試行",
+  "loading": "読み込み中...",
+  "emptyState": "表示するデータがありません",
+  "assetName": "アセット",
+  "priceChangePct": "価格の変更",
+  "volumeChangePct": "音量変化",
+  "summaryLine": "要約",
+  "themeName": "テーマ",
+  "themeScore": "テーマスコア",
+  "stockCount": "シンボル",
+  "sectionRankings": "上・下",
+  "sectionThemes": "テーマランキング",
+  "sectionMarket": "市場の概要",
+  "notAvailable": "N/A",
+  "homeTopSurgeBadge": "トップ10",
+  "homeKicker": "動くものだけ。今お金が流れる場所。",
+  "homeLiveBadge": "ライブ",
+  "homeThemeStockLine": "{count}在庫",
+  "@homeThemeStockLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assetClassBadgeUsStock": "米国株",
+  "assetClassBadgeKrStock": "韓国株",
+  "assetClassBadgeJpStock": "日本株",
+  "assetClassBadgeCnStock": "中国株",
+  "assetClassJpStock": "日本株",
+  "assetClassCnStock": "中国A株",
+  "assetClassBadgeCrypto": "暗号通貨",
+  "assetClassBadgeCommodity": "商品",
+  "assetClassBadgeTheme": "テーマ",
+  "communityComposeThemeNameHint": "テーマ名（例：エネルギー＆コモディティ）",
+  "rankingFilterTitle": "アセットクラス",
+  "rankingFilterConfirm": "OK",
+  "rankingFilterCancel": "取り消す",
+  "rankingFilterNeedOne": "少なくとも1日を選択してください。",
+  "assetDetailMissingClass": "このアイテムの資産クラスがありません。",
+  "assetDetailSectionProfile": "材料形状",
+  "assetDetailMarketCap": "時価総額",
+  "assetDetailMarketCapKrwMillions": "{amount}百万ウォン",
+  "@assetDetailMarketCapKrwMillions": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetDetailMarketCapKrwWonFull": "{amount}ウォン",
+  "@assetDetailMarketCapKrwWonFull": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetDetailMarketCapRank": "時価総額",
+  "assetDetailCurrentPrice": "価格（米ドル）",
+  "assetDetailCryptoProfileMore": "増加",
+  "assetDetailCryptoProfileLess": "減少",
+  "assetDetailSector": "セクター",
+  "assetDetailIndustry": "業種",
+  "assetDetailExchange": "取引所",
+  "assetDetailCurrency": "通貨",
+  "assetDetailPair": "ペア",
+  "assetDetailAbout": "情報",
+  "assetDetailWebsite": "Web サイト",
+  "assetDetailNotAvailable": "—",
+  "assetDetailOpenLinkFailed": "リンクを開けませんでした。",
+  "assetDetailPriceChange": "価格変更（フィード）",
+  "communitySortLatest": "最新",
+  "communitySortPopular": "人気",
+  "communityReplyCount": "返信： {count}",
+  "@communityReplyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assetPostsTitle": "最近の反応",
+  "assetPostsEmpty": "一番乗りで投稿しましょう。",
+  "assetPostsPlaceholder": "コメントをどうぞ",
+  "assetPostsReplyPlaceholder": "返信する",
+  "assetPostsPublish": "役職",
+  "assetPostsReply": "返信する",
+  "assetPostsReplying": "返信中…",
+  "assetPostsCancelReply": "取り消す",
+  "assetPostsSendError": "投稿を公開できませんでした。",
+  "assetDetailMoveSummary": "本日のムーブ（ AI ）",
+  "assetDetailMoveSummaryDisclaimer": "AIは公人のみから生成され、投資アドバイスではありません。",
+  "assetDetailNewsTitle": "ヘッドライン",
+  "assetDetailNewsEmpty": "この検索の最近の見出しはありません。",
+  "assetDetailNewsError": "見出しを読み込めませんでした。接続を確認するか、もう一度お試しください。",
+  "assetDetailNewsDisclaimer": "サードパーティの情報源からの見出し-タイトルとリンクのみ。",
+  "assetDetailNewsShowMore": "もっと表示",
+  "assetDetailNewsShowLess": "簡易表示",
+  "assetDetailNewsWatchAdAiAnalysis": "広告を見る・AIニュース解析",
+  "assetDetailOpenCommunity": "コミュニティ",
+  "communitySearchHint": "投稿内の単語を検索（または） …",
+  "assetDetailOpenChart": "チャートを表示する",
+  "assetChartRange1mo": "1ヶ月",
+  "assetChartRange3mo": "3ヶ月",
+  "assetChartRange1y": "1年",
+  "assetChartFootnote": "Yahoo （サーバー）経由の毎日のキャンドル。投資アドバイスではありません。",
+  "themeDetailChartTitle": "テーマ平均（正規化）",
+  "themeDetailChartFootnote": "合成指数：各シンボルは、範囲内の最初のバーで100にリベースし、暦日で平均化されます。サーバー経由で毎日Yahoo。投資アドバイスではありません。",
+  "accountSuspendedBanner": "現在、コミュニティ内でアカウントを投稿、編集、削除、返信することはできません。",
+  "accountSuspendedSnack": "このアカウントはコミュニティ活動に制限されています。",
+  "shareSheetKakaoTalk": "カカオトークで共有",
+  "shareSheetSystemShare": "共有",
+  "shareSheetCopyLink": "リンクをコピー",
+  "shareSheetCopied": "コピーしました"
+}
