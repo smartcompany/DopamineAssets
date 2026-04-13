@@ -1374,15 +1374,24 @@ class _FilterToggleChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: selected
-                ? DopamineTheme.neonGreen.withValues(alpha: 0.45)
-                : Colors.white.withValues(alpha: 0.08),
+                ? const Color(0xFF4A2F7A).withValues(alpha: 0.92)
+                : const Color(0xFF21183A).withValues(alpha: 0.78),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
-                  ? DopamineTheme.neonGreen.withValues(alpha: 0.95)
-                  : Colors.white.withValues(alpha: 0.22),
-              width: selected ? 1.6 : 1,
+                  ? const Color(0xFFD0A7FF).withValues(alpha: 0.90)
+                  : Colors.white.withValues(alpha: 0.14),
+              width: selected ? 1.2 : 1,
             ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFB97AFF).withValues(alpha: 0.25),
+                      blurRadius: 14,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
           child: Text(
             label,
@@ -1396,8 +1405,8 @@ class _FilterToggleChip extends StatelessWidget {
               height: 1.0,
               letterSpacing: -0.1,
               color: selected
-                  ? const Color(0xFF0A0A0A)
-                  : DopamineTheme.textSecondary,
+                  ? const Color(0xFFF9F2FF)
+                  : DopamineTheme.textSecondary.withValues(alpha: 0.95),
             ),
           ),
         ),
