@@ -12,6 +12,7 @@ import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/config/api_config.dart';
 import '../../core/formatting/percent_format.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/translation/news_title_translator.dart';
 import '../../data/ranking_filter_prefs.dart';
 import '../../data/models/market_summary.dart';
 import '../../data/models/interest_surge_item.dart';
@@ -1374,19 +1375,19 @@ class _FilterToggleChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: selected
-                ? const Color(0xFF4A2F7A).withValues(alpha: 0.92)
-                : const Color(0xFF21183A).withValues(alpha: 0.78),
+                ? const Color(0xFFB85A17).withValues(alpha: 0.92)
+                : const Color(0xFF2E1B11).withValues(alpha: 0.80),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: selected
-                  ? const Color(0xFFD0A7FF).withValues(alpha: 0.90)
+                  ? const Color(0xFFFFC27A).withValues(alpha: 0.92)
                   : Colors.white.withValues(alpha: 0.14),
               width: selected ? 1.2 : 1,
             ),
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: const Color(0xFFB97AFF).withValues(alpha: 0.25),
+                      color: const Color(0xFFFF8A3D).withValues(alpha: 0.30),
                       blurRadius: 14,
                       offset: const Offset(0, 3),
                     ),
@@ -1405,7 +1406,7 @@ class _FilterToggleChip extends StatelessWidget {
               height: 1.0,
               letterSpacing: -0.1,
               color: selected
-                  ? const Color(0xFFF9F2FF)
+                  ? const Color(0xFFFFF3E0)
                   : DopamineTheme.textSecondary.withValues(alpha: 0.95),
             ),
           ),
@@ -2794,41 +2795,107 @@ class _GlassThemeRow extends StatelessWidget {
   }
 }
 
-class _MarketSummaryGrid extends StatelessWidget {
+class _MarketSummaryGrid extends StatefulWidget {
   const _MarketSummaryGrid({required this.l10n, required this.summary});
 
   final AppLocalizations l10n;
   final MarketSummary summary;
 
   @override
+  State<_MarketSummaryGrid> createState() => _MarketSummaryGridState();
+}
+
+class _MarketSummaryGridState extends State<_MarketSummaryGrid> {
+  Future<_HomeLocalizedSummary>? _future;
+  String? _key;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensureLocalizedFuture();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MarketSummaryGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _ensureLocalizedFuture();
+  }
+
+  void _ensureLocalizedFuture() {
+    final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+    final bodyEn = widget.summary.briefingEn?.trim() ?? '';
+    final attrEn = widget.summary.attributionEn?.trim() ?? '';
+    final nextKey = '$lang|$bodyEn|$attrEn';
+    if (_key == nextKey && _future != null) return;
+    _key = nextKey;
+    _future = _buildLocalizedSummary(lang);
+  }
+
+  Future<_HomeLocalizedSummary> _buildLocalizedSummary(String lang) async {
+    if (lang.startsWith('en')) {
+      return _HomeLocalizedSummary(
+        body: widget.summary.bodyForLanguageCode(lang),
+        note: widget.summary.attributionForLanguageCode(lang),
+      );
+    }
+    final sourceBody = widget.summary.briefingEn?.trim() ?? '';
+    final sourceAttr = widget.summary.attributionEn?.trim() ?? '';
+    if (sourceBody.isEmpty) {
+      return _HomeLocalizedSummary(
+        body: widget.summary.bodyForLanguageCode(lang),
+        note: widget.summary.attributionForLanguageCode(lang),
+      );
+    }
+    final body = await translateTextForAppLocale(sourceBody, lang);
+    final note = sourceAttr.isNotEmpty
+        ? await translateTextForAppLocale(sourceAttr, lang)
+        : null;
+    return _HomeLocalizedSummary(body: body, note: note);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final lang = Localizations.localeOf(context).languageCode;
-    final body = summary.bodyForLanguageCode(lang);
-    final note = summary.attributionForLanguageCode(lang);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          body.isNotEmpty ? body : l10n.notAvailable,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            height: 1.5,
-            color: DopamineTheme.textPrimary,
-          ),
-        ),
-        if (note != null && note.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            note,
-            style: theme.textTheme.labelSmall?.copyWith(
-              height: 1.4,
-              color: DopamineTheme.textSecondary,
+    final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+    final fallbackBody = widget.summary.bodyForLanguageCode(lang);
+    final fallbackNote = widget.summary.attributionForLanguageCode(lang);
+    return FutureBuilder<_HomeLocalizedSummary>(
+      future: _future,
+      builder: (context, snapshot) {
+        final localized = snapshot.data;
+        final body = localized?.body ?? fallbackBody;
+        final note = localized?.note ?? fallbackNote;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              body.isNotEmpty ? body : widget.l10n.notAvailable,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.5,
+                color: DopamineTheme.textPrimary,
+              ),
             ),
-          ),
-        ],
-      ],
+            if (note != null && note.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                note,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  height: 1.4,
+                  color: DopamineTheme.textSecondary,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
+}
+
+final class _HomeLocalizedSummary {
+  const _HomeLocalizedSummary({required this.body, this.note});
+  final String body;
+  final String? note;
 }
 
 class _InlineError extends StatelessWidget {
