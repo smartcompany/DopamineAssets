@@ -607,6 +607,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
         return l10n.assetClassBadgeUsStock;
       case 'kr_stock':
         return l10n.assetClassBadgeKrStock;
+      case 'jp_stock':
+        return l10n.assetClassBadgeJpStock;
+      case 'cn_stock':
+        return l10n.assetClassBadgeCnStock;
       case 'crypto':
         return l10n.assetClassBadgeCrypto;
       case 'commodity':

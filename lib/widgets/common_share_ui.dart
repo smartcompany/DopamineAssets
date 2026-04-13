@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/dopamine_theme.dart';
 
 /// 앱 공용 공유 옵션 시트
@@ -24,6 +25,7 @@ abstract final class CommonShareUI {
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
         final textTheme = Theme.of(ctx).textTheme;
         return SafeArea(
           child: Padding(
@@ -45,7 +47,10 @@ abstract final class CommonShareUI {
                     Icons.chat_bubble_rounded,
                     color: Colors.yellow,
                   ),
-                  title: Text('카카오톡 공유', style: textTheme.titleMedium),
+                  title: Text(
+                    l10n.shareSheetKakaoTalk,
+                    style: textTheme.titleMedium,
+                  ),
                   onTap: () async {
                     Navigator.of(ctx).pop();
                           final kakaoText = _mergeTextAndUrl(shareText, linkUrl);
@@ -66,7 +71,10 @@ abstract final class CommonShareUI {
                     Icons.share_outlined,
                     color: DopamineTheme.neonGreen,
                   ),
-                  title: Text('기본 공유', style: textTheme.titleMedium),
+                  title: Text(
+                    l10n.shareSheetSystemShare,
+                    style: textTheme.titleMedium,
+                  ),
                   onTap: () async {
                     Navigator.of(ctx).pop();
                     await _shareTextCompat(
@@ -77,7 +85,10 @@ abstract final class CommonShareUI {
                 ),
                 ListTile(
                   leading: const Icon(Icons.copy_rounded, color: Colors.white70),
-                  title: Text('링크 복사', style: textTheme.titleMedium),
+                  title: Text(
+                    l10n.shareSheetCopyLink,
+                    style: textTheme.titleMedium,
+                  ),
                   onTap: () async {
                     Navigator.of(ctx).pop();
                     await ShareService.copyToClipboard(
@@ -85,7 +96,7 @@ abstract final class CommonShareUI {
                     );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('복사되었습니다')),
+                        SnackBar(content: Text(l10n.shareSheetCopied)),
                       );
                     }
                   },

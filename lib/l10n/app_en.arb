@@ -107,6 +107,8 @@
   "communityOpenAssetDetail": "Asset details",
   "communityMoreMenu": "More",
   "communityPostSeeMore": "See more >",
+  "communityShowOriginal": "Show original",
+  "communityShowTranslated": "Show translation",
   "communityReportPost": "Report",
   "communityBlockAuthor": "Block user",
   "communityPostHiddenByReportNotice": "This post is hidden from other users after a report review.",
@@ -260,6 +262,10 @@
   },
   "assetClassBadgeUsStock": "US stock",
   "assetClassBadgeKrStock": "Korea",
+  "assetClassBadgeJpStock": "Japan",
+  "assetClassBadgeCnStock": "China",
+  "assetClassJpStock": "Japan stocks",
+  "assetClassCnStock": "China A-shares",
   "assetClassBadgeCrypto": "Crypto",
   "assetClassBadgeCommodity": "Commodity",
   "assetClassBadgeTheme": "Theme",
@@ -339,5 +345,9 @@
   "themeDetailChartTitle": "Theme average (normalized)",
   "themeDetailChartFootnote": "Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice.",
   "accountSuspendedBanner": "Your account cannot post, edit, delete, or reply in the community right now.",
-  "accountSuspendedSnack": "This account is restricted from community activity."
+  "accountSuspendedSnack": "This account is restricted from community activity.",
+  "shareSheetKakaoTalk": "Share to KakaoTalk",
+  "shareSheetSystemShare": "System share",
+  "shareSheetCopyLink": "Copy link",
+  "shareSheetCopied": "Copied"
 }

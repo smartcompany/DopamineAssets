@@ -145,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<ThemeItem>> _crashedThemesFuture;
   late Future<MarketSummary> _marketFuture;
   String? _themeLocaleKey;
+  bool _rankingsBootstrapped = false;
 
   @override
   void initState() {
@@ -152,18 +153,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _homeScrollController.addListener(_onHomeScrollChanged);
     _pendingFilter = Set<String>.from(RankingFilterPrefs.allKeys);
     _marketFuture = DopamineApi.fetchMarketSummary();
-    _bootstrapRankings();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final lang = Localizations.localeOf(context).languageCode;
-    if (_themeLocaleKey == lang) return;
-    _themeLocaleKey = lang;
-    _hotThemesFuture = DopamineApi.fetchThemes('hot', locale: lang);
-    _crashedThemesFuture = DopamineApi.fetchThemes('crashed', locale: lang);
-    setState(() {});
+    if (_themeLocaleKey != lang) {
+      _themeLocaleKey = lang;
+      _hotThemesFuture = DopamineApi.fetchThemes('hot', locale: lang);
+      _crashedThemesFuture = DopamineApi.fetchThemes('crashed', locale: lang);
+      setState(() {});
+    }
+    if (!_rankingsBootstrapped) {
+      _rankingsBootstrapped = true;
+      unawaited(_bootstrapRankings());
+    }
   }
 
   /// 랭킹 + 핫/급락 테마 + 시장 요약을 한 번에 갱신 (당겨서 새로고침·초기 부트스트랩 공통)
@@ -353,7 +358,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _bootstrapRankings() async {
-    final c = await RankingFilterPrefs.load();
+    final locale = Localizations.localeOf(context).languageCode;
+    final c = await RankingFilterPrefs.load(locale: locale);
     if (!mounted) return;
     setState(() {
       _rankingClasses = c;
@@ -388,7 +394,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refreshRankings({bool showLoadingIndicator = false}) async {
     final id = ++_rankingRequestId;
-    final c = _rankingClasses ?? await RankingFilterPrefs.load();
+    final locale = Localizations.localeOf(context).languageCode;
+    final c = _rankingClasses ?? await RankingFilterPrefs.load(locale: locale);
     _logRankings('request #$id start (include=${c.join(",")})');
     if (showLoadingIndicator && mounted) {
       setState(() => _rankingsLoading = true);
@@ -400,7 +407,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       if (!mounted) return;
-      final locale = Localizations.localeOf(context).languageCode;
       final results = await Future.wait([
         DopamineApi.fetchRankingsUp(includeAssetClasses: c, locale: locale),
         DopamineApi.fetchRankingsDown(includeAssetClasses: c, locale: locale),
@@ -855,11 +861,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 36,
                         width: double.infinity,
                         child: _HomeFilterScrollStrip(
-                          itemCount: RankingFilterPrefs.orderedKeys.length,
+                          itemCount:
+                              RankingFilterPrefs.orderedKeysForLocale(
+                                l10n.localeName,
+                              ).length,
                           separatorBuilder: (_, _) =>
                               const SizedBox(width: 8),
                           itemBuilder: (context, index) {
-                            final key = RankingFilterPrefs.orderedKeys[index];
+                            final keys = RankingFilterPrefs.orderedKeysForLocale(
+                              l10n.localeName,
+                            );
+                            final key = keys[index];
                             final label =
                                 _assetClassBadgeLabel(l10n, key) ?? key;
                             final selected = _pendingFilter.contains(key);
@@ -1957,6 +1969,10 @@ String? _assetClassBadgeLabel(AppLocalizations l10n, String? assetClass) {
       return l10n.assetClassBadgeUsStock;
     case 'kr_stock':
       return l10n.assetClassBadgeKrStock;
+    case 'jp_stock':
+      return l10n.assetClassBadgeJpStock;
+    case 'cn_stock':
+      return l10n.assetClassBadgeCnStock;
     case 'crypto':
       return l10n.assetClassBadgeCrypto;
     case 'commodity':
@@ -1976,6 +1992,10 @@ Color _assetClassBadgeColor(String? assetClass) {
       return const Color(0xFF81D4FA);
     case 'kr_stock':
       return const Color(0xFFCE93D8);
+    case 'jp_stock':
+      return const Color(0xFF90CAF9);
+    case 'cn_stock':
+      return const Color(0xFFA5D6A7);
     case 'commodity':
       return const Color(0xFFFFD54F);
     case 'theme':

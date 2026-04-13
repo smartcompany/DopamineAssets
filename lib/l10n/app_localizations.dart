@@ -6,7 +6,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
+import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,1586 +97,1648 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
+    Locale('ja'),
     Locale('ko'),
+    Locale('zh'),
   ];
 
   /// No description provided for @appTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'도파민 자산'**
+  /// In en, this message translates to:
+  /// **'Dopamine Assets'**
   String get appTitle;
 
   /// No description provided for @homeHeaderTitleDecorated.
   ///
-  /// In ko, this message translates to:
-  /// **'도파민 자산'**
+  /// In en, this message translates to:
+  /// **'Dopamine Assets'**
   String get homeHeaderTitleDecorated;
 
   /// No description provided for @navHome.
   ///
-  /// In ko, this message translates to:
-  /// **'홈'**
+  /// In en, this message translates to:
+  /// **'Home'**
   String get navHome;
 
   /// No description provided for @actionLogin.
   ///
-  /// In ko, this message translates to:
-  /// **'로그인'**
+  /// In en, this message translates to:
+  /// **'Log in'**
   String get actionLogin;
 
   /// No description provided for @navCommunity.
   ///
-  /// In ko, this message translates to:
-  /// **'커뮤니티'**
+  /// In en, this message translates to:
+  /// **'Community'**
   String get navCommunity;
 
   /// No description provided for @favoritesEmpty.
   ///
-  /// In ko, this message translates to:
-  /// **'관심 자산이 없습니다.'**
+  /// In en, this message translates to:
+  /// **'No saved favorites yet.'**
   String get favoritesEmpty;
 
   /// No description provided for @favoritesSignInToSave.
   ///
-  /// In ko, this message translates to:
-  /// **'로그인하면 이 기기에서 관심 종목을 저장하고 볼 수 있습니다.'**
+  /// In en, this message translates to:
+  /// **'Sign in to save and view favorites on this device.'**
   String get favoritesSignInToSave;
 
   /// No description provided for @navProfile.
   ///
-  /// In ko, this message translates to:
-  /// **'프로필'**
+  /// In en, this message translates to:
+  /// **'Profile'**
   String get navProfile;
 
   /// No description provided for @profileSignedInSection.
   ///
-  /// In ko, this message translates to:
-  /// **'계정'**
+  /// In en, this message translates to:
+  /// **'Account'**
   String get profileSignedInSection;
 
   /// No description provided for @profileAccountRefreshTooltip.
   ///
-  /// In ko, this message translates to:
-  /// **'프로필·활동 새로고침'**
+  /// In en, this message translates to:
+  /// **'Refresh profile and activity'**
   String get profileAccountRefreshTooltip;
 
   /// No description provided for @profileDisplayName.
   ///
-  /// In ko, this message translates to:
-  /// **'닉네임'**
+  /// In en, this message translates to:
+  /// **'Display name'**
   String get profileDisplayName;
 
   /// No description provided for @profilePhotoTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'프로필 사진'**
+  /// In en, this message translates to:
+  /// **'Profile photo'**
   String get profilePhotoTitle;
 
   /// No description provided for @profilePhotoRemove.
   ///
-  /// In ko, this message translates to:
-  /// **'사진 삭제'**
+  /// In en, this message translates to:
+  /// **'Remove photo'**
   String get profilePhotoRemove;
 
   /// No description provided for @profilePhotoSaved.
   ///
-  /// In ko, this message translates to:
-  /// **'프로필 사진을 저장했습니다.'**
+  /// In en, this message translates to:
+  /// **'Profile photo saved.'**
   String get profilePhotoSaved;
 
   /// No description provided for @profilePhotoRemoved.
   ///
-  /// In ko, this message translates to:
-  /// **'프로필 사진을 삭제했습니다.'**
+  /// In en, this message translates to:
+  /// **'Profile photo removed.'**
   String get profilePhotoRemoved;
 
   /// No description provided for @profileEmail.
   ///
-  /// In ko, this message translates to:
-  /// **'이메일'**
+  /// In en, this message translates to:
+  /// **'Email'**
   String get profileEmail;
 
   /// No description provided for @profileUid.
   ///
-  /// In ko, this message translates to:
-  /// **'사용자 ID'**
+  /// In en, this message translates to:
+  /// **'User ID'**
   String get profileUid;
 
   /// No description provided for @profileNoEmail.
   ///
-  /// In ko, this message translates to:
-  /// **'없음 (소셜 로그인)'**
+  /// In en, this message translates to:
+  /// **'Not set (social login)'**
   String get profileNoEmail;
 
   /// No description provided for @profileLogout.
   ///
-  /// In ko, this message translates to:
-  /// **'로그아웃'**
+  /// In en, this message translates to:
+  /// **'Log out'**
   String get profileLogout;
 
   /// No description provided for @profileLogoutDone.
   ///
-  /// In ko, this message translates to:
-  /// **'로그아웃했습니다.'**
+  /// In en, this message translates to:
+  /// **'Signed out.'**
   String get profileLogoutDone;
 
   /// No description provided for @profileDeleteAccount.
   ///
-  /// In ko, this message translates to:
-  /// **'탈퇴하기'**
+  /// In en, this message translates to:
+  /// **'Delete account'**
   String get profileDeleteAccount;
 
   /// No description provided for @profileDeleteTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'탈퇴할까요?'**
+  /// In en, this message translates to:
+  /// **'Delete account?'**
   String get profileDeleteTitle;
 
   /// No description provided for @profileDeleteMessage.
   ///
-  /// In ko, this message translates to:
-  /// **'되돌릴 수 없습니다. Firebase 계정과 로그인 정보가 삭제됩니다.'**
+  /// In en, this message translates to:
+  /// **'This cannot be undone. Your Firebase account and sign-in will be removed.'**
   String get profileDeleteMessage;
 
   /// No description provided for @profileDeleteCancel.
   ///
-  /// In ko, this message translates to:
-  /// **'취소'**
+  /// In en, this message translates to:
+  /// **'Cancel'**
   String get profileDeleteCancel;
 
   /// No description provided for @profileDeleteConfirm.
   ///
-  /// In ko, this message translates to:
-  /// **'탈퇴'**
+  /// In en, this message translates to:
+  /// **'Delete'**
   String get profileDeleteConfirm;
 
   /// No description provided for @profileDeleteDone.
   ///
-  /// In ko, this message translates to:
-  /// **'탈퇴 처리되었습니다.'**
+  /// In en, this message translates to:
+  /// **'Account deleted.'**
   String get profileDeleteDone;
 
   /// No description provided for @profileRequiresRecentLogin.
   ///
-  /// In ko, this message translates to:
-  /// **'보안을 위해 다시 로그인한 뒤 시도해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Please sign in again and retry (security).'**
   String get profileRequiresRecentLogin;
 
   /// No description provided for @profileNotSignedIn.
   ///
-  /// In ko, this message translates to:
-  /// **'로그인하면 계정 정보를 볼 수 있습니다.'**
+  /// In en, this message translates to:
+  /// **'Sign in to see your account.'**
   String get profileNotSignedIn;
 
   /// No description provided for @profileSaveDisplayName.
   ///
-  /// In ko, this message translates to:
-  /// **'저장'**
+  /// In en, this message translates to:
+  /// **'Save'**
   String get profileSaveDisplayName;
 
   /// No description provided for @profileDisplayNameHint.
   ///
-  /// In ko, this message translates to:
-  /// **'게시글에 표시되는 이름'**
+  /// In en, this message translates to:
+  /// **'How your name appears on posts'**
   String get profileDisplayNameHint;
 
   /// No description provided for @profileDisplayNameInputPlaceholder.
   ///
-  /// In ko, this message translates to:
-  /// **'닉네임을 입력해 주세요'**
+  /// In en, this message translates to:
+  /// **'Enter a display name'**
   String get profileDisplayNameInputPlaceholder;
 
   /// No description provided for @profileCheckDisplayNameDuplicate.
   ///
-  /// In ko, this message translates to:
-  /// **'중복 확인'**
+  /// In en, this message translates to:
+  /// **'Check availability'**
   String get profileCheckDisplayNameDuplicate;
 
   /// No description provided for @profileDisplayNameEmpty.
   ///
-  /// In ko, this message translates to:
-  /// **'닉네임을 입력해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Please enter a display name.'**
   String get profileDisplayNameEmpty;
 
   /// No description provided for @profileDisplayNameCheckFirst.
   ///
-  /// In ko, this message translates to:
-  /// **'먼저 중복 확인을 해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Check availability before saving.'**
   String get profileDisplayNameCheckFirst;
 
   /// No description provided for @profileNicknameRequiredForCommunity.
   ///
-  /// In ko, this message translates to:
-  /// **'프로필에서 닉네임을 설정해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Set your display name in Profile.'**
   String get profileNicknameRequiredForCommunity;
 
   /// No description provided for @profilePushTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'푸시 알림'**
+  /// In en, this message translates to:
+  /// **'Push notifications'**
   String get profilePushTitle;
 
   /// No description provided for @profileSettingsTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'설정'**
+  /// In en, this message translates to:
+  /// **'Settings'**
   String get profileSettingsTitle;
 
   /// No description provided for @profileSettingsLegalDisclosures.
   ///
-  /// In ko, this message translates to:
-  /// **'데이터 안내 및 면책'**
+  /// In en, this message translates to:
+  /// **'Data sources & disclaimers'**
   String get profileSettingsLegalDisclosures;
 
   /// No description provided for @profilePushMaster.
   ///
-  /// In ko, this message translates to:
-  /// **'전체 알림'**
+  /// In en, this message translates to:
+  /// **'All notifications'**
   String get profilePushMaster;
 
   /// No description provided for @profilePushSocialReply.
   ///
-  /// In ko, this message translates to:
-  /// **'내 글/댓글에 답글'**
+  /// In en, this message translates to:
+  /// **'Replies to my posts/comments'**
   String get profilePushSocialReply;
 
   /// No description provided for @profilePushSocialLike.
   ///
-  /// In ko, this message translates to:
-  /// **'내 댓글에 좋아요'**
+  /// In en, this message translates to:
+  /// **'Likes on my comments'**
   String get profilePushSocialLike;
 
   /// No description provided for @profilePushMarketDaily.
   ///
-  /// In ko, this message translates to:
-  /// **'일일 마켓 요약'**
+  /// In en, this message translates to:
+  /// **'Daily market summary'**
   String get profilePushMarketDaily;
 
   /// No description provided for @profilePushHotMoverDiscussion.
   ///
-  /// In ko, this message translates to:
-  /// **'급등·급락 종목의 활발한 토론'**
+  /// In en, this message translates to:
+  /// **'Hot movers — lively discussions'**
   String get profilePushHotMoverDiscussion;
 
   /// No description provided for @profileStatPosts.
   ///
-  /// In ko, this message translates to:
-  /// **'게시글'**
+  /// In en, this message translates to:
+  /// **'Posts'**
   String get profileStatPosts;
 
   /// No description provided for @profileStatFollowing.
   ///
-  /// In ko, this message translates to:
-  /// **'팔로잉'**
+  /// In en, this message translates to:
+  /// **'Following'**
   String get profileStatFollowing;
 
   /// No description provided for @profileStatFollowers.
   ///
-  /// In ko, this message translates to:
-  /// **'팔로워'**
+  /// In en, this message translates to:
+  /// **'Followers'**
   String get profileStatFollowers;
 
   /// No description provided for @profileStatBlocked.
   ///
-  /// In ko, this message translates to:
-  /// **'차단'**
+  /// In en, this message translates to:
+  /// **'Blocked'**
   String get profileStatBlocked;
 
   /// No description provided for @profileBlockedTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'차단한 사용자'**
+  /// In en, this message translates to:
+  /// **'Blocked users'**
   String get profileBlockedTitle;
 
   /// No description provided for @profileBlockedListEmpty.
   ///
-  /// In ko, this message translates to:
-  /// **'차단한 사용자가 없습니다.'**
+  /// In en, this message translates to:
+  /// **'You have not blocked anyone.'**
   String get profileBlockedListEmpty;
 
   /// No description provided for @profileUnblockAction.
   ///
-  /// In ko, this message translates to:
-  /// **'차단 해제'**
+  /// In en, this message translates to:
+  /// **'Unblock'**
   String get profileUnblockAction;
 
   /// No description provided for @profileUnblockedDone.
   ///
-  /// In ko, this message translates to:
-  /// **'차단을 해제했습니다.'**
+  /// In en, this message translates to:
+  /// **'Unblocked.'**
   String get profileUnblockedDone;
 
   /// No description provided for @profileActivityTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'활동 내역'**
+  /// In en, this message translates to:
+  /// **'Activity'**
   String get profileActivityTitle;
 
   /// No description provided for @profileActivityMyPost.
   ///
-  /// In ko, this message translates to:
-  /// **'내가 쓴 글'**
+  /// In en, this message translates to:
+  /// **'Your post'**
   String get profileActivityMyPost;
 
   /// No description provided for @profileActivityPostOnAsset.
   ///
-  /// In ko, this message translates to:
-  /// **'{assetName} 에 쓴 글'**
+  /// In en, this message translates to:
+  /// **'Post on {assetName}'**
   String profileActivityPostOnAsset(String assetName);
 
   /// No description provided for @profileActivityMyReply.
   ///
-  /// In ko, this message translates to:
-  /// **'내 답글'**
+  /// In en, this message translates to:
+  /// **'Your reply'**
   String get profileActivityMyReply;
 
   /// No description provided for @profileActivityReplyOnPost.
   ///
-  /// In ko, this message translates to:
-  /// **'내 글에 달린 댓글'**
+  /// In en, this message translates to:
+  /// **'Reply on your post'**
   String get profileActivityReplyOnPost;
 
   /// No description provided for @profileActivityLikeReceived.
   ///
-  /// In ko, this message translates to:
-  /// **'내 댓글에 좋아요'**
+  /// In en, this message translates to:
+  /// **'Like on your comment'**
   String get profileActivityLikeReceived;
 
   /// No description provided for @profileActivityLikeGiven.
   ///
-  /// In ko, this message translates to:
-  /// **'좋아요를 누른 댓글'**
+  /// In en, this message translates to:
+  /// **'You liked a comment'**
   String get profileActivityLikeGiven;
 
   /// No description provided for @profileActivityEditPost.
   ///
-  /// In ko, this message translates to:
-  /// **'수정'**
+  /// In en, this message translates to:
+  /// **'Edit'**
   String get profileActivityEditPost;
 
   /// No description provided for @profileActivityDeletePost.
   ///
-  /// In ko, this message translates to:
-  /// **'삭제'**
+  /// In en, this message translates to:
+  /// **'Delete'**
   String get profileActivityDeletePost;
 
   /// No description provided for @profileActivityEditDialogTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'글 수정'**
+  /// In en, this message translates to:
+  /// **'Edit post'**
   String get profileActivityEditDialogTitle;
 
   /// No description provided for @profileActivityDeleteDialogTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'이 글을 삭제할까요?'**
+  /// In en, this message translates to:
+  /// **'Delete this post?'**
   String get profileActivityDeleteDialogTitle;
 
   /// No description provided for @profileActivityPostDeleted.
   ///
-  /// In ko, this message translates to:
-  /// **'삭제되었습니다.'**
+  /// In en, this message translates to:
+  /// **'Deleted.'**
   String get profileActivityPostDeleted;
 
   /// No description provided for @profileActivityPostUpdated.
   ///
-  /// In ko, this message translates to:
-  /// **'수정되었습니다.'**
+  /// In en, this message translates to:
+  /// **'Saved.'**
   String get profileActivityPostUpdated;
 
   /// No description provided for @profileFollowListEmpty.
   ///
-  /// In ko, this message translates to:
-  /// **'아직 없습니다.'**
+  /// In en, this message translates to:
+  /// **'No users yet.'**
   String get profileFollowListEmpty;
 
   /// No description provided for @profileDisplayNameSaved.
   ///
-  /// In ko, this message translates to:
-  /// **'닉네임을 저장했습니다.'**
+  /// In en, this message translates to:
+  /// **'Display name updated.'**
   String get profileDisplayNameSaved;
 
   /// No description provided for @profileDisplayNameTaken.
   ///
-  /// In ko, this message translates to:
-  /// **'이 닉네임은 이미 다른 사용자가 사용 중입니다.'**
+  /// In en, this message translates to:
+  /// **'This display name is already taken.'**
   String get profileDisplayNameTaken;
 
   /// No description provided for @profileDisplayNameDuplicateFromSocialTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'닉네임 확인'**
+  /// In en, this message translates to:
+  /// **'Display name'**
   String get profileDisplayNameDuplicateFromSocialTitle;
 
   /// No description provided for @profileDisplayNameDuplicateFromSocialMessage.
   ///
-  /// In ko, this message translates to:
-  /// **'소셜 계정에서 가져온 이름 \"{name}\"은(는) 이미 사용 중입니다. 아래에 새 닉네임을 입력한 뒤 중복 확인 후 저장해 주세요.'**
+  /// In en, this message translates to:
+  /// **'The name from your sign-in provider, \"{name}\", is already in use. Enter a new name below, tap Check availability, then Save.'**
   String profileDisplayNameDuplicateFromSocialMessage(String name);
 
   /// No description provided for @profileDisplayNameDuplicateFromSocialOk.
   ///
-  /// In ko, this message translates to:
-  /// **'확인'**
+  /// In en, this message translates to:
+  /// **'OK'**
   String get profileDisplayNameDuplicateFromSocialOk;
 
   /// No description provided for @privacyProcessingConsentTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'이용약관·커뮤니티 규칙 및 개인정보 동의'**
+  /// In en, this message translates to:
+  /// **'Terms, community & privacy'**
   String get privacyProcessingConsentTitle;
 
   /// No description provided for @privacyProcessingConsentLead.
   ///
-  /// In ko, this message translates to:
-  /// **'커뮤니티 등 사용자 생성 콘텐츠(UGC)를 포함한 서비스를 이용하시려면 아래를 확인하신 뒤 동의해 주세요.'**
+  /// In en, this message translates to:
+  /// **'To use the service—including community and other user-generated content—please read and accept the following before continuing.'**
   String get privacyProcessingConsentLead;
 
   /// No description provided for @privacyProcessingConsentSectionPrivacy.
   ///
-  /// In ko, this message translates to:
-  /// **'개인정보'**
+  /// In en, this message translates to:
+  /// **'Personal data'**
   String get privacyProcessingConsentSectionPrivacy;
 
   /// No description provided for @privacyProcessingConsentSectionCommunity.
   ///
-  /// In ko, this message translates to:
-  /// **'커뮤니티 및 사용자 생성 콘텐츠(UGC)'**
+  /// In en, this message translates to:
+  /// **'Community & user-generated content (UGC)'**
   String get privacyProcessingConsentSectionCommunity;
 
   /// No description provided for @privacyProcessingConsentUgcIntro.
   ///
-  /// In ko, this message translates to:
-  /// **'게시글·댓글 등 UGC를 보거나 작성하기 전에 적용됩니다.'**
+  /// In en, this message translates to:
+  /// **'These rules apply before you access posts, comments, and other UGC:'**
   String get privacyProcessingConsentUgcIntro;
 
   /// No description provided for @privacyProcessingConsentBullet1.
   ///
-  /// In ko, this message translates to:
-  /// **'수집 항목: 계정 식별자(Firebase UID), 이메일(있는 경우), 닉네임·프로필 사진, 게시·댓글·관심 종목 등 서비스 이용 과정에서 생성되는 정보'**
+  /// In en, this message translates to:
+  /// **'Data collected: account identifier (Firebase UID), email if provided, display name and profile photo, and information generated through use such as posts, comments, and watchlists.'**
   String get privacyProcessingConsentBullet1;
 
   /// No description provided for @privacyProcessingConsentBullet2.
   ///
-  /// In ko, this message translates to:
-  /// **'이용 목적: 회원 식별, 커뮤니티·피드 제공, 고객 지원, 부정 이용 방지 및 서비스 개선'**
+  /// In en, this message translates to:
+  /// **'Purposes: identification, community and feed features, support, abuse prevention, and service improvement.'**
   String get privacyProcessingConsentBullet2;
 
   /// No description provided for @privacyProcessingConsentBullet3.
   ///
-  /// In ko, this message translates to:
-  /// **'보관 및 파기: 탈퇴 시 관련 법령에 따른 보관 의무가 없는 한 지체 없이 삭제·처리합니다.'**
+  /// In en, this message translates to:
+  /// **'Retention: we delete or anonymize data when you delete your account, except where law requires longer retention.'**
   String get privacyProcessingConsentBullet3;
 
   /// No description provided for @privacyProcessingConsentUgcBullet1.
   ///
-  /// In ko, this message translates to:
-  /// **'무관용 원칙: 타인에게 불쾌하거나 부적절한 콘텐츠는 허용하지 않습니다. 불법 정보, 괴롭힘·혐오 표현, 동의 없는 성적 콘텐츠, 폭력·위협, 스팸·사기 등이 이에 해당합니다.'**
+  /// In en, this message translates to:
+  /// **'Zero tolerance: objectionable content is not allowed. This includes unlawful material, harassment, hate, non-consensual sexual content, violence, threats, spam, scams, and similar abuse.'**
   String get privacyProcessingConsentUgcBullet1;
 
   /// No description provided for @privacyProcessingConsentUgcBullet2.
   ///
-  /// In ko, this message translates to:
-  /// **'가해·악성 이용자에 대해서도 용납하지 않으며, 위반 시 콘텐츠 삭제, 기능 제한, 계정 정지 또는 해지 등 조치를 할 수 있습니다.'**
+  /// In en, this message translates to:
+  /// **'Abusive users are not tolerated. We may remove content, limit features, or suspend or terminate accounts that break these rules.'**
   String get privacyProcessingConsentUgcBullet2;
 
   /// No description provided for @privacyProcessingConsentUgcBullet3.
   ///
-  /// In ko, this message translates to:
-  /// **'부적절한 글은 게시글 메뉴에서 신고할 수 있고, 다른 사용자는 차단할 수 있습니다(게시글·프로필). 피해가 있다면 신고·차단 기능을 이용해 주세요.'**
+  /// In en, this message translates to:
+  /// **'You can report objectionable posts and block users from the menus on posts and in profiles. Please use report and block if you see harmful content or behavior.'**
   String get privacyProcessingConsentUgcBullet3;
 
   /// No description provided for @privacyProcessingConsentCheckboxPrivacy.
   ///
-  /// In ko, this message translates to:
-  /// **'위 개인정보 항목에 기재된 수집·이용에 동의합니다.'**
+  /// In en, this message translates to:
+  /// **'I agree to the collection and use of my personal data as described in the Personal data section above.'**
   String get privacyProcessingConsentCheckboxPrivacy;
 
   /// No description provided for @privacyProcessingConsentCheckboxCommunity.
   ///
-  /// In ko, this message translates to:
-  /// **'위 커뮤니티 및 UGC 규칙(부적절 콘텐츠·가해 이용자에 대한 무관용 포함)에 동의합니다.'**
+  /// In en, this message translates to:
+  /// **'I agree to the community and UGC rules above, including zero tolerance for objectionable content and abusive users.'**
   String get privacyProcessingConsentCheckboxCommunity;
 
   /// No description provided for @privacyProcessingConsentAgree.
   ///
-  /// In ko, this message translates to:
-  /// **'동의하고 계속하기'**
+  /// In en, this message translates to:
+  /// **'Agree and continue'**
   String get privacyProcessingConsentAgree;
 
   /// No description provided for @privacyProcessingConsentDecline.
   ///
-  /// In ko, this message translates to:
-  /// **'동의하지 않음'**
+  /// In en, this message translates to:
+  /// **'Decline'**
   String get privacyProcessingConsentDecline;
 
   /// No description provided for @profileFollowUnfollow.
   ///
-  /// In ko, this message translates to:
-  /// **'언팔로우'**
+  /// In en, this message translates to:
+  /// **'Unfollow'**
   String get profileFollowUnfollow;
 
   /// No description provided for @profileFollowTitleFollowing.
   ///
-  /// In ko, this message translates to:
-  /// **'팔로잉'**
+  /// In en, this message translates to:
+  /// **'Following'**
   String get profileFollowTitleFollowing;
 
   /// No description provided for @profileFollowTitleFollowers.
   ///
-  /// In ko, this message translates to:
-  /// **'팔로워'**
+  /// In en, this message translates to:
+  /// **'Followers'**
   String get profileFollowTitleFollowers;
 
   /// No description provided for @communityFollow.
   ///
-  /// In ko, this message translates to:
-  /// **'팔로우'**
+  /// In en, this message translates to:
+  /// **'Follow'**
   String get communityFollow;
 
   /// No description provided for @communityUnfollow.
   ///
-  /// In ko, this message translates to:
-  /// **'언팔로우'**
+  /// In en, this message translates to:
+  /// **'Unfollow'**
   String get communityUnfollow;
 
   /// No description provided for @communityOpenAssetDetail.
   ///
-  /// In ko, this message translates to:
-  /// **'종목 상세'**
+  /// In en, this message translates to:
+  /// **'Asset details'**
   String get communityOpenAssetDetail;
 
   /// No description provided for @communityMoreMenu.
   ///
-  /// In ko, this message translates to:
-  /// **'더보기'**
+  /// In en, this message translates to:
+  /// **'More'**
   String get communityMoreMenu;
 
   /// No description provided for @communityPostSeeMore.
   ///
-  /// In ko, this message translates to:
-  /// **'더보기 >'**
+  /// In en, this message translates to:
+  /// **'See more >'**
   String get communityPostSeeMore;
+
+  /// No description provided for @communityShowOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show original'**
+  String get communityShowOriginal;
+
+  /// No description provided for @communityShowTranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'Show translation'**
+  String get communityShowTranslated;
 
   /// No description provided for @communityReportPost.
   ///
-  /// In ko, this message translates to:
-  /// **'신고'**
+  /// In en, this message translates to:
+  /// **'Report'**
   String get communityReportPost;
 
   /// No description provided for @communityBlockAuthor.
   ///
-  /// In ko, this message translates to:
-  /// **'사용자 차단'**
+  /// In en, this message translates to:
+  /// **'Block user'**
   String get communityBlockAuthor;
 
   /// No description provided for @communityPostHiddenByReportNotice.
   ///
-  /// In ko, this message translates to:
-  /// **'신고 검토로 이 글은 다른 이용자에게 보이지 않습니다.'**
+  /// In en, this message translates to:
+  /// **'This post is hidden from other users after a report review.'**
   String get communityPostHiddenByReportNotice;
 
   /// No description provided for @communityBlockAuthorHint.
   ///
-  /// In ko, this message translates to:
-  /// **'이 사용자를 차단하면 언팔로우되며, 상대가 쓴 글이 보이지 않습니다.'**
+  /// In en, this message translates to:
+  /// **'Blocking unfollows this user and hides their posts from you.'**
   String get communityBlockAuthorHint;
 
   /// No description provided for @communityBlockAuthorMenuSubtitle.
   ///
-  /// In ko, this message translates to:
-  /// **'사용자'**
+  /// In en, this message translates to:
+  /// **'User'**
   String get communityBlockAuthorMenuSubtitle;
 
   /// No description provided for @communityReportPostMenuSubtitle.
   ///
-  /// In ko, this message translates to:
-  /// **'이 글'**
+  /// In en, this message translates to:
+  /// **'This post'**
   String get communityReportPostMenuSubtitle;
 
   /// No description provided for @communityBlockAuthorShort.
   ///
-  /// In ko, this message translates to:
-  /// **'차단'**
+  /// In en, this message translates to:
+  /// **'Block'**
   String get communityBlockAuthorShort;
 
   /// No description provided for @communityReportPostShort.
   ///
-  /// In ko, this message translates to:
-  /// **'신고'**
+  /// In en, this message translates to:
+  /// **'Report'**
   String get communityReportPostShort;
 
   /// No description provided for @communityReportDialogTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'이 글을 신고할까요?'**
+  /// In en, this message translates to:
+  /// **'Report this post?'**
   String get communityReportDialogTitle;
 
   /// No description provided for @communityReportReasonHint.
   ///
-  /// In ko, this message translates to:
-  /// **'사유 (선택)'**
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
   String get communityReportReasonHint;
 
   /// No description provided for @communityReportSend.
   ///
-  /// In ko, this message translates to:
-  /// **'신고'**
+  /// In en, this message translates to:
+  /// **'Report'**
   String get communityReportSend;
 
   /// No description provided for @communityReportSheetTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'신고하기'**
+  /// In en, this message translates to:
+  /// **'Report'**
   String get communityReportSheetTitle;
 
   /// No description provided for @communityReportSheetSubtitle.
   ///
-  /// In ko, this message translates to:
-  /// **'신고 사유를 선택해주세요.'**
+  /// In en, this message translates to:
+  /// **'Select a reason for your report.'**
   String get communityReportSheetSubtitle;
 
   /// No description provided for @communityReportReasonSpam.
   ///
-  /// In ko, this message translates to:
-  /// **'스팸/광고'**
+  /// In en, this message translates to:
+  /// **'Spam or ads'**
   String get communityReportReasonSpam;
 
   /// No description provided for @communityReportReasonAbuse.
   ///
-  /// In ko, this message translates to:
-  /// **'욕설/비방/혐오 표현'**
+  /// In en, this message translates to:
+  /// **'Harassment or hate'**
   String get communityReportReasonAbuse;
 
   /// No description provided for @communityReportReasonSexual.
   ///
-  /// In ko, this message translates to:
-  /// **'성적/음란한 내용'**
+  /// In en, this message translates to:
+  /// **'Sexual content'**
   String get communityReportReasonSexual;
 
   /// No description provided for @communityReportReasonViolence.
   ///
-  /// In ko, this message translates to:
-  /// **'폭력/위협'**
+  /// In en, this message translates to:
+  /// **'Violence or threats'**
   String get communityReportReasonViolence;
 
   /// No description provided for @communityReportReasonOther.
   ///
-  /// In ko, this message translates to:
-  /// **'기타'**
+  /// In en, this message translates to:
+  /// **'Other'**
   String get communityReportReasonOther;
 
   /// No description provided for @communityReportDetailHint.
   ///
-  /// In ko, this message translates to:
-  /// **'자세한 내용을 적어주세요. (선택)'**
+  /// In en, this message translates to:
+  /// **'Add details (optional)'**
   String get communityReportDetailHint;
 
   /// No description provided for @communityReportSubmitButton.
   ///
-  /// In ko, this message translates to:
-  /// **'신고 보내기'**
+  /// In en, this message translates to:
+  /// **'Submit report'**
   String get communityReportSubmitButton;
 
   /// No description provided for @communityReportSubmitted.
   ///
-  /// In ko, this message translates to:
-  /// **'신고가 접수되었습니다. 감사합니다.'**
+  /// In en, this message translates to:
+  /// **'Thanks — your report was submitted.'**
   String get communityReportSubmitted;
 
   /// No description provided for @communityBlockAuthorTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'이 사용자를 차단할까요?'**
+  /// In en, this message translates to:
+  /// **'Block this user?'**
   String get communityBlockAuthorTitle;
 
   /// No description provided for @communityBlockAuthorMessage.
   ///
-  /// In ko, this message translates to:
-  /// **'{authorName}님의 글과 프로필이 더 이상 표시되지 않습니다.'**
+  /// In en, this message translates to:
+  /// **'You will no longer see posts or this profile from {authorName}.'**
   String communityBlockAuthorMessage(String authorName);
 
   /// No description provided for @communityUserBlocked.
   ///
-  /// In ko, this message translates to:
-  /// **'차단했습니다.'**
+  /// In en, this message translates to:
+  /// **'User blocked.'**
   String get communityUserBlocked;
 
   /// No description provided for @communityLikeLogin.
   ///
-  /// In ko, this message translates to:
-  /// **'좋아요하려면 로그인하세요.'**
+  /// In en, this message translates to:
+  /// **'Sign in to like.'**
   String get communityLikeLogin;
 
   /// No description provided for @communityLikeCount.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'{count}'**
   String communityLikeCount(int count);
 
   /// No description provided for @communityCommentCount.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'{count}'**
   String communityCommentCount(int count);
 
   /// No description provided for @communityPostDetailTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'본문'**
+  /// In en, this message translates to:
+  /// **'Post'**
   String get communityPostDetailTitle;
 
   /// No description provided for @communityCommentsTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'댓글'**
+  /// In en, this message translates to:
+  /// **'Comments'**
   String get communityCommentsTitle;
 
   /// No description provided for @communityWrite.
   ///
-  /// In ko, this message translates to:
-  /// **'글쓰기'**
+  /// In en, this message translates to:
+  /// **'Write'**
   String get communityWrite;
 
   /// No description provided for @communityComposeTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'글쓰기'**
+  /// In en, this message translates to:
+  /// **'New post'**
   String get communityComposeTitle;
 
   /// No description provided for @communityComposeSubmit.
   ///
-  /// In ko, this message translates to:
-  /// **'게시'**
+  /// In en, this message translates to:
+  /// **'Post'**
   String get communityComposeSubmit;
 
   /// No description provided for @communityComposeOptionalTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'제목 (선택)'**
+  /// In en, this message translates to:
+  /// **'Title (optional)'**
   String get communityComposeOptionalTitle;
 
   /// No description provided for @communityComposeTitleHint.
   ///
-  /// In ko, this message translates to:
-  /// **'제목을 입력하거나 비워 두세요'**
+  /// In en, this message translates to:
+  /// **'Add a title or leave blank'**
   String get communityComposeTitleHint;
 
   /// No description provided for @communityComposeSymbolLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'종목 심볼'**
+  /// In en, this message translates to:
+  /// **'Symbol'**
   String get communityComposeSymbolLabel;
 
   /// No description provided for @communityComposeThemePickerLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'테마 이름'**
+  /// In en, this message translates to:
+  /// **'Theme'**
   String get communityComposeThemePickerLabel;
 
   /// No description provided for @communityComposePickTheme.
   ///
-  /// In ko, this message translates to:
-  /// **'테마를 선택하세요'**
+  /// In en, this message translates to:
+  /// **'Choose a theme'**
   String get communityComposePickTheme;
 
   /// No description provided for @communityComposeSymbolHint.
   ///
-  /// In ko, this message translates to:
-  /// **'예: TSLA, IBRX'**
+  /// In en, this message translates to:
+  /// **'e.g. TSLA, IBRX'**
   String get communityComposeSymbolHint;
 
   /// No description provided for @communityComposeAssetClassLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'자산 유형'**
+  /// In en, this message translates to:
+  /// **'Asset type'**
   String get communityComposeAssetClassLabel;
 
   /// No description provided for @communityComposeBodyLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'본문'**
+  /// In en, this message translates to:
+  /// **'Body'**
   String get communityComposeBodyLabel;
 
   /// No description provided for @communityComposeBodyHint.
   ///
-  /// In ko, this message translates to:
-  /// **'광고·비난·도배 등 부적절한 글은 삭제될 수 있으며, 반복 시 활동이 제한될 수 있습니다. 건전한 토론을 부탁드립니다.'**
+  /// In en, this message translates to:
+  /// **'Spam, ads, harassment, or abuse may be removed; repeated violations may restrict your account. Please keep discussion respectful.'**
   String get communityComposeBodyHint;
 
   /// No description provided for @communityComposePhotosLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'사진'**
+  /// In en, this message translates to:
+  /// **'Photos'**
   String get communityComposePhotosLabel;
 
   /// No description provided for @communityComposeNeedSymbol.
   ///
-  /// In ko, this message translates to:
-  /// **'종목을 선택해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Choose a symbol.'**
   String get communityComposeNeedSymbol;
 
   /// No description provided for @communityComposeNeedBody.
   ///
-  /// In ko, this message translates to:
-  /// **'본문을 입력해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Enter the body text.'**
   String get communityComposeNeedBody;
 
   /// No description provided for @communityComposePickSymbol.
   ///
-  /// In ko, this message translates to:
-  /// **'종목 선택'**
+  /// In en, this message translates to:
+  /// **'Choose symbol'**
   String get communityComposePickSymbol;
 
   /// No description provided for @communityComposeNoRankedSymbols.
   ///
-  /// In ko, this message translates to:
-  /// **'이 자산 유형의 랭킹 종목이 없습니다. 홈에서 랭킹을 불러온 뒤 다시 시도해 주세요.'**
+  /// In en, this message translates to:
+  /// **'No ranked symbols for this asset type. Open Home to load rankings and try again.'**
   String get communityComposeNoRankedSymbols;
 
   /// No description provided for @communityComposeAddPhotoShort.
   ///
-  /// In ko, this message translates to:
-  /// **'사진'**
+  /// In en, this message translates to:
+  /// **'Photo'**
   String get communityComposeAddPhotoShort;
 
   /// No description provided for @communityComposeAddGifShort.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'GIF'**
   String get communityComposeAddGifShort;
 
   /// No description provided for @communityComposeGiphySearchHint.
   ///
-  /// In ko, this message translates to:
-  /// **'GIPHY 검색'**
+  /// In en, this message translates to:
+  /// **'Search GIPHY'**
   String get communityComposeGiphySearchHint;
 
   /// No description provided for @communityComposeGiphyPoweredBy.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'Powered by GIPHY'**
   String get communityComposeGiphyPoweredBy;
 
   /// No description provided for @communityComposeGiphyTooLarge.
   ///
-  /// In ko, this message translates to:
-  /// **'파일이 5MB를 넘어 첨부할 수 없습니다. 다른 GIF를 선택해 주세요.'**
+  /// In en, this message translates to:
+  /// **'This file is over 5MB. Pick another GIF.'**
   String get communityComposeGiphyTooLarge;
 
   /// No description provided for @communityComposeGiphyDownloadError.
   ///
-  /// In ko, this message translates to:
-  /// **'GIF를 불러오지 못했습니다. 다시 시도해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Could not load the GIF. Try again.'**
   String get communityComposeGiphyDownloadError;
 
   /// No description provided for @communityComposeGiphyRateLimited.
   ///
-  /// In ko, this message translates to:
-  /// **'잠시 후 다시 시도해 주세요. (요청 한도)'**
+  /// In en, this message translates to:
+  /// **'Please try again in a moment. (rate limit)'**
   String get communityComposeGiphyRateLimited;
 
   /// No description provided for @communityComposeGiphyLoadError.
   ///
-  /// In ko, this message translates to:
-  /// **'목록을 불러오지 못했습니다.'**
+  /// In en, this message translates to:
+  /// **'Could not load the list.'**
   String get communityComposeGiphyLoadError;
 
   /// No description provided for @communityComposeGiphyRetry.
   ///
-  /// In ko, this message translates to:
-  /// **'다시 시도'**
+  /// In en, this message translates to:
+  /// **'Retry'**
   String get communityComposeGiphyRetry;
 
   /// No description provided for @communityComposeGiphyEmpty.
   ///
-  /// In ko, this message translates to:
-  /// **'결과가 없습니다.'**
+  /// In en, this message translates to:
+  /// **'No results.'**
   String get communityComposeGiphyEmpty;
 
   /// No description provided for @communityComposeGiphyThumbError.
   ///
-  /// In ko, this message translates to:
-  /// **'미리보기를 불러올 수 없음'**
+  /// In en, this message translates to:
+  /// **'Preview unavailable'**
   String get communityComposeGiphyThumbError;
 
   /// No description provided for @communityComposeEditTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'글 수정'**
+  /// In en, this message translates to:
+  /// **'Edit post'**
   String get communityComposeEditTitle;
 
   /// No description provided for @communityComposeSave.
   ///
-  /// In ko, this message translates to:
-  /// **'저장'**
+  /// In en, this message translates to:
+  /// **'Save'**
   String get communityComposeSave;
 
   /// No description provided for @communityComposeEditReplyTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'답글 수정'**
+  /// In en, this message translates to:
+  /// **'Edit reply'**
   String get communityComposeEditReplyTitle;
 
   /// No description provided for @ugcBannedWordsMessage.
   ///
-  /// In ko, this message translates to:
-  /// **'허용되지 않는 표현이 포함되어 있습니다: {term}'**
+  /// In en, this message translates to:
+  /// **'This text contains disallowed wording: {term}'**
   String ugcBannedWordsMessage(String term);
 
   /// No description provided for @navRankings.
   ///
-  /// In ko, this message translates to:
-  /// **'랭킹'**
+  /// In en, this message translates to:
+  /// **'Rankings'**
   String get navRankings;
 
   /// No description provided for @navThemes.
   ///
-  /// In ko, this message translates to:
-  /// **'테마'**
+  /// In en, this message translates to:
+  /// **'Themes'**
   String get navThemes;
 
   /// No description provided for @navMarket.
   ///
-  /// In ko, this message translates to:
-  /// **'시장'**
+  /// In en, this message translates to:
+  /// **'Market'**
   String get navMarket;
 
   /// No description provided for @homeRankingApplyFiltersTooltip.
   ///
-  /// In ko, this message translates to:
-  /// **'선택한 필터를 랭킹에 반영합니다'**
+  /// In en, this message translates to:
+  /// **'Apply selected filters to rankings'**
   String get homeRankingApplyFiltersTooltip;
 
   /// No description provided for @rankingsUpTab.
   ///
-  /// In ko, this message translates to:
-  /// **'상승 🔥'**
+  /// In en, this message translates to:
+  /// **'Surging 🔥'**
   String get rankingsUpTab;
 
   /// No description provided for @rankingsDownTab.
   ///
-  /// In ko, this message translates to:
-  /// **'하락 💀'**
+  /// In en, this message translates to:
+  /// **'Crashing 💀'**
   String get rankingsDownTab;
 
   /// No description provided for @rankingsUpTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'오늘 가장 미친 상승'**
+  /// In en, this message translates to:
+  /// **'Wildest gainers today'**
   String get rankingsUpTitle;
 
   /// No description provided for @rankingsDownTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'오늘 가장 크게 박살난 것'**
+  /// In en, this message translates to:
+  /// **'Biggest losers today'**
   String get rankingsDownTitle;
 
   /// No description provided for @homeRankingsShareTooltip.
   ///
-  /// In ko, this message translates to:
-  /// **'랭킹 공유'**
+  /// In en, this message translates to:
+  /// **'Share rankings'**
   String get homeRankingsShareTooltip;
 
   /// No description provided for @homeRankingsShareEmptySnack.
   ///
-  /// In ko, this message translates to:
-  /// **'공유할 랭킹이 없습니다.'**
+  /// In en, this message translates to:
+  /// **'No rankings to share yet.'**
   String get homeRankingsShareEmptySnack;
 
   /// No description provided for @homeRankingsShareFiltersLine.
   ///
-  /// In ko, this message translates to:
-  /// **'필터: {filters}'**
+  /// In en, this message translates to:
+  /// **'Filters: {filters}'**
   String homeRankingsShareFiltersLine(String filters);
 
   /// No description provided for @homeInterestSurgeTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'오늘 관심 폭주'**
+  /// In en, this message translates to:
+  /// **'Today\'s interest surge'**
   String get homeInterestSurgeTitle;
 
   /// No description provided for @homeInterestSurgeInfoIconTooltip.
   ///
-  /// In ko, this message translates to:
-  /// **'데이터 안내'**
+  /// In en, this message translates to:
+  /// **'How this list is built'**
   String get homeInterestSurgeInfoIconTooltip;
 
   /// No description provided for @homeInterestSurgeInfoTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'오늘 관심 폭주 안내'**
+  /// In en, this message translates to:
+  /// **'About today\'s interest surge'**
   String get homeInterestSurgeInfoTitle;
 
   /// No description provided for @homeInterestSurgeInfoBody.
   ///
-  /// In ko, this message translates to:
-  /// **'이 목록은 AI가 최근 시장 이슈·뉴스·투자자 관심 흐름 등을 바탕으로, 미국·한국 주식, 암호화폐, 원자재 중에서 주목할 만한 자산을 고르고 0~100 사이의 \'트렌드\' 상대 점수를 추정해 만듭니다.\n\n점수는 서버에서 하루 단위로 정리·저장되며, 앱은 그 결과를 보여 줍니다.\n\n참고용 정보일 뿐이며 투자 권유나 수익을 보장하지 않습니다.'**
+  /// In en, this message translates to:
+  /// **'This list is built with AI: it picks US and Korean stocks, crypto, and commodities that look attention-worthy from recent market context, news, and investor-interest signals, then estimates a relative 0–100 \"trend\" score for each.\n\nScores are processed and stored on our servers once per day; the app shows the latest snapshot.\n\nFor information only—not investment advice, and not a guarantee of returns.'**
   String get homeInterestSurgeInfoBody;
 
   /// No description provided for @homeInterestSurgeInfoDismiss.
   ///
-  /// In ko, this message translates to:
-  /// **'확인'**
+  /// In en, this message translates to:
+  /// **'OK'**
   String get homeInterestSurgeInfoDismiss;
 
   /// No description provided for @homeTrendScoreLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'트렌드'**
+  /// In en, this message translates to:
+  /// **'Trend'**
   String get homeTrendScoreLabel;
 
   /// No description provided for @homeRankingShowMoreTooltip.
   ///
-  /// In ko, this message translates to:
-  /// **'더 보기'**
+  /// In en, this message translates to:
+  /// **'Show more'**
   String get homeRankingShowMoreTooltip;
 
   /// No description provided for @homeInterestSurgeShowMoreWithAd.
   ///
-  /// In ko, this message translates to:
-  /// **'광고 보고 더 보기'**
+  /// In en, this message translates to:
+  /// **'Watch ad to show more'**
   String get homeInterestSurgeShowMoreWithAd;
 
   /// No description provided for @homeRankingShowLessTooltip.
   ///
-  /// In ko, this message translates to:
-  /// **'접기'**
+  /// In en, this message translates to:
+  /// **'Show less'**
   String get homeRankingShowLessTooltip;
 
   /// No description provided for @themesHotTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'오늘 가장 미친 테마'**
+  /// In en, this message translates to:
+  /// **'Hottest themes today'**
   String get themesHotTitle;
 
   /// No description provided for @themesCrashedTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'오늘 박살난 테마'**
+  /// In en, this message translates to:
+  /// **'Themes that got crushed'**
   String get themesCrashedTitle;
 
   /// No description provided for @themesEmergingTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'갑자기 뜬 테마'**
+  /// In en, this message translates to:
+  /// **'Suddenly trending themes'**
   String get themesEmergingTitle;
 
   /// No description provided for @marketSummaryTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'시장 요약'**
+  /// In en, this message translates to:
+  /// **'Market summary'**
   String get marketSummaryTitle;
 
   /// No description provided for @kimchiPremiumLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'김치 프리미엄'**
+  /// In en, this message translates to:
+  /// **'Kimchi premium'**
   String get kimchiPremiumLabel;
 
   /// No description provided for @exchangeRateLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'환율'**
+  /// In en, this message translates to:
+  /// **'Exchange rate'**
   String get exchangeRateLabel;
 
   /// No description provided for @marketStatusLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'시장 상태'**
+  /// In en, this message translates to:
+  /// **'Market mood'**
   String get marketStatusLabel;
 
   /// No description provided for @dopamineScoreLabel.
   ///
-  /// In ko, this message translates to:
-  /// **'도파민 점수'**
+  /// In en, this message translates to:
+  /// **'Dopamine score'**
   String get dopamineScoreLabel;
 
   /// No description provided for @errorLoadFailed.
   ///
-  /// In ko, this message translates to:
-  /// **'불러오지 못했습니다.'**
+  /// In en, this message translates to:
+  /// **'Could not load data.'**
   String get errorLoadFailed;
 
   /// No description provided for @errorNoApi.
   ///
-  /// In ko, this message translates to:
-  /// **'API 주소가 설정되지 않았습니다. 실행 시 --dart-define=API_BASE_URL=... 를 지정하세요.'**
+  /// In en, this message translates to:
+  /// **'API base URL is not set. Pass --dart-define=API_BASE_URL=... when running.'**
   String get errorNoApi;
 
   /// No description provided for @retry.
   ///
-  /// In ko, this message translates to:
-  /// **'다시 시도'**
+  /// In en, this message translates to:
+  /// **'Retry'**
   String get retry;
 
   /// No description provided for @loading.
   ///
-  /// In ko, this message translates to:
-  /// **'불러오는 중…'**
+  /// In en, this message translates to:
+  /// **'Loading…'**
   String get loading;
 
   /// No description provided for @emptyState.
   ///
-  /// In ko, this message translates to:
-  /// **'표시할 데이터가 없습니다.'**
+  /// In en, this message translates to:
+  /// **'No data to show.'**
   String get emptyState;
 
   /// No description provided for @assetName.
   ///
-  /// In ko, this message translates to:
-  /// **'자산'**
+  /// In en, this message translates to:
+  /// **'Asset'**
   String get assetName;
 
   /// No description provided for @priceChangePct.
   ///
-  /// In ko, this message translates to:
-  /// **'가격 변동'**
+  /// In en, this message translates to:
+  /// **'Price change'**
   String get priceChangePct;
 
   /// No description provided for @volumeChangePct.
   ///
-  /// In ko, this message translates to:
-  /// **'거래량 변동'**
+  /// In en, this message translates to:
+  /// **'Volume change'**
   String get volumeChangePct;
 
   /// No description provided for @summaryLine.
   ///
-  /// In ko, this message translates to:
-  /// **'한줄 요약'**
+  /// In en, this message translates to:
+  /// **'Summary'**
   String get summaryLine;
 
   /// No description provided for @themeName.
   ///
-  /// In ko, this message translates to:
-  /// **'테마'**
+  /// In en, this message translates to:
+  /// **'Theme'**
   String get themeName;
 
   /// No description provided for @themeScore.
   ///
-  /// In ko, this message translates to:
-  /// **'테마 점수'**
+  /// In en, this message translates to:
+  /// **'Theme score'**
   String get themeScore;
 
   /// No description provided for @stockCount.
   ///
-  /// In ko, this message translates to:
-  /// **'종목 수'**
+  /// In en, this message translates to:
+  /// **'Symbols'**
   String get stockCount;
 
   /// No description provided for @sectionRankings.
   ///
-  /// In ko, this message translates to:
-  /// **'상승 · 하락'**
+  /// In en, this message translates to:
+  /// **'Up · Down'**
   String get sectionRankings;
 
   /// No description provided for @sectionThemes.
   ///
-  /// In ko, this message translates to:
-  /// **'테마 랭킹'**
+  /// In en, this message translates to:
+  /// **'Theme rankings'**
   String get sectionThemes;
 
   /// No description provided for @sectionMarket.
   ///
-  /// In ko, this message translates to:
-  /// **'시장 요약'**
+  /// In en, this message translates to:
+  /// **'Market summary'**
   String get sectionMarket;
 
   /// No description provided for @notAvailable.
   ///
-  /// In ko, this message translates to:
-  /// **'—'**
+  /// In en, this message translates to:
+  /// **'N/A'**
   String get notAvailable;
 
   /// No description provided for @homeTopSurgeBadge.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'TOP 10'**
   String get homeTopSurgeBadge;
 
   /// No description provided for @homeKicker.
   ///
-  /// In ko, this message translates to:
-  /// **'움직이는 자산만. 지금 돈이 몰리는 곳.'**
+  /// In en, this message translates to:
+  /// **'Only what moves. Where money flows right now.'**
   String get homeKicker;
 
   /// No description provided for @homeLiveBadge.
   ///
-  /// In ko, this message translates to:
-  /// **'실시간'**
+  /// In en, this message translates to:
+  /// **'LIVE'**
   String get homeLiveBadge;
 
   /// No description provided for @homeThemeStockLine.
   ///
-  /// In ko, this message translates to:
-  /// **'{count}개 종목'**
+  /// In en, this message translates to:
+  /// **'{count} stocks'**
   String homeThemeStockLine(int count);
 
   /// No description provided for @assetClassBadgeUsStock.
   ///
-  /// In ko, this message translates to:
-  /// **'미국 주식'**
+  /// In en, this message translates to:
+  /// **'US stock'**
   String get assetClassBadgeUsStock;
 
   /// No description provided for @assetClassBadgeKrStock.
   ///
-  /// In ko, this message translates to:
-  /// **'한국 주식'**
+  /// In en, this message translates to:
+  /// **'Korea'**
   String get assetClassBadgeKrStock;
+
+  /// No description provided for @assetClassBadgeJpStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Japan'**
+  String get assetClassBadgeJpStock;
+
+  /// No description provided for @assetClassBadgeCnStock.
+  ///
+  /// In en, this message translates to:
+  /// **'China'**
+  String get assetClassBadgeCnStock;
+
+  /// No description provided for @assetClassJpStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Japan stocks'**
+  String get assetClassJpStock;
+
+  /// No description provided for @assetClassCnStock.
+  ///
+  /// In en, this message translates to:
+  /// **'China A-shares'**
+  String get assetClassCnStock;
 
   /// No description provided for @assetClassBadgeCrypto.
   ///
-  /// In ko, this message translates to:
-  /// **'암호화폐'**
+  /// In en, this message translates to:
+  /// **'Crypto'**
   String get assetClassBadgeCrypto;
 
   /// No description provided for @assetClassBadgeCommodity.
   ///
-  /// In ko, this message translates to:
-  /// **'원자재'**
+  /// In en, this message translates to:
+  /// **'Commodity'**
   String get assetClassBadgeCommodity;
 
   /// No description provided for @assetClassBadgeTheme.
   ///
-  /// In ko, this message translates to:
-  /// **'테마'**
+  /// In en, this message translates to:
+  /// **'Theme'**
   String get assetClassBadgeTheme;
 
   /// No description provided for @communityComposeThemeNameHint.
   ///
-  /// In ko, this message translates to:
-  /// **'테마 이름 (예: 에너지·원자재)'**
+  /// In en, this message translates to:
+  /// **'Theme name (e.g. Energy & commodities)'**
   String get communityComposeThemeNameHint;
 
   /// No description provided for @rankingFilterTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'자산 필터'**
+  /// In en, this message translates to:
+  /// **'Asset classes'**
   String get rankingFilterTitle;
 
   /// No description provided for @rankingFilterConfirm.
   ///
-  /// In ko, this message translates to:
-  /// **'확인'**
+  /// In en, this message translates to:
+  /// **'OK'**
   String get rankingFilterConfirm;
 
   /// No description provided for @rankingFilterCancel.
   ///
-  /// In ko, this message translates to:
-  /// **'취소'**
+  /// In en, this message translates to:
+  /// **'Cancel'**
   String get rankingFilterCancel;
 
   /// No description provided for @rankingFilterNeedOne.
   ///
-  /// In ko, this message translates to:
-  /// **'한 개 이상 선택해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Select at least one.'**
   String get rankingFilterNeedOne;
 
   /// No description provided for @assetDetailMissingClass.
   ///
-  /// In ko, this message translates to:
-  /// **'자산 분류 정보가 없어 상세를 열 수 없습니다.'**
+  /// In en, this message translates to:
+  /// **'Missing asset class for this item.'**
   String get assetDetailMissingClass;
 
   /// No description provided for @assetDetailSectionProfile.
   ///
-  /// In ko, this message translates to:
-  /// **'개요'**
+  /// In en, this message translates to:
+  /// **'Profile'**
   String get assetDetailSectionProfile;
 
   /// No description provided for @assetDetailMarketCap.
   ///
-  /// In ko, this message translates to:
-  /// **'시가총액'**
+  /// In en, this message translates to:
+  /// **'Market cap'**
   String get assetDetailMarketCap;
 
   /// No description provided for @assetDetailMarketCapKrwMillions.
   ///
-  /// In ko, this message translates to:
-  /// **'{amount}백만'**
+  /// In en, this message translates to:
+  /// **'{amount}M KRW'**
   String assetDetailMarketCapKrwMillions(String amount);
 
   /// No description provided for @assetDetailMarketCapKrwWonFull.
   ///
-  /// In ko, this message translates to:
-  /// **'{amount}원'**
+  /// In en, this message translates to:
+  /// **'{amount} KRW'**
   String assetDetailMarketCapKrwWonFull(String amount);
 
   /// No description provided for @assetDetailMarketCapRank.
   ///
-  /// In ko, this message translates to:
-  /// **'시총 랭킹'**
+  /// In en, this message translates to:
+  /// **'Market cap rank'**
   String get assetDetailMarketCapRank;
 
   /// No description provided for @assetDetailCurrentPrice.
   ///
-  /// In ko, this message translates to:
-  /// **'현재 가격'**
+  /// In en, this message translates to:
+  /// **'Price (USD)'**
   String get assetDetailCurrentPrice;
 
   /// No description provided for @assetDetailCryptoProfileMore.
   ///
-  /// In ko, this message translates to:
-  /// **'더보기'**
+  /// In en, this message translates to:
+  /// **'More'**
   String get assetDetailCryptoProfileMore;
 
   /// No description provided for @assetDetailCryptoProfileLess.
   ///
-  /// In ko, this message translates to:
-  /// **'접기'**
+  /// In en, this message translates to:
+  /// **'Less'**
   String get assetDetailCryptoProfileLess;
 
   /// No description provided for @assetDetailSector.
   ///
-  /// In ko, this message translates to:
-  /// **'섹터'**
+  /// In en, this message translates to:
+  /// **'Sector'**
   String get assetDetailSector;
 
   /// No description provided for @assetDetailIndustry.
   ///
-  /// In ko, this message translates to:
-  /// **'산업'**
+  /// In en, this message translates to:
+  /// **'Industry'**
   String get assetDetailIndustry;
 
   /// No description provided for @assetDetailExchange.
   ///
-  /// In ko, this message translates to:
-  /// **'거래소'**
+  /// In en, this message translates to:
+  /// **'Exchange'**
   String get assetDetailExchange;
 
   /// No description provided for @assetDetailCurrency.
   ///
-  /// In ko, this message translates to:
-  /// **'통화'**
+  /// In en, this message translates to:
+  /// **'Currency'**
   String get assetDetailCurrency;
 
   /// No description provided for @assetDetailPair.
   ///
-  /// In ko, this message translates to:
-  /// **'거래쌍'**
+  /// In en, this message translates to:
+  /// **'Pair'**
   String get assetDetailPair;
 
   /// No description provided for @assetDetailAbout.
   ///
-  /// In ko, this message translates to:
-  /// **'소개'**
+  /// In en, this message translates to:
+  /// **'About'**
   String get assetDetailAbout;
 
   /// No description provided for @assetDetailWebsite.
   ///
-  /// In ko, this message translates to:
-  /// **'웹사이트'**
+  /// In en, this message translates to:
+  /// **'Website'**
   String get assetDetailWebsite;
 
   /// No description provided for @assetDetailNotAvailable.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'—'**
   String get assetDetailNotAvailable;
 
   /// No description provided for @assetDetailOpenLinkFailed.
   ///
-  /// In ko, this message translates to:
-  /// **'링크를 열 수 없습니다.'**
+  /// In en, this message translates to:
+  /// **'Could not open link.'**
   String get assetDetailOpenLinkFailed;
 
   /// No description provided for @assetDetailPriceChange.
   ///
-  /// In ko, this message translates to:
-  /// **'가격 변동 (피드)'**
+  /// In en, this message translates to:
+  /// **'Price change (feed)'**
   String get assetDetailPriceChange;
 
   /// No description provided for @communitySortLatest.
   ///
-  /// In ko, this message translates to:
-  /// **'최신순'**
+  /// In en, this message translates to:
+  /// **'Latest'**
   String get communitySortLatest;
 
   /// No description provided for @communitySortPopular.
   ///
-  /// In ko, this message translates to:
-  /// **'인기순'**
+  /// In en, this message translates to:
+  /// **'Popular'**
   String get communitySortPopular;
 
   /// No description provided for @communityReplyCount.
   ///
-  /// In ko, this message translates to:
-  /// **'답글 {count}개'**
+  /// In en, this message translates to:
+  /// **'Replies: {count}'**
   String communityReplyCount(int count);
 
   /// No description provided for @assetPostsTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'최근 반응'**
+  /// In en, this message translates to:
+  /// **'Recent reactions'**
   String get assetPostsTitle;
 
   /// No description provided for @assetPostsEmpty.
   ///
-  /// In ko, this message translates to:
-  /// **'첫 게시글을 남겨보세요.'**
+  /// In en, this message translates to:
+  /// **'Be the first to post.'**
   String get assetPostsEmpty;
 
   /// No description provided for @assetPostsPlaceholder.
   ///
-  /// In ko, this message translates to:
-  /// **'댓글을 남겨 주세요.'**
+  /// In en, this message translates to:
+  /// **'Leave a comment.'**
   String get assetPostsPlaceholder;
 
   /// No description provided for @assetPostsReplyPlaceholder.
   ///
-  /// In ko, this message translates to:
-  /// **'답글을 남겨 주세요.'**
+  /// In en, this message translates to:
+  /// **'Write a reply.'**
   String get assetPostsReplyPlaceholder;
 
   /// No description provided for @assetPostsPublish.
   ///
-  /// In ko, this message translates to:
-  /// **'등록'**
+  /// In en, this message translates to:
+  /// **'Post'**
   String get assetPostsPublish;
 
   /// No description provided for @assetPostsReply.
   ///
-  /// In ko, this message translates to:
-  /// **'답글'**
+  /// In en, this message translates to:
+  /// **'Reply'**
   String get assetPostsReply;
 
   /// No description provided for @assetPostsReplying.
   ///
-  /// In ko, this message translates to:
-  /// **'답글 작성 중'**
+  /// In en, this message translates to:
+  /// **'Replying'**
   String get assetPostsReplying;
 
   /// No description provided for @assetPostsCancelReply.
   ///
-  /// In ko, this message translates to:
-  /// **'취소'**
+  /// In en, this message translates to:
+  /// **'Cancel'**
   String get assetPostsCancelReply;
 
   /// No description provided for @assetPostsSendError.
   ///
-  /// In ko, this message translates to:
-  /// **'게시글을 등록하지 못했습니다.'**
+  /// In en, this message translates to:
+  /// **'Could not publish your post.'**
   String get assetPostsSendError;
 
   /// No description provided for @assetDetailMoveSummary.
   ///
-  /// In ko, this message translates to:
-  /// **'오늘 움직임 요약'**
+  /// In en, this message translates to:
+  /// **'Today’s move (AI)'**
   String get assetDetailMoveSummary;
 
   /// No description provided for @assetDetailMoveSummaryDisclaimer.
   ///
-  /// In ko, this message translates to:
-  /// **'AI가 공개 수치만으로 생성한 참고용 문장이며, 투자 권유가 아닙니다.'**
+  /// In en, this message translates to:
+  /// **'AI-generated from public figures only—not investment advice.'**
   String get assetDetailMoveSummaryDisclaimer;
 
   /// No description provided for @assetDetailNewsTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'뉴스'**
+  /// In en, this message translates to:
+  /// **'Headlines'**
   String get assetDetailNewsTitle;
 
   /// No description provided for @assetDetailNewsEmpty.
   ///
-  /// In ko, this message translates to:
-  /// **'이 검색으로 최근 헤드라인이 없습니다.'**
+  /// In en, this message translates to:
+  /// **'No recent headlines for this search.'**
   String get assetDetailNewsEmpty;
 
   /// No description provided for @assetDetailNewsError.
   ///
-  /// In ko, this message translates to:
-  /// **'뉴스를 불러오지 못했습니다. 연결을 확인하거나 다시 시도해 주세요.'**
+  /// In en, this message translates to:
+  /// **'Could not load headlines. Check your connection or try again.'**
   String get assetDetailNewsError;
 
   /// No description provided for @assetDetailNewsDisclaimer.
   ///
-  /// In ko, this message translates to:
-  /// **'외부 뉴스 소스의 제목·링크만 표시합니다.'**
+  /// In en, this message translates to:
+  /// **'Headlines from third-party sources—titles and links only.'**
   String get assetDetailNewsDisclaimer;
 
   /// No description provided for @assetDetailNewsShowMore.
   ///
-  /// In ko, this message translates to:
-  /// **'더 보기'**
+  /// In en, this message translates to:
+  /// **'Show more'**
   String get assetDetailNewsShowMore;
 
   /// No description provided for @assetDetailNewsShowLess.
   ///
-  /// In ko, this message translates to:
-  /// **'접기'**
+  /// In en, this message translates to:
+  /// **'Show less'**
   String get assetDetailNewsShowLess;
 
   /// No description provided for @assetDetailNewsWatchAdAiAnalysis.
   ///
-  /// In ko, this message translates to:
-  /// **'광고보고 AI 뉴스 분석'**
+  /// In en, this message translates to:
+  /// **'Watch ad · AI news analysis'**
   String get assetDetailNewsWatchAdAiAnalysis;
 
   /// No description provided for @assetDetailOpenCommunity.
   ///
-  /// In ko, this message translates to:
-  /// **'커뮤니티'**
+  /// In en, this message translates to:
+  /// **'Community'**
   String get assetDetailOpenCommunity;
 
   /// No description provided for @communitySearchHint.
   ///
-  /// In ko, this message translates to:
-  /// **'게시글 본문 검색 (OR)…'**
+  /// In en, this message translates to:
+  /// **'Search words in posts (OR)…'**
   String get communitySearchHint;
 
   /// No description provided for @assetDetailOpenChart.
   ///
-  /// In ko, this message translates to:
-  /// **'차트 보기'**
+  /// In en, this message translates to:
+  /// **'View chart'**
   String get assetDetailOpenChart;
 
   /// No description provided for @assetChartRange1mo.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'1M'**
   String get assetChartRange1mo;
 
   /// No description provided for @assetChartRange3mo.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'3M'**
   String get assetChartRange3mo;
 
   /// No description provided for @assetChartRange1y.
   ///
-  /// In ko, this message translates to:
+  /// In en, this message translates to:
   /// **'1Y'**
   String get assetChartRange1y;
 
   /// No description provided for @assetChartFootnote.
   ///
-  /// In ko, this message translates to:
-  /// **'일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다.'**
+  /// In en, this message translates to:
+  /// **'Daily candles via Yahoo (server). Not investment advice.'**
   String get assetChartFootnote;
 
   /// No description provided for @themeDetailChartTitle.
   ///
-  /// In ko, this message translates to:
-  /// **'테마 평균 추이'**
+  /// In en, this message translates to:
+  /// **'Theme average (normalized)'**
   String get themeDetailChartTitle;
 
   /// No description provided for @themeDetailChartFootnote.
   ///
-  /// In ko, this message translates to:
-  /// **'구성 종목별로 구간 첫 종가를 100으로 맞춘 뒤, 같은 날짜의 값을 평균한 합성 지수입니다. Yahoo 일봉 · 서버 집계. 투자 권유가 아닙니다.'**
+  /// In en, this message translates to:
+  /// **'Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice.'**
   String get themeDetailChartFootnote;
 
   /// No description provided for @accountSuspendedBanner.
   ///
-  /// In ko, this message translates to:
-  /// **'이 계정은 커뮤니티 사용이 제한된 상태입니다. 글 작성·수정·삭제·답글을 할 수 없습니다.'**
+  /// In en, this message translates to:
+  /// **'Your account cannot post, edit, delete, or reply in the community right now.'**
   String get accountSuspendedBanner;
 
   /// No description provided for @accountSuspendedSnack.
   ///
-  /// In ko, this message translates to:
-  /// **'커뮤니티 사용이 제한된 계정입니다.'**
+  /// In en, this message translates to:
+  /// **'This account is restricted from community activity.'**
   String get accountSuspendedSnack;
+
+  /// No description provided for @shareSheetKakaoTalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Share to KakaoTalk'**
+  String get shareSheetKakaoTalk;
+
+  /// No description provided for @shareSheetSystemShare.
+  ///
+  /// In en, this message translates to:
+  /// **'System share'**
+  String get shareSheetSystemShare;
+
+  /// No description provided for @shareSheetCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get shareSheetCopyLink;
+
+  /// No description provided for @shareSheetCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get shareSheetCopied;
 }
 
 class _AppLocalizationsDelegate
@@ -1688,7 +1752,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'ko'].contains(locale.languageCode);
+      <String>['en', 'ja', 'ko', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1699,8 +1763,12 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'ja':
+      return AppLocalizationsJa();
     case 'ko':
       return AppLocalizationsKo();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(

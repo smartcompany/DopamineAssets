@@ -303,6 +303,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityPostSeeMore => '더보기 >';
 
   @override
+  String get communityShowOriginal => '원문 보기';
+
+  @override
+  String get communityShowTranslated => '번역 보기';
+
+  @override
   String get communityReportPost => '신고';
 
   @override
@@ -656,6 +662,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetClassBadgeKrStock => '한국 주식';
 
   @override
+  String get assetClassBadgeJpStock => '일본 주식';
+
+  @override
+  String get assetClassBadgeCnStock => '중국 주식';
+
+  @override
+  String get assetClassJpStock => '일본 주식';
+
+  @override
+  String get assetClassCnStock => '중국 A주';
+
+  @override
   String get assetClassBadgeCrypto => '암호화폐';
 
   @override
@@ -840,4 +858,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get accountSuspendedSnack => '커뮤니티 사용이 제한된 계정입니다.';
+
+  @override
+  String get shareSheetKakaoTalk => '카카오톡 공유';
+
+  @override
+  String get shareSheetSystemShare => '기본 공유';
+
+  @override
+  String get shareSheetCopyLink => '링크 복사';
+
+  @override
+  String get shareSheetCopied => '복사되었습니다';
 }

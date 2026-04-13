@@ -70,6 +70,8 @@ class HomeAssetSuggestions extends ChangeNotifier {
   static const _mergeableInterestClasses = <String>{
     'us_stock',
     'kr_stock',
+    'jp_stock',
+    'cn_stock',
     'crypto',
     'commodity',
   };

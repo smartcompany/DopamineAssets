@@ -125,6 +125,24 @@ String assetNewsSearchQuery({
         return '$sym 주식';
       }
       return '코스피';
+    case 'jp_stock':
+      final parts = <String>[];
+      if (nm.isNotEmpty) parts.add(nm);
+      if (sym.isNotEmpty) parts.add(sym);
+      if (parts.isEmpty) return 'Japan stock market';
+      parts.add('Japan stock');
+      var q = parts.join(' ');
+      if (q.length > 200) q = q.substring(0, 200).trim();
+      return q;
+    case 'cn_stock':
+      final parts = <String>[];
+      if (nm.isNotEmpty) parts.add(nm);
+      if (sym.isNotEmpty) parts.add(sym);
+      if (parts.isEmpty) return 'China A-share stock';
+      parts.add('China stock');
+      var q = parts.join(' ');
+      if (q.length > 200) q = q.substring(0, 200).trim();
+      return q;
     case 'commodity':
       if (nm.isNotEmpty) {
         return '$nm commodity';

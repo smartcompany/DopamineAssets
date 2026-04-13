@@ -5,6 +5,7 @@ import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../theme/dopamine_theme.dart';
 import '../../widgets/common_share_ui.dart';
+import '../../widgets/community_translated_body.dart';
 import '../asset/asset_detail_screen.dart';
 
 /// 커뮤니티 피드·프로필 활동 등에서 동일한 게시 카드 UI
@@ -84,6 +85,10 @@ class CommunityPostCard extends StatelessWidget {
         return l10n.assetClassBadgeUsStock;
       case 'kr_stock':
         return l10n.assetClassBadgeKrStock;
+      case 'jp_stock':
+        return l10n.assetClassBadgeJpStock;
+      case 'cn_stock':
+        return l10n.assetClassBadgeCnStock;
       case 'crypto':
         return l10n.assetClassBadgeCrypto;
       case 'commodity':
@@ -359,8 +364,11 @@ class CommunityPostCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 8),
-              _PostBodySnippet(
+              CommunityTranslatedBody(
                 body: post.body,
+                localeName: l10n.localeName,
+                showOriginalLabel: l10n.communityShowOriginal,
+                showTranslatedLabel: l10n.communityShowTranslated,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: DopamineTheme.textPrimary,
                   height: 1.32,
@@ -521,75 +529,6 @@ class CommunityPostCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// 본문이 [maxLines]를 넘으면 말줄임 후 `더보기 >`로 본문 화면 진입을 안내한다.
-class _PostBodySnippet extends StatelessWidget {
-  const _PostBodySnippet({
-    required this.body,
-    required this.style,
-    required this.maxLines,
-    required this.seeMoreLabel,
-    this.onSeeMore,
-  });
-
-  final String body;
-  final TextStyle? style;
-  final int maxLines;
-  final String seeMoreLabel;
-  final VoidCallback? onSeeMore;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = body.trim();
-    if (t.isEmpty) return const SizedBox.shrink();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final textStyle =
-            style ??
-            DefaultTextStyle.of(
-              context,
-            ).style.copyWith(color: DopamineTheme.textPrimary, height: 1.32);
-        final painter = TextPainter(
-          text: TextSpan(text: body, style: textStyle),
-          textDirection: Directionality.of(context),
-          maxLines: maxLines,
-        )..layout(maxWidth: constraints.maxWidth);
-
-        final clipped = painter.didExceedMaxLines;
-        final showLink = clipped && onSeeMore != null;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              body,
-              maxLines: maxLines,
-              overflow: TextOverflow.ellipsis,
-              style: textStyle,
-            ),
-            if (showLink) ...[
-              const SizedBox(height: 6),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onSeeMore,
-                child: Text(
-                  seeMoreLabel,
-                  style: textStyle.copyWith(
-                    color: DopamineTheme.neonGreen,
-                    fontWeight: FontWeight.w700,
-                    fontSize: (textStyle.fontSize ?? 14) * 0.92,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        );
-      },
     );
   }
 }

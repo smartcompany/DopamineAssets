@@ -56,6 +56,8 @@ String _yahooChartSymbol(String assetClass, String raw) {
       return '$t-USD';
     case 'us_stock':
     case 'kr_stock':
+    case 'jp_stock':
+    case 'cn_stock':
     case 'commodity':
       return t;
     case 'theme':

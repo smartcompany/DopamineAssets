@@ -308,6 +308,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityPostSeeMore => 'See more >';
 
   @override
+  String get communityShowOriginal => 'Show original';
+
+  @override
+  String get communityShowTranslated => 'Show translation';
+
+  @override
   String get communityReportPost => 'Report';
 
   @override
@@ -663,6 +669,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetClassBadgeKrStock => 'Korea';
 
   @override
+  String get assetClassBadgeJpStock => 'Japan';
+
+  @override
+  String get assetClassBadgeCnStock => 'China';
+
+  @override
+  String get assetClassJpStock => 'Japan stocks';
+
+  @override
+  String get assetClassCnStock => 'China A-shares';
+
+  @override
   String get assetClassBadgeCrypto => 'Crypto';
 
   @override
@@ -852,4 +870,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get accountSuspendedSnack =>
       'This account is restricted from community activity.';
+
+  @override
+  String get shareSheetKakaoTalk => 'Share to KakaoTalk';
+
+  @override
+  String get shareSheetSystemShare => 'System share';
+
+  @override
+  String get shareSheetCopyLink => 'Copy link';
+
+  @override
+  String get shareSheetCopied => 'Copied';
 }

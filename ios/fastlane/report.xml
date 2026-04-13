@@ -5,47 +5,49 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: app_store_connect_api_key" time="0.002735">
+      <testcase classname="fastlane.lanes" name="0: app_store_connect_api_key" time="0.00275">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: default_platform" time="8.1e-05">
+      <testcase classname="fastlane.lanes" name="1: default_platform" time="8.6e-05">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="2: cocoapods" time="6.299149">
+      <testcase classname="fastlane.lanes" name="2: cocoapods" time="4.799104">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="3: increment_build_number" time="0.339696">
+      <testcase classname="fastlane.lanes" name="3: increment_build_number" time="0.943403">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="4: get_provisioning_profile" time="4.370257">
+      <testcase classname="fastlane.lanes" name="4: get_provisioning_profile" time="4.349111">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="5: clean_build_artifacts" time="0.000434">
+      <testcase classname="fastlane.lanes" name="5: clean_build_artifacts" time="0.000273">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="6: build_app" time="107.410075">
+      <testcase classname="fastlane.lanes" name="6: build_app" time="168.598334">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="7: upload_symbols_to_crashlytics" time="97.434471">
+      <testcase classname="fastlane.lanes" name="7: upload_symbols_to_crashlytics" time="107.66807">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="8: upload_to_app_store" time="101.48211">
+      <testcase classname="fastlane.lanes" name="8: upload_to_app_store" time="602.55106">
+        
+          <failure message="/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/actions/actions_helper.rb:67:in &apos;Fastlane::Actions.execute_action&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/runner.rb:255:in &apos;block in Fastlane::Runner#execute_action&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/runner.rb:229:in &apos;Dir.chdir&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/runner.rb:229:in &apos;Fastlane::Runner#execute_action&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/runner.rb:157:in &apos;Fastlane::Runner#trigger_action_by_name&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/fast_file.rb:159:in &apos;Fastlane::FastFile#method_missing&apos;&#10;Fastfile:80:in &apos;block (2 levels) in Fastlane::FastFile#parsing_binding&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/lane.rb:41:in &apos;Fastlane::Lane#call&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/runner.rb:49:in &apos;block in Fastlane::Runner#execute&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/runner.rb:45:in &apos;Dir.chdir&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/runner.rb:45:in &apos;Fastlane::Runner#execute&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/lane_manager.rb:46:in &apos;Fastlane::LaneManager.cruise_lane&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/command_line_handler.rb:34:in &apos;Fastlane::CommandLineHandler.handle&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/commands_generator.rb:110:in &apos;block (2 levels) in Fastlane::CommandsGenerator#run&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/commander-4.6.0/lib/commander/command.rb:187:in &apos;Commander::Command#call&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/commander-4.6.0/lib/commander/command.rb:157:in &apos;Commander::Command#run&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/commander-4.6.0/lib/commander/runner.rb:444:in &apos;Commander::Runner#run_active_command&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane_core/lib/fastlane_core/ui/fastlane_runner.rb:124:in &apos;Commander::Runner#run!&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/commander-4.6.0/lib/commander/delegates.rb:18:in &apos;Commander::Delegates#run!&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/commands_generator.rb:363:in &apos;Fastlane::CommandsGenerator#run&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/commands_generator.rb:43:in &apos;Fastlane::CommandsGenerator.start&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/fastlane/lib/fastlane/cli_tools_distributor.rb:123:in &apos;Fastlane::CLIToolsDistributor.take_off&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/gems/fastlane-2.230.0/bin/fastlane:23:in &apos;&lt;top (required)&gt;&apos;&#10;/opt/homebrew/Cellar/ruby/4.0.0/lib/ruby/4.0.0/rubygems.rb:303:in &apos;Kernel#load&apos;&#10;/opt/homebrew/Cellar/ruby/4.0.0/lib/ruby/4.0.0/rubygems.rb:303:in &apos;Gem.activate_and_load_bin_path&apos;&#10;/opt/homebrew/Cellar/fastlane/2.230.0_1/libexec/bin/fastlane:25:in &apos;&lt;main&gt;&apos;&#10;&#10;Error uploading ipa file: &#10; [Application Loader Error Output]: [ContentDelivery.Uploader.72504A6C0] Download task 4 failed with error: The network connection was lost. (-1005)&#10;[Application Loader Error Output]: [ContentDelivery.Uploader.105503200] CHANGE UPLOAD STATE TO COMPLETE (UPLOADING ASSET DESCRIPTION): error: Error Domain=NSURLErrorDomain Code=-1005 &quot;The network connection was lost.&quot; UserInfo={NSUnderlyingError=0x725270e70 {Error Domain=kCFErrorDomainCFNetwork Code=-1005 &quot;(null)&quot; UserInfo={_kCFStreamErrorCodeKey=54, _kCFStreamErrorDomainKey=1}}, NSErrorFailingURLStringKey=https://contentdelivery.itunes.apple.com/MZContentDeliveryService/iris/v1/buildDeliveryFiles/bc0250ea-e7aa-442b-a17d-7a887ae12064, NSErrorFailingURLKey=https://contentdelivery.itunes.apple.com/MZContentDeliveryService/iris/v1/buildDeliveryFiles/bc0250ea-e7aa-442b-a17d-7a887ae12064, _kCFStreamErrorDomainKey=1, _kCFStreamErrorCodeKey=54, NSLocalizedDescription=The network connection was lost.}[0m&#10;[Application Loader Error Output]: [ContentDelivery.Uploader.105503200] The network connection was lost for CHANGE UPLOAD STATE TO COMPLETE (UPLOADING ASSET DESCRIPTION). Retrying request (4 attempts remaining).[0m" />
         
       </testcase>
     

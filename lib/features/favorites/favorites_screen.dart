@@ -172,6 +172,8 @@ List<_FavoriteSection> _buildSectionsInOrder(
   final order = <({String key, String title})>[
     (key: 'kr_stock', title: l10n.assetClassBadgeKrStock),
     (key: 'us_stock', title: l10n.assetClassBadgeUsStock),
+    (key: 'jp_stock', title: l10n.assetClassBadgeJpStock),
+    (key: 'cn_stock', title: l10n.assetClassBadgeCnStock),
     (key: 'crypto', title: l10n.assetClassBadgeCrypto),
     (key: 'commodity', title: l10n.assetClassBadgeCommodity),
   ];
@@ -190,6 +192,10 @@ String _classLabel(String assetClass, AppLocalizations l10n) {
       return l10n.assetClassBadgeKrStock;
     case 'us_stock':
       return l10n.assetClassBadgeUsStock;
+    case 'jp_stock':
+      return l10n.assetClassBadgeJpStock;
+    case 'cn_stock':
+      return l10n.assetClassBadgeCnStock;
     case 'crypto':
       return l10n.assetClassBadgeCrypto;
     case 'commodity':

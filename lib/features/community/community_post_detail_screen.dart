@@ -21,6 +21,7 @@ import '../../data/models/ranked_asset.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/dopamine_theme.dart';
 import '../../widgets/common_share_ui.dart';
+import '../../widgets/community_translated_body.dart';
 import '../asset/asset_detail_screen.dart';
 import 'community_compose_screen.dart';
 import 'community_report_sheet.dart';
@@ -671,6 +672,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         return l10n.assetClassBadgeUsStock;
       case 'kr_stock':
         return l10n.assetClassBadgeKrStock;
+      case 'jp_stock':
+        return l10n.assetClassBadgeJpStock;
+      case 'cn_stock':
+        return l10n.assetClassBadgeCnStock;
       case 'crypto':
         return l10n.assetClassBadgeCrypto;
       case 'commodity':
@@ -1487,8 +1492,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           ),
         ],
         const SizedBox(height: 10),
-        Text(
-          _post.body,
+        CommunityTranslatedBody(
+          body: _post.body,
+          localeName: l10n.localeName,
+          showOriginalLabel: l10n.communityShowOriginal,
+          showTranslatedLabel: l10n.communityShowTranslated,
           style: theme.textTheme.bodyMedium?.copyWith(height: 1.35),
         ),
         const SizedBox(height: 14),

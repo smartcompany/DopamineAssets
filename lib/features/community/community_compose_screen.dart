@@ -139,6 +139,8 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   static const _classes = <String>[
     'us_stock',
     'kr_stock',
+    'jp_stock',
+    'cn_stock',
     'crypto',
     'commodity',
     'theme',
@@ -426,6 +428,10 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         return l10n.assetClassBadgeUsStock;
       case 'kr_stock':
         return l10n.assetClassBadgeKrStock;
+      case 'jp_stock':
+        return l10n.assetClassBadgeJpStock;
+      case 'cn_stock':
+        return l10n.assetClassBadgeCnStock;
       case 'crypto':
         return l10n.assetClassBadgeCrypto;
       case 'commodity':

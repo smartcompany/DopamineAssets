@@ -2,7 +2,7 @@ name: dopamine_assets
 description: "Dopamine Assets — volatile-asset feed (US/KR stocks, crypto, commodities)."
 publish_to: "none"
 
-version: 1.0.2+4
+version: 1.0.3+5
 
 environment:
   sdk: ^3.10.7

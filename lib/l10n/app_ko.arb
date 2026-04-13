@@ -107,6 +107,8 @@
   "communityOpenAssetDetail": "종목 상세",
   "communityMoreMenu": "더보기",
   "communityPostSeeMore": "더보기 >",
+  "communityShowOriginal": "원문 보기",
+  "communityShowTranslated": "번역 보기",
   "communityReportPost": "신고",
   "communityBlockAuthor": "사용자 차단",
   "communityPostHiddenByReportNotice": "신고 검토로 이 글은 다른 이용자에게 보이지 않습니다.",
@@ -260,6 +262,10 @@
   },
   "assetClassBadgeUsStock": "미국 주식",
   "assetClassBadgeKrStock": "한국 주식",
+  "assetClassBadgeJpStock": "일본 주식",
+  "assetClassBadgeCnStock": "중국 주식",
+  "assetClassJpStock": "일본 주식",
+  "assetClassCnStock": "중국 A주",
   "assetClassBadgeCrypto": "암호화폐",
   "assetClassBadgeCommodity": "원자재",
   "assetClassBadgeTheme": "테마",
@@ -339,5 +345,9 @@
   "themeDetailChartTitle": "테마 평균 추이",
   "themeDetailChartFootnote": "구성 종목별로 구간 첫 종가를 100으로 맞춘 뒤, 같은 날짜의 값을 평균한 합성 지수입니다. Yahoo 일봉 · 서버 집계. 투자 권유가 아닙니다.",
   "accountSuspendedBanner": "이 계정은 커뮤니티 사용이 제한된 상태입니다. 글 작성·수정·삭제·답글을 할 수 없습니다.",
-  "accountSuspendedSnack": "커뮤니티 사용이 제한된 계정입니다."
+  "accountSuspendedSnack": "커뮤니티 사용이 제한된 계정입니다.",
+  "shareSheetKakaoTalk": "카카오톡 공유",
+  "shareSheetSystemShare": "기본 공유",
+  "shareSheetCopyLink": "링크 복사",
+  "shareSheetCopied": "복사되었습니다"
 }

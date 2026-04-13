@@ -34,7 +34,7 @@ class _RankingsScreenState extends State<RankingsScreen>
     final lang = Localizations.localeOf(context).languageCode;
     if (_rankingsLocaleKey == lang) return;
     _rankingsLocaleKey = lang;
-    final classesFuture = RankingFilterPrefs.load();
+    final classesFuture = RankingFilterPrefs.load(locale: lang);
     _upFuture = classesFuture.then(
       (c) => DopamineApi.fetchRankingsUp(
         includeAssetClasses: c,
