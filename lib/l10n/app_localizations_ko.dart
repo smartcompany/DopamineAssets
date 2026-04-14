@@ -24,6 +24,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navCommunity => '커뮤니티';
 
   @override
+  String get navFavorites => '관심';
+
+  @override
   String get favoritesEmpty => '관심 자산이 없습니다.';
 
   @override

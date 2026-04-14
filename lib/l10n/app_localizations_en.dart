@@ -24,6 +24,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navCommunity => 'Community';
 
   @override
+  String get navFavorites => 'Favorites';
+
+  @override
   String get favoritesEmpty => 'No saved favorites yet.';
 
   @override

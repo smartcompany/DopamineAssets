@@ -24,13 +24,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navCommunity => '社区';
 
   @override
+  String get navFavorites => '自选';
+
+  @override
   String get favoritesEmpty => '尚未保存收藏。';
 
   @override
   String get favoritesSignInToSave => '登录以在此设备上保存和查看收藏夹。';
 
   @override
-  String get navProfile => '個人檔案';
+  String get navProfile => '个人资料';
 
   @override
   String get profileSignedInSection => '账户';
@@ -102,13 +105,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileDisplayNameInputPlaceholder => '输入显示名';
 
   @override
-  String get profileCheckDisplayNameDuplicate => '查看余票情况';
+  String get profileCheckDisplayNameDuplicate => '检查名称是否可用';
 
   @override
-  String get profileDisplayNameEmpty => '請輸入顯示名稱。';
+  String get profileDisplayNameEmpty => '请输入显示名称。';
 
   @override
-  String get profileDisplayNameCheckFirst => '保存前，请检查可订状态。';
+  String get profileDisplayNameCheckFirst => '保存前请先检查名称是否可用。';
 
   @override
   String get profileNicknameRequiredForCommunity => '在个人资料中设置您的显示名称。';
@@ -141,16 +144,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileStatPosts => '文章';
 
   @override
-  String get profileStatFollowing => '追蹤';
+  String get profileStatFollowing => '关注';
 
   @override
   String get profileStatFollowers => '粉丝';
 
   @override
-  String get profileStatBlocked => '封锁';
+  String get profileStatBlocked => '已屏蔽';
 
   @override
-  String get profileBlockedTitle => '阻止的用户';
+  String get profileBlockedTitle => '已屏蔽用户';
 
   @override
   String get profileBlockedListEmpty => '您没有屏蔽任何人。';
@@ -159,7 +162,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileUnblockAction => '取消屏蔽';
 
   @override
-  String get profileUnblockedDone => '解除阻止';
+  String get profileUnblockedDone => '已解除屏蔽';
 
   @override
   String get profileActivityTitle => '活跃度';
@@ -191,7 +194,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileActivityDeletePost => '删除';
 
   @override
-  String get profileActivityEditDialogTitle => '排除帖子';
+  String get profileActivityEditDialogTitle => '编辑帖子';
 
   @override
   String get profileActivityDeleteDialogTitle => '删除此帖子';
@@ -200,7 +203,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileActivityPostDeleted => '已删除。';
 
   @override
-  String get profileActivityPostUpdated => '已保存.';
+  String get profileActivityPostUpdated => '已保存。';
 
   @override
   String get profileFollowListEmpty => '尚无用户';
@@ -216,7 +219,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String profileDisplayNameDuplicateFromSocialMessage(String name) {
-    return '登录提供商的姓名「$name」已被使用。在下方输入新名称，轻点查看可订状态，然后轻点保存。';
+    return '登录提供商的姓名「$name」已被占用。请在下方输入新名称，先检查是否可用，再保存。';
   }
 
   @override
@@ -279,7 +282,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileFollowUnfollow => '未关注';
 
   @override
-  String get profileFollowTitleFollowing => '追蹤';
+  String get profileFollowTitleFollowing => '关注';
 
   @override
   String get profileFollowTitleFollowers => '粉丝';
@@ -297,7 +300,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get communityMoreMenu => '更多';
 
   @override
-  String get communityPostSeeMore => '顯示更多';
+  String get communityPostSeeMore => '显示更多';
 
   @override
   String get communityShowOriginal => '查看原文';
@@ -306,7 +309,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get communityShowTranslated => '查看翻译';
 
   @override
-  String get communityReportPost => '报告';
+  String get communityReportPost => '举报';
 
   @override
   String get communityBlockAuthor => '拉入黑名单';
@@ -324,10 +327,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get communityReportPostMenuSubtitle => '这个帖子';
 
   @override
-  String get communityBlockAuthorShort => '格挡';
+  String get communityBlockAuthorShort => '屏蔽';
 
   @override
-  String get communityReportPostShort => '报告';
+  String get communityReportPostShort => '举报';
 
   @override
   String get communityReportDialogTitle => '举报此帖子';
@@ -336,10 +339,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get communityReportReasonHint => '原因（可选）';
 
   @override
-  String get communityReportSend => '报告';
+  String get communityReportSend => '提交举报';
 
   @override
-  String get communityReportSheetTitle => '报告';
+  String get communityReportSheetTitle => '举报';
 
   @override
   String get communityReportSheetSubtitle => '选择您的举报原因';
@@ -348,7 +351,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get communityReportReasonSpam => '垃圾邮件或广告';
 
   @override
-  String get communityReportReasonAbuse => '「骚扰」或';
+  String get communityReportReasonAbuse => '骚扰或仇恨';
 
   @override
   String get communityReportReasonSexual => '色情内容';
@@ -357,10 +360,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get communityReportReasonViolence => '暴力或威胁';
 
   @override
-  String get communityReportReasonOther => 'Other';
+  String get communityReportReasonOther => '其他';
 
   @override
-  String get communityReportDetailHint => '詳情（選擇）';
+  String get communityReportDetailHint => '详情（可选）';
 
   @override
   String get communityReportSubmitButton => '提交报告';
@@ -369,18 +372,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get communityReportSubmitted => '谢谢！您的举报已提交。';
 
   @override
-  String get communityBlockAuthorTitle => 'Block this user?';
+  String get communityBlockAuthorTitle => '屏蔽此用户？';
 
   @override
   String communityBlockAuthorMessage(String authorName) {
-    return 'You will no longer see posts or this profile from $authorName.';
+    return '屏蔽后，您将不再看到来自 $authorName 的帖子或其个人主页。';
   }
 
   @override
-  String get communityUserBlocked => 'User blocked.';
+  String get communityUserBlocked => '已屏蔽该用户。';
 
   @override
-  String get communityLikeLogin => 'Sign in to like.';
+  String get communityLikeLogin => '登录后即可点赞。';
 
   @override
   String communityLikeCount(int count) {
@@ -393,298 +396,291 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get communityPostDetailTitle => 'Post';
+  String get communityPostDetailTitle => '帖子';
 
   @override
-  String get communityCommentsTitle => 'Comments';
+  String get communityCommentsTitle => '评论';
 
   @override
-  String get communityWrite => 'Write';
+  String get communityWrite => '写评论';
 
   @override
-  String get communityComposeTitle => 'New post';
+  String get communityComposeTitle => '发布新帖';
 
   @override
-  String get communityComposeSubmit => 'Post';
+  String get communityComposeSubmit => '发布';
 
   @override
-  String get communityComposeOptionalTitle => 'Title (optional)';
+  String get communityComposeOptionalTitle => '标题（可选）';
 
   @override
-  String get communityComposeTitleHint => 'Add a title or leave blank';
+  String get communityComposeTitleHint => '填写标题或留空';
 
   @override
-  String get communityComposeSymbolLabel => 'Symbol';
+  String get communityComposeSymbolLabel => '代码';
 
   @override
-  String get communityComposeThemePickerLabel => 'Theme';
+  String get communityComposeThemePickerLabel => '主题';
 
   @override
-  String get communityComposePickTheme => 'Choose a theme';
+  String get communityComposePickTheme => '选择主题';
 
   @override
-  String get communityComposeSymbolHint => 'e.g. TSLA, IBRX';
+  String get communityComposeSymbolHint => '例如 TSLA、IBRX';
 
   @override
-  String get communityComposeAssetClassLabel => 'Asset type';
+  String get communityComposeAssetClassLabel => '资产类型';
 
   @override
-  String get communityComposeBodyLabel => 'Body';
+  String get communityComposeBodyLabel => '正文';
 
   @override
   String get communityComposeBodyHint =>
-      'Spam, ads, harassment, or abuse may be removed; repeated violations may restrict your account. Please keep discussion respectful.';
+      '垃圾信息、广告、骚扰或辱骂内容可能被删除；屡次违规可能导致账号受限。请文明讨论。';
 
   @override
-  String get communityComposePhotosLabel => 'Photos';
+  String get communityComposePhotosLabel => '图片';
 
   @override
-  String get communityComposeNeedSymbol => 'Choose a symbol.';
+  String get communityComposeNeedSymbol => '请选择代码。';
 
   @override
-  String get communityComposeNeedBody => 'Enter the body text.';
+  String get communityComposeNeedBody => '请输入正文。';
 
   @override
-  String get communityComposePickSymbol => 'Choose symbol';
+  String get communityComposePickSymbol => '选择代码';
 
   @override
-  String get communityComposeNoRankedSymbols =>
-      'No ranked symbols for this asset type. Open Home to load rankings and try again.';
+  String get communityComposeNoRankedSymbols => '该资产类型暂无排行代码。请打开首页加载排行后再试。';
 
   @override
-  String get communityComposeAddPhotoShort => 'Photo';
+  String get communityComposeAddPhotoShort => '照片';
 
   @override
-  String get communityComposeAddGifShort => 'GIF';
+  String get communityComposeAddGifShort => '动图';
 
   @override
-  String get communityComposeGiphySearchHint => 'Search GIPHY';
+  String get communityComposeGiphySearchHint => '搜索 GIPHY';
 
   @override
-  String get communityComposeGiphyPoweredBy => 'Powered by GIPHY';
+  String get communityComposeGiphyPoweredBy => '由 GIPHY 提供支持';
 
   @override
-  String get communityComposeGiphyTooLarge =>
-      'This file is over 5MB. Pick another GIF.';
+  String get communityComposeGiphyTooLarge => '文件超过 5MB，请另选一张 GIF。';
 
   @override
-  String get communityComposeGiphyDownloadError =>
-      'Could not load the GIF. Try again.';
+  String get communityComposeGiphyDownloadError => '无法加载该 GIF，请重试。';
 
   @override
-  String get communityComposeGiphyRateLimited =>
-      'Please try again in a moment. (rate limit)';
+  String get communityComposeGiphyRateLimited => '请求过于频繁，请稍后再试。';
 
   @override
-  String get communityComposeGiphyLoadError => 'Could not load the list.';
+  String get communityComposeGiphyLoadError => '无法加载列表。';
 
   @override
-  String get communityComposeGiphyRetry => 'Retry';
+  String get communityComposeGiphyRetry => '重试';
 
   @override
-  String get communityComposeGiphyEmpty => 'No results.';
+  String get communityComposeGiphyEmpty => '暂无结果。';
 
   @override
-  String get communityComposeGiphyThumbError => 'Preview unavailable';
+  String get communityComposeGiphyThumbError => '预览不可用';
 
   @override
-  String get communityComposeEditTitle => '排除帖子';
+  String get communityComposeEditTitle => '编辑帖子';
 
   @override
   String get communityComposeSave => '确认保存';
 
   @override
-  String get communityComposeEditReplyTitle => 'Edit reply';
+  String get communityComposeEditReplyTitle => '编辑回复';
 
   @override
   String ugcBannedWordsMessage(String term) {
-    return 'This text contains disallowed wording: $term';
+    return '文本包含不允许的用语：$term';
   }
 
   @override
-  String get navRankings => 'Rankings';
+  String get navRankings => '排行榜';
 
   @override
-  String get navThemes => 'Themes';
+  String get navThemes => '主题';
 
   @override
-  String get navMarket => 'Market';
+  String get navMarket => '市场';
 
   @override
-  String get homeRankingApplyFiltersTooltip =>
-      'Apply selected filters to rankings';
+  String get homeRankingApplyFiltersTooltip => '将所选资产类别应用到排行榜';
 
   @override
-  String get rankingsUpTab => 'Surging 🔥';
+  String get rankingsUpTab => '暴涨 🔥';
 
   @override
-  String get rankingsDownTab => 'Crashing 💀';
+  String get rankingsDownTab => '暴跌 💀';
 
   @override
-  String get rankingsUpTitle => 'Wildest gainers today';
+  String get rankingsUpTitle => '今日最猛涨幅';
 
   @override
-  String get rankingsDownTitle => 'Biggest losers today';
+  String get rankingsDownTitle => '今日最大跌幅';
 
   @override
-  String get homeRankingsShareTooltip => 'Share rankings';
+  String get homeRankingsShareTooltip => '分享排行榜';
 
   @override
-  String get homeRankingsShareEmptySnack => 'No rankings to share yet.';
+  String get homeRankingsShareEmptySnack => '暂无可分享的排行数据。';
 
   @override
   String homeRankingsShareFiltersLine(String filters) {
-    return 'Filters: $filters';
+    return '筛选：$filters';
   }
 
   @override
-  String get homeInterestSurgeTitle => 'Today\'s interest surge';
+  String get homeInterestSurgeTitle => '今日关注飙升';
 
   @override
-  String get homeInterestSurgeInfoIconTooltip => 'How this list is built';
+  String get homeInterestSurgeInfoIconTooltip => '此列表如何生成';
 
   @override
-  String get homeInterestSurgeInfoTitle => 'About today\'s interest surge';
+  String get homeInterestSurgeInfoTitle => '关于今日关注飙升';
 
   @override
   String get homeInterestSurgeInfoBody =>
-      'This list is built with AI: it picks US and Korean stocks, crypto, and commodities that look attention-worthy from recent market context, news, and investor-interest signals, then estimates a relative 0–100 \"trend\" score for each.\n\nScores are processed and stored on our servers once per day; the app shows the latest snapshot.\n\nFor information only—not investment advice, and not a guarantee of returns.';
+      '该列表由 AI 生成：结合近期市场环境、新闻与投资者关注度信号，从美股、韩股、加密货币与大宗商品中筛选值得关注的标的，并为每个标的估算 0–100 的相对「热度」分数。\n\n分数每天在我们的服务器上处理并存储一次；应用展示最新快照。\n\n仅供参考，不构成投资建议，也不保证收益。';
 
   @override
-  String get homeInterestSurgeInfoDismiss => '确认';
+  String get homeInterestSurgeInfoDismiss => '确定';
 
   @override
-  String get homeTrendScoreLabel => 'Trend';
+  String get homeTrendScoreLabel => '热度';
 
   @override
-  String get homeRankingShowMoreTooltip => 'Show more';
+  String get homeRankingShowMoreTooltip => '展开更多';
 
   @override
-  String get homeInterestSurgeShowMoreWithAd => 'Watch ad to show more';
+  String get homeInterestSurgeShowMoreWithAd => '观看广告以显示更多';
 
   @override
-  String get homeRankingShowLessTooltip => 'Show less';
+  String get homeRankingShowLessTooltip => '收起';
 
   @override
-  String get themesHotTitle => 'Hottest themes today';
+  String get themesHotTitle => '今日最热主题';
 
   @override
-  String get themesCrashedTitle => 'Themes that got crushed';
+  String get themesCrashedTitle => '今日重挫主题';
 
   @override
-  String get themesEmergingTitle => 'Suddenly trending themes';
+  String get themesEmergingTitle => '突然走红主题';
 
   @override
-  String get marketSummaryTitle => 'Market summary';
+  String get marketSummaryTitle => '市场摘要';
 
   @override
-  String get kimchiPremiumLabel => 'Kimchi premium';
+  String get kimchiPremiumLabel => '泡菜溢价';
 
   @override
-  String get exchangeRateLabel => 'Exchange rate';
+  String get exchangeRateLabel => '汇率';
 
   @override
-  String get marketStatusLabel => 'Market mood';
+  String get marketStatusLabel => '市场情绪';
 
   @override
-  String get dopamineScoreLabel => 'Dopamine score';
+  String get dopamineScoreLabel => '多巴胺指数';
 
   @override
-  String get errorLoadFailed => 'Could not load data.';
+  String get errorLoadFailed => '无法加载数据。';
 
   @override
-  String get errorNoApi =>
-      'API base URL is not set. Pass --dart-define=API_BASE_URL=... when running.';
+  String get errorNoApi => '未设置 API 地址。运行请传入 --dart-define=API_BASE_URL=...';
 
   @override
-  String get retry => 'Retry';
+  String get retry => '重试';
 
   @override
-  String get loading => 'Loading…';
+  String get loading => '加载中…';
 
   @override
-  String get emptyState => 'No data to show.';
+  String get emptyState => '暂无数据。';
 
   @override
-  String get assetName => 'Asset';
+  String get assetName => '资产';
 
   @override
-  String get priceChangePct => 'Price change';
+  String get priceChangePct => '涨跌幅';
 
   @override
-  String get volumeChangePct => 'Volume change';
+  String get volumeChangePct => '成交量变化';
 
   @override
-  String get summaryLine => 'Summary';
+  String get summaryLine => '摘要';
 
   @override
-  String get themeName => 'Theme';
+  String get themeName => '主题';
 
   @override
-  String get themeScore => 'Theme score';
+  String get themeScore => '主题得分';
 
   @override
-  String get stockCount => 'Symbols';
+  String get stockCount => '标的数';
 
   @override
-  String get sectionRankings => 'Up · Down';
+  String get sectionRankings => '涨跌榜';
 
   @override
-  String get sectionThemes => 'Theme rankings';
+  String get sectionThemes => '主题排行';
 
   @override
-  String get sectionMarket => 'Market summary';
+  String get sectionMarket => '市场摘要';
 
   @override
-  String get notAvailable => 'N/A';
+  String get notAvailable => '无';
 
   @override
   String get homeTopSurgeBadge => 'TOP 10';
 
   @override
-  String get homeKicker => 'Only what moves. Where money flows right now.';
+  String get homeKicker => '只看波动，追随资金流向。';
 
   @override
-  String get homeLiveBadge => 'LIVE';
+  String get homeLiveBadge => '实时';
 
   @override
   String homeThemeStockLine(int count) {
-    return '$count stocks';
+    return '$count 只股票';
   }
 
   @override
-  String get assetClassBadgeUsStock => 'US stock';
+  String get assetClassBadgeUsStock => '美股';
 
   @override
-  String get assetClassBadgeKrStock => 'Korea';
+  String get assetClassBadgeKrStock => '韩股';
 
   @override
-  String get assetClassBadgeJpStock => 'Japan';
+  String get assetClassBadgeJpStock => '日股';
 
   @override
-  String get assetClassBadgeCnStock => 'China';
+  String get assetClassBadgeCnStock => '中股';
 
   @override
-  String get assetClassJpStock => 'Japan stocks';
+  String get assetClassJpStock => '日本股市';
 
   @override
-  String get assetClassCnStock => 'China A-shares';
+  String get assetClassCnStock => '中国A股';
 
   @override
-  String get assetClassBadgeCrypto => 'Crypto';
+  String get assetClassBadgeCrypto => '加密货币';
 
   @override
-  String get assetClassBadgeCommodity => 'Commodity';
+  String get assetClassBadgeCommodity => '大宗商品';
 
   @override
-  String get assetClassBadgeTheme => 'Theme';
+  String get assetClassBadgeTheme => '主题';
 
   @override
-  String get communityComposeThemeNameHint =>
-      'Theme name (e.g. Energy & commodities)';
+  String get communityComposeThemeNameHint => '主题名称（例如：能源与大宗商品）';
 
   @override
-  String get rankingFilterTitle => 'Asset classes';
+  String get rankingFilterTitle => '资产类别';
 
   @override
   String get rankingFilterConfirm => '确认';
@@ -693,16 +689,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get rankingFilterCancel => '取消';
 
   @override
-  String get rankingFilterNeedOne => 'Select at least one.';
+  String get rankingFilterNeedOne => '请至少选择一项。';
 
   @override
-  String get assetDetailMissingClass => 'Missing asset class for this item.';
+  String get assetDetailMissingClass => '缺少该标的的资产类别。';
 
   @override
-  String get assetDetailSectionProfile => '個人檔案';
+  String get assetDetailSectionProfile => '概况';
 
   @override
-  String get assetDetailMarketCap => 'Market cap';
+  String get assetDetailMarketCap => '市值';
 
   @override
   String assetDetailMarketCapKrwMillions(String amount) {
@@ -715,123 +711,120 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get assetDetailMarketCapRank => 'Market cap rank';
+  String get assetDetailMarketCapRank => '市值排名';
 
   @override
-  String get assetDetailCurrentPrice => 'Price (USD)';
+  String get assetDetailCurrentPrice => '价格（美元）';
 
   @override
   String get assetDetailCryptoProfileMore => '更多';
 
   @override
-  String get assetDetailCryptoProfileLess => 'Less';
+  String get assetDetailCryptoProfileLess => '收起';
 
   @override
-  String get assetDetailSector => 'Sector';
+  String get assetDetailSector => '行业板块';
 
   @override
-  String get assetDetailIndustry => 'Industry';
+  String get assetDetailIndustry => '细分行业';
 
   @override
-  String get assetDetailExchange => 'Exchange';
+  String get assetDetailExchange => '交易所';
 
   @override
-  String get assetDetailCurrency => 'Currency';
+  String get assetDetailCurrency => '计价货币';
 
   @override
-  String get assetDetailPair => 'Pair';
+  String get assetDetailPair => '交易对';
 
   @override
-  String get assetDetailAbout => 'About';
+  String get assetDetailAbout => '简介';
 
   @override
-  String get assetDetailWebsite => 'Website';
+  String get assetDetailWebsite => '官网';
 
   @override
   String get assetDetailNotAvailable => '—';
 
   @override
-  String get assetDetailOpenLinkFailed => 'Could not open link.';
+  String get assetDetailOpenLinkFailed => '无法打开链接。';
 
   @override
-  String get assetDetailPriceChange => 'Price change (feed)';
+  String get assetDetailPriceChange => '涨跌幅（数据源）';
 
   @override
-  String get communitySortLatest => 'Latest';
+  String get communitySortLatest => '最新';
 
   @override
-  String get communitySortPopular => 'Popular';
+  String get communitySortPopular => '热门';
 
   @override
   String communityReplyCount(int count) {
-    return 'Replies: $count';
+    return '回复：$count';
   }
 
   @override
-  String get assetPostsTitle => 'Recent reactions';
+  String get assetPostsTitle => '最新讨论';
 
   @override
-  String get assetPostsEmpty => 'Be the first to post.';
+  String get assetPostsEmpty => '抢先发布第一条吧。';
 
   @override
-  String get assetPostsPlaceholder => 'Leave a comment.';
+  String get assetPostsPlaceholder => '发表评论…';
 
   @override
-  String get assetPostsReplyPlaceholder => 'Write a reply.';
+  String get assetPostsReplyPlaceholder => '撰写回复…';
 
   @override
-  String get assetPostsPublish => 'Post';
+  String get assetPostsPublish => '发布';
 
   @override
-  String get assetPostsReply => 'Reply';
+  String get assetPostsReply => '回复';
 
   @override
-  String get assetPostsReplying => 'Replying';
+  String get assetPostsReplying => '正在回复';
 
   @override
   String get assetPostsCancelReply => '取消';
 
   @override
-  String get assetPostsSendError => 'Could not publish your post.';
+  String get assetPostsSendError => '发布失败，请重试。';
 
   @override
-  String get assetDetailMoveSummary => 'Today’s move (AI)';
+  String get assetDetailMoveSummary => '今日异动（AI）';
 
   @override
-  String get assetDetailMoveSummaryDisclaimer =>
-      'AI-generated from public figures only—not investment advice.';
+  String get assetDetailMoveSummaryDisclaimer => '由公开数据经 AI 生成，仅供参考，不构成投资建议。';
 
   @override
-  String get assetDetailNewsTitle => 'Headlines';
+  String get assetDetailNewsTitle => '头条';
 
   @override
-  String get assetDetailNewsEmpty => 'No recent headlines for this search.';
+  String get assetDetailNewsEmpty => '暂无相关头条。';
 
   @override
-  String get assetDetailNewsError =>
-      'Could not load headlines. Check your connection or try again.';
+  String get assetDetailNewsError => '头条加载失败，请检查网络后重试。';
 
   @override
-  String get assetDetailNewsDisclaimer =>
-      'Headlines from third-party sources—titles and links only.';
+  String get assetDetailNewsDisclaimer => '头条来自第三方，仅展示标题与链接。';
 
   @override
-  String get assetDetailNewsShowMore => 'Show more';
+  String get assetDetailNewsShowMore => '展开更多';
 
   @override
-  String get assetDetailNewsShowLess => 'Show less';
+  String get assetDetailNewsShowLess => '收起';
 
   @override
-  String get assetDetailNewsWatchAdAiAnalysis => 'Watch ad · AI news analysis';
+  String get assetDetailNewsWatchAdAiAnalysis => '观看广告 · AI 新闻解读';
 
   @override
   String get assetDetailOpenCommunity => '社区';
 
   @override
-  String get communitySearchHint => 'Search words in posts (OR)…';
+  String get communitySearchHint => '搜索帖子中的关键词（任一匹配）…';
 
   @override
-  String get assetDetailOpenChart => 'View chart';
+  String get assetDetailOpenChart => '查看图表';
 
   @override
   String get assetChartRange1mo => '1M';
@@ -843,23 +836,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assetChartRange1y => '1Y';
 
   @override
-  String get assetChartFootnote =>
-      'Daily candles via Yahoo (server). Not investment advice.';
+  String get assetChartFootnote => '日 K 线来自 Yahoo（经服务器）。仅供参考，不构成投资建议。';
 
   @override
-  String get themeDetailChartTitle => 'Theme average (normalized)';
+  String get themeDetailChartTitle => '主题指数（归一化）';
 
   @override
   String get themeDetailChartFootnote =>
-      'Synthetic index: each symbol rebased to 100 at its first bar in the range, then averaged by calendar day. Yahoo daily via server. Not investment advice.';
+      '合成指数：区间内各标的在首日 K 线归一为 100，再按日历日平均。日数据经 Yahoo 与服务器拉取。仅供参考，不构成投资建议。';
 
   @override
-  String get accountSuspendedBanner =>
-      'Your account cannot post, edit, delete, or reply in the community right now.';
+  String get accountSuspendedBanner => '您的账号暂不可在社区发帖、编辑、删除或回复。';
 
   @override
-  String get accountSuspendedSnack =>
-      'This account is restricted from community activity.';
+  String get accountSuspendedSnack => '该账号的社区功能已被限制。';
 
   @override
   String get shareSheetKakaoTalk => '分享到 KakaoTalk';

@@ -96,9 +96,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 NavigationDestination(
                   icon: const Icon(Icons.favorite_border_rounded),
                   selectedIcon: const Icon(Icons.favorite_rounded),
-                  label: Localizations.localeOf(context).languageCode == 'ko'
-                      ? '관심'
-                      : 'Favorites',
+                  label: l10n.navFavorites,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.forum_outlined),

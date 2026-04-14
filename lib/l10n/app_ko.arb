@@ -5,6 +5,7 @@
   "navHome": "홈",
   "actionLogin": "로그인",
   "navCommunity": "커뮤니티",
+  "navFavorites": "관심",
   "favoritesEmpty": "관심 자산이 없습니다.",
   "favoritesSignInToSave": "로그인하면 이 기기에서 관심 종목을 저장하고 볼 수 있습니다.",
   "navProfile": "프로필",

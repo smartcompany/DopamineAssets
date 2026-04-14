@@ -24,6 +24,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navCommunity => 'コミュニティ';
 
   @override
+  String get navFavorites => 'ウォッチリスト';
+
+  @override
   String get favoritesEmpty => 'お気に入りはまだ保存されていません。';
 
   @override

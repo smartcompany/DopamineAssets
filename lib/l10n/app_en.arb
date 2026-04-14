@@ -5,6 +5,7 @@
   "navHome": "Home",
   "actionLogin": "Log in",
   "navCommunity": "Community",
+  "navFavorites": "Favorites",
   "favoritesEmpty": "No saved favorites yet.",
   "favoritesSignInToSave": "Sign in to save and view favorites on this device.",
   "navProfile": "Profile",

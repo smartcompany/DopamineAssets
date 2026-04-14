@@ -132,6 +132,12 @@ abstract class AppLocalizations {
   /// **'Community'**
   String get navCommunity;
 
+  /// No description provided for @navFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get navFavorites;
+
   /// No description provided for @favoritesEmpty.
   ///
   /// In en, this message translates to:

@@ -5,6 +5,7 @@
   "navHome": "ホーム",
   "actionLogin": "ログイン",
   "navCommunity": "コミュニティ",
+  "navFavorites": "ウォッチリスト",
   "favoritesEmpty": "お気に入りはまだ保存されていません。",
   "favoritesSignInToSave": "このデバイスでお気に入りを保存して表示するにはサインインしてください。",
   "navProfile": "材料形状",

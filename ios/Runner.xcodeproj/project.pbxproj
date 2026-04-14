@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		B1C146F21CF9000F007C117E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B1C146F01CF9000F007C117E /* InfoPlist.strings */; };
 		B1C146F31CF9000F007C117E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B1C146F11CF9000F007C117E /* InfoPlist.strings */; };
+		D4E558121CF9000F007C117E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D4E558101CF9000F007C117E /* InfoPlist.strings */; };
+		D4E558131CF9000F007C117E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D4E558111CF9000F007C117E /* InfoPlist.strings */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		2A90F12A2F72587C0049E962 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2A90F1292F72587C0049E962 /* GoogleService-Info.plist */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
@@ -68,6 +70,8 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B1C146F01CF9000F007C117E /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		B1C146F11CF9000F007C117E /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D4E558101CF9000F007C117E /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D4E558111CF9000F007C117E /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		A585A6A4CC4CE83C8D62B80A /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		A723AA972E6A5AADFAFCCD77 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE7EE0FA1CEA0E049061496D /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
@@ -161,6 +165,8 @@
 			children = (
 				B1C146F01CF9000F007C117E /* InfoPlist.strings */,
 				B1C146F11CF9000F007C117E /* InfoPlist.strings */,
+				D4E558101CF9000F007C117E /* InfoPlist.strings */,
+				D4E558111CF9000F007C117E /* InfoPlist.strings */,
 				2A8060042F78F6DC00DF7606 /* Runner.entitlements */,
 				2A90F1292F72587C0049E962 /* GoogleService-Info.plist */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
@@ -247,6 +253,8 @@
 			knownRegions = (
 				en,
 				ko,
+				ja,
+				"zh-Hans",
 				Base,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
@@ -274,6 +282,8 @@
 			files = (
 				B1C146F21CF9000F007C117E /* InfoPlist.strings in Resources */,
 				B1C146F31CF9000F007C117E /* InfoPlist.strings in Resources */,
+				D4E558121CF9000F007C117E /* InfoPlist.strings in Resources */,
+				D4E558131CF9000F007C117E /* InfoPlist.strings in Resources */,
 				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				2A90F12A2F72587C0049E962 /* GoogleService-Info.plist in Resources */,
