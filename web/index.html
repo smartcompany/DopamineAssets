@@ -31,8 +31,46 @@
 
   <title>dopamine_assets</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Flutter 첫 프레임 전 기본 흰 화면 방지 + 로딩 표시 */
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #221039;
+      color: #e8e0f5;
+    }
+    #flutter-loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+      z-index: 99999;
+    }
+    #flutter-loading .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #ffca28;
+      border-radius: 50%;
+      animation: flutter-spin 0.85s linear infinite;
+    }
+    @keyframes flutter-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <div id="flutter-loading" aria-live="polite" aria-busy="true">
+    <div class="spinner" role="presentation"></div>
+    <span>Loading…</span>
+  </div>
   <script>
     (function () {
       try {
@@ -82,5 +120,20 @@
     })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+    (function () {
+      function removeLoading() {
+        var el = document.getElementById('flutter-loading');
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      }
+      function onFirstFrame() {
+        clearTimeout(fallbackTimer);
+        removeLoading();
+        window.removeEventListener('flutter-first-frame', onFirstFrame);
+      }
+      var fallbackTimer = setTimeout(onFirstFrame, 20000);
+      window.addEventListener('flutter-first-frame', onFirstFrame);
+    })();
+  </script>
 </body>
 </html>

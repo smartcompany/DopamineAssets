@@ -64,8 +64,6 @@ Future<void> main() async {
         '312575797891-32oqllsgnd6dcp9uhr85h9s7idsmlg6t.apps.googleusercontent.com',
   );
   await authProvider.initialize();
-  await preloadAppSettings();
-  await UgcBannedWords.preload();
   final navigatorKey = GlobalKey<NavigatorState>();
   runApp(
     MultiProvider(
@@ -89,11 +87,14 @@ Future<void> main() async {
       child: DopamineApp(navigatorKey: navigatorKey),
     ),
   );
+  // 설정/금칙어 프리로드는 첫 프레임 이후(웹은 특히 체감 로딩 단축).
   // APNs 토큰은 네이티브 등록 직후 비동기로 옵니다. runApp 전에 getToken() 하면 실기기에서도
   // [apns-token-not-set] 이 나고 DB 등록이 스킵되는 경우가 많습니다.
-  if (!kIsWeb) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(preloadAppSettings());
+    unawaited(UgcBannedWords.preload());
+    if (!kIsWeb) {
       DopaminePushCoordinator.start(navigatorKey);
-    });
-  }
+    }
+  });
 }
