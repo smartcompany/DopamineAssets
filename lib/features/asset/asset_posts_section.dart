@@ -96,7 +96,8 @@ class _AssetPostsSectionState extends State<AssetPostsSection> {
           assetClass: widget.assetClass,
           displayName: widget.displayName,
         );
-    Navigator.of(context).pop();
+    // 상세 화면 아래에 남아있을 수 있는 팝업/바텀시트까지 함께 정리.
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<void> _toggleLike(int index, AssetComment c) async {

@@ -99,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const int _rankingTopN = 10;
   static const int _rankingCollapsedVisible = 3;
   static const int _interestSurgeMax = 10;
+  static const int _top50Limit = 50;
   static const int _interestSurgeCollapsedVisible = 3;
   static const Duration _rankingPollInterval = Duration(seconds: 5);
   static const Duration _filterApplyDebounce = Duration(milliseconds: 600);
@@ -689,6 +690,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: expanded
                         ? l10n.homeRankingShowLessTooltip
                         : l10n.homeRankingShowMoreTooltip,
+                    trailingActionLabel: expanded ? _top50Label(l10n.localeName) : null,
+                    onTrailingActionTap: expanded
+                        ? () => _presentTop50Rankings(up: up, l10n: l10n)
+                        : null,
                     onTap: () {
                       setState(() {
                         if (up) {
@@ -756,6 +761,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         : (InterestSurgeExpandAdGate.watchedAdThisSession
                               ? l10n.homeRankingShowMoreTooltip
                               : l10n.homeInterestSurgeShowMoreWithAd),
+                    trailingActionLabel: expanded ? _top50Label(l10n.localeName) : null,
+                    onTrailingActionTap: expanded
+                        ? () => _presentTop50InterestSurge(l10n)
+                        : null,
                     adUnlockHint:
                         !expanded &&
                         !InterestSurgeExpandAdGate.watchedAdThisSession,
@@ -1236,6 +1245,214 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+
+  String _top50Label(String localeName) {
+    final base = localeName.toLowerCase();
+    if (base.startsWith('ko')) return '50개 보기';
+    if (base.startsWith('ja')) return '50件表示';
+    if (base.startsWith('zh')) return '查看50条';
+    return 'View 50';
+  }
+
+  Future<void> _presentTop50Rankings({
+    required bool up,
+    required AppLocalizations l10n,
+  }) async {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final include = _rankingClasses ?? _pendingFilter;
+    final future = up
+        ? DopamineApi.fetchRankingsUp(
+            includeAssetClasses: include,
+            locale: locale,
+            limit: _top50Limit,
+          )
+        : DopamineApi.fetchRankingsDown(
+            includeAssetClasses: include,
+            locale: locale,
+            limit: _top50Limit,
+          );
+    final title = up ? l10n.rankingsUpTitle : l10n.rankingsDownTitle;
+    await _presentTop50SheetFrame(
+      title: '$title · TOP $_top50Limit',
+      bodyBuilder: (ctx) => FutureBuilder<List<RankedAsset>>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(
+              child: CircularProgressIndicator(color: DopamineTheme.neonGreen),
+            );
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  '${l10n.emptyState}\n(${snapshot.error})',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: DopamineTheme.textSecondary,
+                  ),
+                ),
+              ),
+            );
+          }
+          final items = snapshot.data ?? const <RankedAsset>[];
+          if (items.isEmpty) {
+            return Center(
+              child: Text(
+                l10n.emptyState,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: DopamineTheme.textSecondary,
+                ),
+              ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            itemCount: items.length,
+            itemBuilder: (context, i) => _GlassAssetRow(
+              rank: i + 1,
+              asset: items[i],
+              locale: locale,
+              upList: up,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  AssetDetailScreen.open(this.context, items[i]);
+                });
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _presentTop50InterestSurge(AppLocalizations l10n) async {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final future = DopamineApi.fetchInterestSurge(
+      locale: locale,
+      limit: _top50Limit,
+    );
+    await _presentTop50SheetFrame(
+      title: '${l10n.homeInterestSurgeTitle} · TOP $_top50Limit',
+      bodyBuilder: (ctx) => FutureBuilder<List<InterestSurgeItem>>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(
+              child: CircularProgressIndicator(color: DopamineTheme.neonGreen),
+            );
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  '${l10n.emptyState}\n(${snapshot.error})',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: DopamineTheme.textSecondary,
+                  ),
+                ),
+              ),
+            );
+          }
+          final items = snapshot.data ?? const <InterestSurgeItem>[];
+          if (items.isEmpty) {
+            return Center(
+              child: Text(
+                l10n.emptyState,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: DopamineTheme.textSecondary,
+                ),
+              ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            itemCount: items.length,
+            itemBuilder: (context, i) => _GlassInterestSurgeRow(
+              item: items[i],
+              trendLabel: l10n.homeTrendScoreLabel,
+              onTap: () {
+                final shell = RankedAsset.communityShell(
+                  symbol: items[i].symbol,
+                  assetClass: items[i].category,
+                  displayName: items[i].name,
+                );
+                Navigator.of(ctx).pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  AssetDetailScreen.open(this.context, shell);
+                });
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _presentTop50SheetFrame({
+    required String title,
+    required WidgetBuilder bodyBuilder,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1B1232),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          top: false,
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.84,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: bodyBuilder(ctx),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 /// 가로 스크롤 필터 — 양끝이 잘릴 때만 `ShaderMask`로 살짝 페이드.
@@ -1618,6 +1835,8 @@ class _HomeExpandCollapsePill extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.adUnlockHint = false,
+    this.trailingActionLabel,
+    this.onTrailingActionTap,
   });
 
   final Color accentColor;
@@ -1627,6 +1846,8 @@ class _HomeExpandCollapsePill extends StatelessWidget {
 
   /// 접힌 상태에서 첫 확장에 광고가 필요할 때(재생 아이콘 + 살짝 다른 글로우).
   final bool adUnlockHint;
+  final String? trailingActionLabel;
+  final VoidCallback? onTrailingActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1681,45 +1902,85 @@ class _HomeExpandCollapsePill extends StatelessWidget {
                     vertical: 13,
                     horizontal: 14,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      if (adUnlockHint && !expanded) ...[
-                        Icon(
-                          Icons.play_circle_filled_rounded,
-                          color: accentColor.withValues(alpha: 0.95),
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Flexible(
-                        child: Text(
-                          label,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.96),
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: expanded ? -0.2 : -0.35,
-                            height: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: accentColor.withValues(alpha: 0.45),
-                                blurRadius: 10,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (adUnlockHint && !expanded) ...[
+                            Icon(
+                              Icons.play_circle_filled_rounded,
+                              color: accentColor.withValues(alpha: 0.95),
+                              size: 22,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Flexible(
+                            child: Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.96),
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: expanded ? -0.2 : -0.35,
+                                height: 1.2,
+                                shadows: [
+                                  Shadow(
+                                    color: accentColor.withValues(alpha: 0.45),
+                                    blurRadius: 10,
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            expanded
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            color: accentColor.withValues(alpha: 0.98),
+                            size: 26,
+                          ),
+                        ],
+                      ),
+                      if (trailingActionLabel != null &&
+                          trailingActionLabel!.isNotEmpty &&
+                          onTrailingActionTap != null)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.white.withValues(alpha: 0.10),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.24),
+                              ),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: onTrailingActionTap,
+                                borderRadius: BorderRadius.circular(999),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 7,
+                                  ),
+                                  child: Text(
+                                    trailingActionLabel!,
+                                    style: theme.textTheme.labelMedium?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.96),
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        expanded
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        color: accentColor.withValues(alpha: 0.98),
-                        size: 26,
-                      ),
                     ],
                   ),
                 ),
@@ -2209,12 +2470,14 @@ class _GlassAssetRow extends StatelessWidget {
     required this.asset,
     required this.locale,
     required this.upList,
+    this.onTap,
   });
 
   final int rank;
   final RankedAsset asset;
   final String locale;
   final bool upList;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -2350,7 +2613,7 @@ class _GlassAssetRow extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => AssetDetailScreen.open(context, asset),
+          onTap: onTap ?? () => AssetDetailScreen.open(context, asset),
           borderRadius: BorderRadius.circular(borderRadius),
           child: isFirstPlace
               ? _FirstPlacePulsingShell(
@@ -2427,10 +2690,15 @@ String _formatInterestDeltaForDisplay(double v) {
 }
 
 class _GlassInterestSurgeRow extends StatelessWidget {
-  const _GlassInterestSurgeRow({required this.item, required this.trendLabel});
+  const _GlassInterestSurgeRow({
+    required this.item,
+    required this.trendLabel,
+    this.onTap,
+  });
 
   final InterestSurgeItem item;
   final String trendLabel;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -2660,7 +2928,7 @@ class _GlassInterestSurgeRow extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => AssetDetailScreen.open(context, shell),
+          onTap: onTap ?? () => AssetDetailScreen.open(context, shell),
           borderRadius: BorderRadius.circular(cardBorderRadius),
           child: cardShell(),
         ),

@@ -31,11 +31,14 @@ abstract final class DopamineApi {
   static Future<List<RankedAsset>> fetchRankingsUp({
     Set<String>? includeAssetClasses,
     String? locale,
+    int limit = 10,
   }) async {
     final response = await _client.get(
       _uri(
         '/api/feed/rankings/up',
-      ).replace(queryParameters: _rankingsQuery(includeAssetClasses, locale)),
+      ).replace(
+        queryParameters: _rankingsQuery(includeAssetClasses, locale, limit),
+      ),
       headers: _jsonHeaders,
     );
     return _decodeRankings(response);
@@ -44,11 +47,14 @@ abstract final class DopamineApi {
   static Future<List<RankedAsset>> fetchRankingsDown({
     Set<String>? includeAssetClasses,
     String? locale,
+    int limit = 10,
   }) async {
     final response = await _client.get(
       _uri(
         '/api/feed/rankings/down',
-      ).replace(queryParameters: _rankingsQuery(includeAssetClasses, locale)),
+      ).replace(
+        queryParameters: _rankingsQuery(includeAssetClasses, locale, limit),
+      ),
       headers: _jsonHeaders,
     );
     return _decodeRankings(response);
@@ -57,9 +63,11 @@ abstract final class DopamineApi {
   static Map<String, String> _rankingsQuery(
     Set<String>? includeAssetClasses,
     String? locale,
+    int limit,
   ) {
+    final safeLimit = limit.clamp(1, 50);
     final q = <String, String>{
-      'limit': '10',
+      'limit': '$safeLimit',
       'source': ApiConfig.rankingSource,
     };
     if (includeAssetClasses != null && includeAssetClasses.isNotEmpty) {
@@ -1194,11 +1202,15 @@ abstract final class DopamineApi {
   /// Supabase `dopamine_interest_asset_scores` 기반 홈 「오늘 관심 폭주」.
   static Future<List<InterestSurgeItem>> fetchInterestSurge({
     String? locale,
+    int limit = 10,
   }) async {
+    final safeLimit = limit.clamp(1, 50);
+    final q = <String, String>{'limit': '$safeLimit'};
+    if (locale != null && locale.trim().isNotEmpty) {
+      q['locale'] = locale.trim();
+    }
     final uri = _uri('/api/feed/interest-surge').replace(
-      queryParameters: locale != null && locale.trim().isNotEmpty
-          ? {'locale': locale.trim()}
-          : null,
+      queryParameters: q,
     );
     final response = await _client.get(
       uri,
