@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -10,6 +11,7 @@ import 'package:share_lib/share_lib.dart';
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
+import '../../core/analytics/app_analytics.dart';
 import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/giphy/giphy_config.dart';
 import '../../core/giphy/giphy_picker_sheet.dart';
@@ -609,6 +611,13 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
           idToken: token,
         );
         if (!mounted) return;
+        unawaited(
+          AppAnalytics.logCommunityPostSubmitted(
+            isEdit: true,
+            assetClass: _selectedAsset?.assetClass ?? _assetClass,
+            imageCount: allUrls.length,
+          ),
+        );
         Navigator.of(context).pop(
           _communityPostAfterPatch(updated, base: widget.editPrefill),
         );
@@ -639,6 +648,13 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       );
 
       if (!mounted) return;
+      unawaited(
+        AppAnalytics.logCommunityPostSubmitted(
+          isEdit: false,
+          assetClass: ac,
+          imageCount: urls.length,
+        ),
+      );
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;

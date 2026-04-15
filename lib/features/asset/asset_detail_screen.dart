@@ -5,12 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:share_lib/share_lib.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
-import '../../auth/dopamine_user.dart';
+import '../../core/analytics/app_analytics.dart';
 import '../../core/favorites/favorites_catalog.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../core/navigation/home_shell_navigation.dart';
@@ -43,6 +42,15 @@ class AssetDetailScreen extends StatefulWidget {
       }
       return;
     }
+    final locale = Localizations.localeOf(context).languageCode;
+    unawaited(
+      AppAnalytics.logAssetDetailOpen(
+        source: 'screen_navigation',
+        symbol: asset.symbol,
+        assetClass: asset.assetClass ?? 'unknown',
+        locale: locale,
+      ),
+    );
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => AssetDetailScreen(rankedAsset: asset),
@@ -172,6 +180,14 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
         );
         if (!mounted) return;
         setState(() => _isFavorite = false);
+        unawaited(
+          AppAnalytics.logFavoriteToggled(
+            symbol: d.symbol,
+            assetClass: ac,
+            favored: false,
+            source: 'asset_detail',
+          ),
+        );
       } else {
         await DopamineApi.upsertFavoriteAsset(
           idToken: token,
@@ -181,6 +197,14 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
         );
         if (!mounted) return;
         setState(() => _isFavorite = true);
+        unawaited(
+          AppAnalytics.logFavoriteToggled(
+            symbol: d.symbol,
+            assetClass: ac,
+            favored: true,
+            source: 'asset_detail',
+          ),
+        );
       }
       if (mounted) {
         final lang = Localizations.localeOf(context).languageCode;
@@ -366,6 +390,17 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                   padding: const EdgeInsets.all(10),
                                 ),
                                 onPressed: () {
+                                  final locale = Localizations.localeOf(
+                                    context,
+                                  ).languageCode;
+                                  unawaited(
+                                    AppAnalytics.logAssetDetailOpen(
+                                      source: 'detail_to_community',
+                                      symbol: d.symbol,
+                                      assetClass: d.assetClass,
+                                      locale: locale,
+                                    ),
+                                  );
                                   context
                                       .read<HomeShellNavigation>()
                                       .openCommunityForAsset(
@@ -373,7 +408,8 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                         assetClass: d.assetClass,
                                         displayName: d.name,
                                       );
-                                  Navigator.of(context).pop();
+                                  // 상세 화면 아래에 남아있을 수 있는 팝업/바텀시트까지 함께 정리.
+                                  Navigator.of(context).popUntil((route) => route.isFirst);
                                 },
                                 icon: const Icon(Icons.forum_rounded),
                               ),

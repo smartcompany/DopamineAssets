@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
@@ -7,6 +8,7 @@ import 'package:share_lib/share_lib.dart';
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
+import '../../core/analytics/app_analytics.dart';
 import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
@@ -63,6 +65,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   /// 좋아요 API 중인 게시글 id (하트 로딩 표시)
   final Set<String> _likeBusyIds = {};
   String? _lastOpenedSharedPostId;
+  bool _communityViewLogged = false;
 
   @override
   void initState() {
@@ -70,6 +73,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (!_communityViewLogged) {
+        _communityViewLogged = true;
+        final locale = Localizations.localeOf(context).languageCode;
+        unawaited(
+          AppAnalytics.logCommunityView(
+            locale: locale,
+            platform: defaultTargetPlatform.name,
+          ),
+        );
+      }
       _scheduleFetch();
       _openInitialSharedPostIfNeeded();
     });
@@ -288,6 +301,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _openPostDetail(CommunityPost p) async {
+    unawaited(
+      AppAnalytics.logCommunityPostOpen(
+        source: 'community_feed',
+        postId: p.id,
+        assetClass: p.assetClass,
+      ),
+    );
     final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
     final changed = await CommunityPostDetailScreen.open(
       context,
@@ -326,6 +346,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
         next[index] = p.copyWith(likeCount: r.likeCount, likedByMe: r.liked);
         _posts = next;
       });
+      unawaited(
+        AppAnalytics.logCommunityLikeToggled(
+          postId: p.id,
+          liked: r.liked,
+          source: 'community_feed',
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -415,6 +442,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (!await ensureNotSuspendedWithRefresh(context)) {
       return;
     }
+    final locale = Localizations.localeOf(context).languageCode;
+    unawaited(
+      AppAnalytics.logCommunityComposeOpened(
+        source: 'community_feed',
+        locale: locale,
+      ),
+    );
     final result = await Navigator.of(context).push<Object?>(
       MaterialPageRoute<Object?>(
         builder: (ctx) => CommunityComposeScreen(

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 
+import '../../core/analytics/app_analytics.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../data/models/market_summary.dart';
@@ -115,6 +118,13 @@ class _MarketSummaryScreenState extends State<MarketSummaryScreen> {
     final translatedAttr = sourceAttribution.isNotEmpty
         ? await translateTextForAppLocale(sourceAttribution, lang)
         : null;
+    unawaited(
+      AppAnalytics.logMarketSummaryTranslate(
+        fromLang: 'en',
+        toLang: lang,
+        screen: 'market_summary',
+      ),
+    );
     return _LocalizedSummary(body: translatedBody, attribution: translatedAttr);
   }
 }

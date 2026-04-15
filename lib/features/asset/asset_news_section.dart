@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../core/analytics/app_analytics.dart';
 import '../../core/config/api_config.dart';
 import '../../core/news_ai_digest.dart';
 import '../../core/network/dopamine_api.dart';
@@ -93,6 +94,14 @@ class _AssetNewsSectionState extends State<AssetNewsSection> {
   }
 
   Future<void> _retry() async {
+    final locale = Localizations.localeOf(context).languageCode;
+    unawaited(
+      AppAnalytics.logNewsRetryClick(
+        assetClass: widget.assetClass,
+        symbol: widget.symbol,
+        locale: locale,
+      ),
+    );
     setState(() {
       _newsExpanded = false;
       _future = _load();

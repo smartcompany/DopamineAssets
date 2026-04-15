@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../analytics/app_analytics.dart';
 import '../navigation/home_shell_navigation.dart';
 import '../network/dopamine_api.dart';
 
@@ -155,26 +158,37 @@ abstract final class DopaminePushCoordinator {
       await registerForUser(initialUser);
     }
 
-    void handleOpen(RemoteMessage m) {
+    void handleOpen(RemoteMessage m, {required String source}) {
       final ctx = navigatorKey.currentContext;
       if (ctx == null || !ctx.mounted) return;
       final data = m.data;
-      final type = data['type'] ?? '';
+      final type = (data['type'] ?? '').toString().trim();
+      final symbol = (data['symbol'] ?? '').toString().trim();
+      final assetClass = (data['assetClass'] ?? '').toString().trim();
+      unawaited(
+        AppAnalytics.logPushOpen(
+          pushType: type.isEmpty ? 'unknown' : type,
+          source: source,
+          platform: dopaminePushPlatformLabel(),
+          symbol: symbol.isEmpty ? null : symbol,
+          assetClass: assetClass.isEmpty ? null : assetClass,
+        ),
+      );
       final nav = Provider.of<HomeShellNavigation>(ctx, listen: false);
       if (type == 'market_daily') {
         nav.setTabIndex(0);
         return;
       }
       if (type == 'social_reply' || type == 'social_like') {
-        final sym = data['symbol']?.trim() ?? '';
-        final ac = data['assetClass']?.trim() ?? '';
+        final sym = symbol;
+        final ac = assetClass;
         if (sym.isNotEmpty && ac.isNotEmpty) {
           nav.openCommunityForAsset(symbol: sym, assetClass: ac);
         }
       }
       if (type == 'hot_mover_discussion') {
-        final sym = data['symbol']?.trim() ?? '';
-        final ac = data['assetClass']?.trim() ?? '';
+        final sym = symbol;
+        final ac = assetClass;
         final rootId = data['rootCommentId']?.trim() ?? '';
         if (sym.isNotEmpty && ac.isNotEmpty && rootId.isNotEmpty) {
           nav.openCommunityHotDiscussion(
@@ -197,10 +211,14 @@ abstract final class DopaminePushCoordinator {
     }
 
     FirebaseMessaging.onMessage.listen(handleForeground);
-    FirebaseMessaging.onMessageOpenedApp.listen(handleOpen);
+    FirebaseMessaging.onMessageOpenedApp.listen(
+      (m) => handleOpen(m, source: 'background_tap'),
+    );
     final initial = await messaging.getInitialMessage();
     if (initial != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => handleOpen(initial));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => handleOpen(initial, source: 'cold_start'),
+      );
     }
   }
 }

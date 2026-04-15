@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/ads/home_ranking_banner_ad.dart';
 import '../../core/ads/interest_surge_expand_ad_gate.dart';
+import '../../core/analytics/app_analytics.dart';
 import '../../core/feed/home_asset_suggestions.dart';
 import '../../core/config/api_config.dart';
 import '../../core/formatting/percent_format.dart';
@@ -140,6 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _rankingDownExpanded = false;
   bool _interestSurgeExpanded = false;
   bool _interestSurgeAdLoading = false;
+  bool _homeViewLogged = false;
 
   List<InterestSurgeItem>? _interestSurgeItems;
 
@@ -161,6 +164,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final lang = Localizations.localeOf(context).languageCode;
+    if (!_homeViewLogged) {
+      _homeViewLogged = true;
+      unawaited(
+        AppAnalytics.logHomeView(
+          locale: lang,
+          platform: defaultTargetPlatform.name,
+        ),
+      );
+    }
     if (_themeLocaleKey != lang) {
       _themeLocaleKey = lang;
       _hotThemesFuture = DopamineApi.fetchThemes('hot', locale: lang);
@@ -335,6 +347,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedDopamineSectionId = id;
       _programmaticDopamineSectionScroll = true;
     });
+    final locale = Localizations.localeOf(context).languageCode;
+    unawaited(
+      AppAnalytics.logHomeSectionTap(sectionId: id, locale: locale),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = key.currentContext;
       if (ctx != null && mounted) {
@@ -531,6 +547,13 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _rankingClasses = next;
     });
+    final locale = Localizations.localeOf(context).languageCode;
+    unawaited(
+      AppAnalytics.logRankingFilterApplied(
+        selectedCount: next.length,
+        locale: locale,
+      ),
+    );
     _logRankings('filter applied → reschedule poll if enabled');
     _scheduleRankingPoll();
     await _refreshRankings(showLoadingIndicator: true);
@@ -695,13 +718,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? () => _presentTop50Rankings(up: up, l10n: l10n)
                         : null,
                     onTap: () {
+                      final nextExpanded = !expanded;
                       setState(() {
                         if (up) {
-                          _rankingUpExpanded = !_rankingUpExpanded;
+                          _rankingUpExpanded = nextExpanded;
                         } else {
-                          _rankingDownExpanded = !_rankingDownExpanded;
+                          _rankingDownExpanded = nextExpanded;
                         }
                       });
+                      final locale = Localizations.localeOf(context).languageCode;
+                      unawaited(
+                        AppAnalytics.logHomeExpandToggle(
+                          sectionId: up ? 'up' : 'down',
+                          expanded: nextExpanded,
+                          locale: locale,
+                        ),
+                      );
                     },
                   ),
               ],
@@ -769,13 +801,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         !expanded &&
                         !InterestSurgeExpandAdGate.watchedAdThisSession,
                     onTap: () async {
+                      final locale = Localizations.localeOf(context).languageCode;
                       if (expanded) {
                         setState(() {
                           _interestSurgeExpanded = false;
                         });
+                        unawaited(
+                          AppAnalytics.logHomeExpandToggle(
+                            sectionId: 'interest',
+                            expanded: false,
+                            locale: locale,
+                          ),
+                        );
                         return;
                       }
                       if (!InterestSurgeExpandAdGate.watchedAdThisSession) {
+                        unawaited(
+                          AppAnalytics.logInterestAdGate(
+                            result: 'shown',
+                            locale: locale,
+                          ),
+                        );
                         setState(() {
                           _interestSurgeAdLoading = true;
                         });
@@ -784,6 +830,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         } catch (e, st) {
                           debugPrint('[InterestSurge] ad gate error: $e\n$st');
                           InterestSurgeExpandAdGate.watchedAdThisSession = true;
+                          unawaited(
+                            AppAnalytics.logInterestAdGate(
+                              result: 'failed',
+                              locale: locale,
+                            ),
+                          );
                         } finally {
                           if (mounted) {
                             setState(() {
@@ -792,11 +844,31 @@ class _HomeScreenState extends State<HomeScreen> {
                             });
                           }
                         }
+                        unawaited(
+                          AppAnalytics.logHomeExpandToggle(
+                            sectionId: 'interest',
+                            expanded: true,
+                            locale: locale,
+                          ),
+                        );
                         return;
                       }
+                      unawaited(
+                        AppAnalytics.logInterestAdGate(
+                          result: 'skipped',
+                          locale: locale,
+                        ),
+                      );
                       setState(() {
                         _interestSurgeExpanded = true;
                       });
+                      unawaited(
+                        AppAnalytics.logHomeExpandToggle(
+                          sectionId: 'interest',
+                          expanded: true,
+                          locale: locale,
+                        ),
+                      );
                     },
                   ),
               ],
@@ -1259,6 +1331,13 @@ class _HomeScreenState extends State<HomeScreen> {
     required AppLocalizations l10n,
   }) async {
     final locale = Localizations.localeOf(context).toLanguageTag();
+    unawaited(
+      AppAnalytics.logView50Opened(
+        section: up ? 'rankings_up' : 'rankings_down',
+        itemCount: _top50Limit,
+        locale: locale,
+      ),
+    );
     final include = _rankingClasses ?? _pendingFilter;
     final future = up
         ? DopamineApi.fetchRankingsUp(
@@ -1331,6 +1410,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _presentTop50InterestSurge(AppLocalizations l10n) async {
     final locale = Localizations.localeOf(context).toLanguageTag();
+    unawaited(
+      AppAnalytics.logView50Opened(
+        section: 'interest_surge',
+        itemCount: _top50Limit,
+        locale: locale,
+      ),
+    );
     final future = DopamineApi.fetchInterestSurge(
       locale: locale,
       limit: _top50Limit,
@@ -3118,6 +3204,13 @@ class _MarketSummaryGridState extends State<_MarketSummaryGrid> {
     final note = sourceAttr.isNotEmpty
         ? await translateTextForAppLocale(sourceAttr, lang)
         : null;
+    unawaited(
+      AppAnalytics.logMarketSummaryTranslate(
+        fromLang: 'en',
+        toLang: lang,
+        screen: 'home',
+      ),
+    );
     return _HomeLocalizedSummary(body: body, note: note);
   }
 
