@@ -118,6 +118,7 @@ class CommunityComposeScreen extends StatefulWidget {
 class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   static const _maxImages = 6;
   static const double _mobileComposeMediaIconSize = 30;
+  static const String _noSymbolSentinel = "__none__";
 
   /// 제목 필드와 동일한 한 줄 입력 높이(패딩) — 드롭다운 기본 터치 타깃 여백 제거용
   static const EdgeInsets _composeFieldContentPadding = EdgeInsets.symmetric(
@@ -198,6 +199,14 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       symbol: symbol,
       assetClass: assetClass,
       displayName: displayName,
+    );
+  }
+
+  RankedAsset _noneAsset(String assetClass, AppLocalizations l10n) {
+    return RankedAsset.communityShell(
+      symbol: _noSymbolSentinel,
+      assetClass: assetClass,
+      displayName: l10n.notAvailable,
     );
   }
 
@@ -392,6 +401,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   }
 
   void _syncSelectionFromSuggestions(HomeAssetSuggestions sug) {
+    final l10n = AppLocalizations.of(context)!;
     final sym = widget.initialSymbol?.trim();
     if (_assetClass == 'theme') {
       _selectedAsset = null;
@@ -413,7 +423,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       );
       return;
     }
-    _selectedAsset = list.isNotEmpty ? list.first : null;
+    _selectedAsset = _noneAsset(_assetClass, l10n);
   }
 
   @override
@@ -643,7 +653,10 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
         parentId: null,
         title: titleText.isEmpty ? null : titleText,
         imageUrls: urls.isEmpty ? null : urls,
-        assetDisplayName: sel.name.trim().isEmpty ? null : sel.name.trim(),
+        assetDisplayName:
+            sel.symbol == _noSymbolSentinel || sel.name.trim().isEmpty
+            ? null
+            : sel.name.trim(),
         idToken: token,
       );
 
@@ -902,6 +915,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     final theme = Theme.of(context);
     final sug = context.watch<HomeAssetSuggestions>();
     final symbols = sug.assetsForClass(_assetClass);
+    final noneOption = _noneAsset(_assetClass, l10n);
 
     if (_editLoading &&
         widget.editCommentId != null &&
@@ -1027,10 +1041,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                                       _applyInitialThemeSelection();
                                     }
                                   } else {
-                                    final next = sug.assetsForClass(v);
-                                    _selectedAsset = next.isNotEmpty
-                                        ? next.first
-                                        : null;
+                                    _selectedAsset = _noneAsset(v, l10n);
                                   }
                                 });
                               },
@@ -1217,17 +1228,6 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                         },
                       ),
                     )
-                  else if (symbols.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        l10n.communityComposeNoRankedSymbols,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: DopamineTheme.textSecondary,
-                          height: 1.35,
-                        ),
-                      ),
-                    )
                   else
                     InputDecorator(
                       decoration: InputDecoration(
@@ -1247,7 +1247,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                           key: ValueKey(_assetClass),
                           isDense: true,
                           isExpanded: true,
-                          value: _matchingSelection(symbols),
+                          value: _matchingSelection([noneOption, ...symbols]),
                           hint: Text(
                             l10n.communityComposePickSymbol,
                             style: TextStyle(
@@ -1261,6 +1261,14 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
                             color: DopamineTheme.textPrimary,
                           ),
                           items: [
+                            DropdownMenuItem(
+                              value: noneOption,
+                              child: Text(
+                                l10n.notAvailable,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                             for (final a in symbols)
                               DropdownMenuItem(
                                 value: a,

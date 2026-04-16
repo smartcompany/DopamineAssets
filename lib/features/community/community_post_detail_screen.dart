@@ -72,6 +72,7 @@ class CommunityPostDetailScreen extends StatefulWidget {
 }
 
 class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
+  static const String _noSymbolSentinel = "__none__";
   late CommunityPost _post = widget.post;
   List<AssetComment>? _thread;
   Object? _loadError;
@@ -695,9 +696,14 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final clipped = summary.length > 120
         ? '${summary.substring(0, 120)}...'
         : summary;
-    final assetLine = assetName.isNotEmpty
-        ? '$assetName (${_post.assetSymbol})'
-        : _post.assetSymbol;
+    final hasAssetLink =
+        _post.assetSymbol.trim().isNotEmpty &&
+        _post.assetSymbol != _noSymbolSentinel;
+    final assetLine = hasAssetLink
+        ? (assetName.isNotEmpty
+              ? '$assetName (${_post.assetSymbol})'
+              : _post.assetSymbol)
+        : 'General';
     return [
       if (title.isNotEmpty) title,
       if (clipped.isNotEmpty) clipped,
@@ -1291,6 +1297,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     String timeStr,
     bool showFollow,
   ) {
+    final hasAssetLink =
+        _post.assetSymbol.trim().isNotEmpty &&
+        _post.assetSymbol != _noSymbolSentinel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1307,54 +1316,61 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
               fontWeight: FontWeight.w800,
             ),
           ),
-        const SizedBox(height: 6),
+        if (hasAssetLink) ...[
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: DopamineTheme.neonGreen.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: DopamineTheme.neonGreen.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Text(
+                  _post.assetSymbol,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: DopamineTheme.neonGreen,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _classBadge(_post.assetClass, l10n),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: DopamineTheme.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: l10n.communityOpenAssetDetail,
+                icon: Icon(
+                  Icons.info_outline_rounded,
+                  color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
+                ),
+                onPressed: () {
+                  AssetDetailScreen.open(
+                    context,
+                    RankedAsset.communityShell(
+                      symbol: _post.assetSymbol,
+                      assetClass: _post.assetClass,
+                      displayName: (assetName != null && assetName.isNotEmpty)
+                          ? assetName
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ] else
+          const SizedBox(height: 2),
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: DopamineTheme.neonGreen.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: DopamineTheme.neonGreen.withValues(alpha: 0.35),
-                ),
-              ),
-              child: Text(
-                _post.assetSymbol,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: DopamineTheme.neonGreen,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _classBadge(_post.assetClass, l10n),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: DopamineTheme.textSecondary,
-              ),
-            ),
-            const Spacer(),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              tooltip: l10n.communityOpenAssetDetail,
-              icon: Icon(
-                Icons.info_outline_rounded,
-                color: DopamineTheme.neonGreen.withValues(alpha: 0.95),
-              ),
-              onPressed: () {
-                AssetDetailScreen.open(
-                  context,
-                  RankedAsset.communityShell(
-                    symbol: _post.assetSymbol,
-                    assetClass: _post.assetClass,
-                    displayName: (assetName != null && assetName.isNotEmpty)
-                        ? assetName
-                        : null,
-                  ),
-                );
-              },
-            ),
             if (_showOwnPostMenu ||
                 _showOtherPostMenu ||
                 _showGuestPostReportMenu)

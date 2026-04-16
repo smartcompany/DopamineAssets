@@ -38,6 +38,7 @@ class CommunityPostCard extends StatelessWidget {
   final void Function(CommunityPost p)? onOpenAuthorProfile;
   final void Function(CommunityPost p)? onOpenPostDetail;
   final bool showLikeButton;
+  static const String _noSymbolSentinel = "__none__";
 
   String _shareText(CommunityPost p) {
     final title = (p.title ?? '').trim();
@@ -49,9 +50,11 @@ class CommunityPostCard extends StatelessWidget {
     final clipped = summary.length > 120
         ? '${summary.substring(0, 120)}...'
         : summary;
-    final assetLine = assetName.isNotEmpty
-        ? '$assetName (${p.assetSymbol})'
-        : p.assetSymbol;
+    final hasAsset =
+        p.assetSymbol.trim().isNotEmpty && p.assetSymbol != _noSymbolSentinel;
+    final assetLine = hasAsset
+        ? (assetName.isNotEmpty ? '$assetName (${p.assetSymbol})' : p.assetSymbol)
+        : 'General';
     return [
       if (title.isNotEmpty) title,
       if (clipped.isNotEmpty) clipped,
@@ -118,6 +121,9 @@ class CommunityPostCard extends StatelessWidget {
         myUid == null && onReportPost != null;
     final showOverflowMenu =
         showOwnMenu || showLoggedInOtherMenu || showGuestReportMenu;
+    final hasAssetLink =
+        post.assetSymbol.trim().isNotEmpty &&
+        post.assetSymbol != _noSymbolSentinel;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -156,47 +162,49 @@ class CommunityPostCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: DopamineTheme.neonGreen.withValues(
-                                  alpha: 0.15,
+                        if (hasAssetLink)
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
+                                decoration: BoxDecoration(
                                   color: DopamineTheme.neonGreen.withValues(
-                                    alpha: 0.35,
+                                    alpha: 0.15,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: DopamineTheme.neonGreen.withValues(
+                                      alpha: 0.35,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  post.assetSymbol,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: DopamineTheme.neonGreen,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
                               ),
-                              child: Text(
-                                post.assetSymbol,
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: DopamineTheme.neonGreen,
-                                  fontWeight: FontWeight.w800,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _classBadge(post.assetClass, l10n),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: DopamineTheme.textSecondary,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _classBadge(post.assetClass, l10n),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: DopamineTheme.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
-                  IconButton(
+                  if (hasAssetLink)
+                    IconButton(
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -222,7 +230,7 @@ class CommunityPostCard extends StatelessWidget {
                         ),
                       );
                     },
-                  ),
+                    ),
                   if (showOverflowMenu)
                     PopupMenuButton<String>(
                       icon: Icon(
