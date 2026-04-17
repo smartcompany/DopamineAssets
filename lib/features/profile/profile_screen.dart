@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -264,27 +263,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _pickProfilePhoto(AppLocalizations l10n) async {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
-    final picker = ImagePicker();
-    final x = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 88,
-      maxWidth: 1024,
-      maxHeight: 1024,
+    debugPrint('[profile-photo] pick start uid=${fb.uid}');
+    final files = await MediaPickerService.pickImages(
+      context,
+      maxCount: 1,
+      // 서버 업로드 제한(5MB) 전에 클라이언트에서 축소한다.
+      compress: true,
+      maxWidth: 1080,
+      maxHeight: 1080,
+      quality: 72,
+      compressFailureMessage: '이미지 변환에 실패했어요. 다른 사진으로 시도해 주세요.',
     );
-    if (x == null || !mounted) return;
+    debugPrint(
+      '[profile-photo] picker result files=${files?.length ?? -1}',
+    );
+    if (files == null || files.isEmpty) return;
+    final x = files.first;
+    if (!mounted) return;
     setState(() => _uploadingPhoto = true);
     try {
+      final ext = _extFromPath(x.path);
+      debugPrint('[profile-photo] selected path=${x.path} ext=$ext');
       final bytes = await x.readAsBytes();
+      debugPrint('[profile-photo] read bytes length=${bytes.length}');
       final token = await fb.getIdToken();
       if (token == null || token.isEmpty) return;
-      final ext = _extFromPath(x.path);
+      debugPrint('[profile-photo] idToken acquired');
       final url = await uploadProfileImage(
         idToken: token,
         bytes: bytes,
         filename: 'avatar.$ext',
         contentType: _mimeForExt(ext),
       );
+      debugPrint('[profile-photo] uploadProfileImage url=$url');
       await DopamineApi.patchProfilePhotoUrl(idToken: token, photoUrl: url);
+      debugPrint('[profile-photo] patchProfilePhotoUrl success');
       if (!mounted) return;
       final auth = context.read<AuthProvider<DopamineUser>>();
       final current = auth.userProfile;
@@ -302,6 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.profilePhotoSaved)));
     } catch (e) {
+      debugPrint('[profile-photo] upload failed error=$e');
       if (!mounted) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
