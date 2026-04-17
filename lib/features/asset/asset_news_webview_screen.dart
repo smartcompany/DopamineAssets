@@ -5,7 +5,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../theme/dopamine_theme.dart';
 
-/// 뉴스 기사 URL을 앱 안에서 연다 (외부 브라우저로 나가지 않음).
+/// 뉴스·외부 URL을 앱 안 WebView로 연다. 상·하단 세이프 영역은 침범하지 않으며, 상단에는 뒤로가기만 겹친다.
 class AssetNewsWebViewScreen extends StatefulWidget {
   const AssetNewsWebViewScreen({
     super.key,
@@ -78,33 +78,58 @@ class _AssetNewsWebViewScreenState extends State<AssetNewsWebViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final title = widget.pageTitle?.trim().isNotEmpty == true
+        ? widget.pageTitle!.trim()
+        : widget.url.host;
+
     return Scaffold(
       backgroundColor: DopamineTheme.purpleBottom,
-      appBar: AppBar(
-        title: Text(
-          widget.pageTitle?.trim().isNotEmpty == true
-              ? widget.pageTitle!.trim()
-              : widget.url.host,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          if (_progress < 100)
-            LinearProgressIndicator(
-              value: _progress > 0 ? _progress / 100 : null,
-              minHeight: 2,
-              backgroundColor: Colors.white12,
-              color: DopamineTheme.neonGreen,
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: topInset,
+                bottom: bottomInset,
+              ),
+              child: Semantics(
+                label: title,
+                child: WebViewWidget(controller: _controller),
+              ),
             ),
-          Expanded(
-            child: WebViewWidget(controller: _controller),
+          ),
+          if (_progress < 100)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: topInset,
+              child: LinearProgressIndicator(
+                value: _progress > 0 ? _progress / 100 : null,
+                minHeight: 2,
+                backgroundColor: Colors.white12,
+                color: DopamineTheme.neonGreen,
+              ),
+            ),
+          Positioned(
+            top: topInset + 6,
+            left: 8,
+            child: Material(
+              color: Colors.black.withValues(alpha: 0.45),
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                style: IconButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.all(10),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+            ),
           ),
         ],
       ),

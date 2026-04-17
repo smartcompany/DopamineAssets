@@ -837,6 +837,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetDetailOpenChart => '차트 보기';
 
   @override
+  String get assetDetailOpenInToss => '토스';
+
+  @override
+  String get assetDetailOpenInTossTooltip => '토스증권에서 이 종목 주문 화면 열기';
+
+  @override
+  String get assetDetailOpenInExchange => '거래소에서 보기';
+
+  @override
   String get assetChartRange1mo => '1M';
 
   @override

@@ -827,6 +827,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get assetDetailOpenChart => '查看图表';
 
   @override
+  String get assetDetailOpenInToss => 'Toss';
+
+  @override
+  String get assetDetailOpenInTossTooltip => '在 Toss 证券打开该股票的下单页面';
+
+  @override
+  String get assetDetailOpenInExchange => '在交易所查看';
+
+  @override
   String get assetChartRange1mo => '1M';
 
   @override

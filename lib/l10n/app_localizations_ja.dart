@@ -837,6 +837,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get assetDetailOpenChart => 'チャートを表示する';
 
   @override
+  String get assetDetailOpenInToss => 'Toss';
+
+  @override
+  String get assetDetailOpenInTossTooltip => 'Toss証券でこの銘柄の注文画面を開く';
+
+  @override
+  String get assetDetailOpenInExchange => '取引所で見る';
+
+  @override
   String get assetChartRange1mo => '1ヶ月';
 
   @override

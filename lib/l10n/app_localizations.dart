@@ -1674,6 +1674,24 @@ abstract class AppLocalizations {
   /// **'View chart'**
   String get assetDetailOpenChart;
 
+  /// No description provided for @assetDetailOpenInToss.
+  ///
+  /// In en, this message translates to:
+  /// **'Toss'**
+  String get assetDetailOpenInToss;
+
+  /// No description provided for @assetDetailOpenInTossTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open order screen in Toss Securities'**
+  String get assetDetailOpenInTossTooltip;
+
+  /// No description provided for @assetDetailOpenInExchange.
+  ///
+  /// In en, this message translates to:
+  /// **'View on exchange'**
+  String get assetDetailOpenInExchange;
+
   /// No description provided for @assetChartRange1mo.
   ///
   /// In en, this message translates to:
