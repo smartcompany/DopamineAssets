@@ -342,7 +342,15 @@
   "assetDetailOpenInToss": "Toss",
   "assetDetailOpenInTossTooltip": "Open order screen in Toss Securities",
 
-  "assetDetailOpenInExchange": "View on exchange",  "assetChartRange1mo": "1M",
+  "assetDetailOpenInExchange": "View on {exchange}",
+  "@assetDetailOpenInExchange": {
+    "placeholders": {
+      "exchange": {
+        "type": "String"
+      }
+    }
+  },
+  "assetChartRange1mo": "1M",
   "assetChartRange3mo": "3M",
   "assetChartRange1y": "1Y",
   "assetChartFootnote": "Daily candles via Yahoo (server). Not investment advice.",

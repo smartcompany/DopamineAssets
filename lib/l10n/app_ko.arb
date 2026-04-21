@@ -342,7 +342,15 @@
   "assetDetailOpenInToss": "토스",
   "assetDetailOpenInTossTooltip": "토스증권에서 이 종목 주문 화면 열기",
 
-  "assetDetailOpenInExchange": "거래소에서 보기",  "assetChartRange1mo": "1M",
+  "assetDetailOpenInExchange": "{exchange}에서 보기",
+  "@assetDetailOpenInExchange": {
+    "placeholders": {
+      "exchange": {
+        "type": "String"
+      }
+    }
+  },
+  "assetChartRange1mo": "1M",
   "assetChartRange3mo": "3M",
   "assetChartRange1y": "1Y",
   "assetChartFootnote": "일봉 캔들 · Yahoo 데이터(서버 경유). 투자 권유가 아닙니다.",

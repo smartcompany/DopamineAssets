@@ -843,7 +843,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get assetDetailOpenInTossTooltip => '토스증권에서 이 종목 주문 화면 열기';
 
   @override
-  String get assetDetailOpenInExchange => '거래소에서 보기';
+  String assetDetailOpenInExchange(String exchange) {
+    return '$exchange에서 보기';
+  }
 
   @override
   String get assetChartRange1mo => '1M';

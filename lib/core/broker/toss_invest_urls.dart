@@ -34,6 +34,35 @@ Uri? exchangeViewUri({
   return null;
 }
 
+/// "거래소에서 보기" 라벨에 들어갈 거래소/서비스 브랜드명.
+/// [exchangeViewUri]가 null이면 이 함수도 null을 반환한다.
+String? exchangeDisplayName({
+  required String localeLanguageCode,
+  required String assetClass,
+}) {
+  final lang = localeLanguageCode.trim().toLowerCase();
+  final ac = assetClass.trim().toLowerCase();
+  if (ac == 'crypto') {
+    return 'CoinMarketCap';
+  }
+  if (ac == 'us_stock' || ac == 'kr_stock') {
+    if (lang == 'ko') {
+      return '토스';
+    }
+    return 'Yahoo Finance';
+  }
+  if (ac == 'jp_stock') {
+    return lang == 'ja' ? 'Yahoo!ファイナンス' : 'Yahoo! Japan';
+  }
+  if (ac == 'cn_stock') {
+    return lang == 'zh' ? '东方财富' : 'Eastmoney';
+  }
+  if (ac == 'commodity') {
+    return 'Yahoo Finance';
+  }
+  return null;
+}
+
 Uri? yahooFinanceStockUri(String symbol) {
   final s = symbol.trim().toUpperCase();
   if (s.isEmpty) return null;

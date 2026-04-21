@@ -843,7 +843,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get assetDetailOpenInTossTooltip => 'Toss証券でこの銘柄の注文画面を開く';
 
   @override
-  String get assetDetailOpenInExchange => '取引所で見る';
+  String assetDetailOpenInExchange(String exchange) {
+    return '$exchangeで見る';
+  }
 
   @override
   String get assetChartRange1mo => '1ヶ月';

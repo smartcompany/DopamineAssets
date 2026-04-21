@@ -1689,8 +1689,8 @@ abstract class AppLocalizations {
   /// No description provided for @assetDetailOpenInExchange.
   ///
   /// In en, this message translates to:
-  /// **'View on exchange'**
-  String get assetDetailOpenInExchange;
+  /// **'View on {exchange}'**
+  String assetDetailOpenInExchange(String exchange);
 
   /// No description provided for @assetChartRange1mo.
   ///

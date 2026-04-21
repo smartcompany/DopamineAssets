@@ -854,7 +854,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open order screen in Toss Securities';
 
   @override
-  String get assetDetailOpenInExchange => 'View on exchange';
+  String assetDetailOpenInExchange(String exchange) {
+    return 'View on $exchange';
+  }
 
   @override
   String get assetChartRange1mo => '1M';

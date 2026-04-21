@@ -342,7 +342,15 @@
   "assetDetailOpenInToss": "Toss",
   "assetDetailOpenInTossTooltip": "Toss証券でこの銘柄の注文画面を開く",
 
-  "assetDetailOpenInExchange": "取引所で見る",  "assetChartRange1mo": "1ヶ月",
+  "assetDetailOpenInExchange": "{exchange}で見る",
+  "@assetDetailOpenInExchange": {
+    "placeholders": {
+      "exchange": {
+        "type": "String"
+      }
+    }
+  },
+  "assetChartRange1mo": "1ヶ月",
   "assetChartRange3mo": "3ヶ月",
   "assetChartRange1y": "1年",
   "assetChartFootnote": "Yahoo （サーバー）経由の毎日のキャンドル。投資アドバイスではありません。",

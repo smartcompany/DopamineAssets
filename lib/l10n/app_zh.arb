@@ -342,7 +342,15 @@
   "assetDetailOpenInToss": "Toss",
   "assetDetailOpenInTossTooltip": "在 Toss 证券打开该股票的下单页面",
 
-  "assetDetailOpenInExchange": "在交易所查看",  "assetChartRange1mo": "1M",
+  "assetDetailOpenInExchange": "在{exchange}查看",
+  "@assetDetailOpenInExchange": {
+    "placeholders": {
+      "exchange": {
+        "type": "String"
+      }
+    }
+  },
+  "assetChartRange1mo": "1M",
   "assetChartRange3mo": "3M",
   "assetChartRange1y": "1Y",
   "assetChartFootnote": "日 K 线来自 Yahoo（经服务器）。仅供参考，不构成投资建议。",

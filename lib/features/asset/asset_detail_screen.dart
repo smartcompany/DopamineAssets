@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
@@ -320,11 +319,17 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                   '';
               final showThemeChart =
                   isTheme && themeIdForChart.isNotEmpty;
+              final exchangeLocaleLang =
+                  Localizations.localeOf(context).languageCode;
               final exchangeUri = exchangeViewUri(
-                localeLanguageCode: Localizations.localeOf(context).languageCode,
+                localeLanguageCode: exchangeLocaleLang,
                 assetClass: d.assetClass,
                 symbol: d.symbol,
                 cryptoSlug: widget.rankedAsset.coingeckoId,
+              );
+              final exchangeName = exchangeDisplayName(
+                localeLanguageCode: exchangeLocaleLang,
+                assetClass: d.assetClass,
               );
               return SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
@@ -526,11 +531,12 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                     : l10n.dopamineScoreLabel,
                                 a.dopamineScore.toStringAsFixed(1),
                               ),
-                              if (exchangeUri != null)
+                              if (exchangeUri != null && exchangeName != null)
                                 Align(
                                   alignment: Alignment.center,
                                   child: TextButton(
-                                    onPressed: () => _openTossInvestOrder(d),
+                                    onPressed: () =>
+                                        _openExchangeView(exchangeUri),
                                     style: TextButton.styleFrom(
                                       foregroundColor: DopamineTheme.neonGreen,
                                       textStyle: theme.textTheme.titleMedium
@@ -541,9 +547,16 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(l10n.assetDetailOpenInExchange),
+                                        Text(
+                                          l10n.assetDetailOpenInExchange(
+                                            exchangeName,
+                                          ),
+                                        ),
                                         const SizedBox(width: 4),
-                                        const Icon(Icons.expand_more_rounded),
+                                        const Icon(
+                                          Icons.open_in_new_rounded,
+                                          size: 18,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1010,29 +1023,15 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
     );
   }
 
-  Future<void> _openTossInvestOrder(AssetDetail d) async {
-    final localeCode = Localizations.localeOf(context).languageCode;
-    final cryptoSlug = widget.rankedAsset.coingeckoId;
-    final uri = exchangeViewUri(
-      localeLanguageCode: localeCode,
-      assetClass: d.assetClass,
-      symbol: d.symbol,
-      cryptoSlug: cryptoSlug,
-    );
-    debugPrint(
-      '[exchange-view] locale=$localeCode assetClass=${d.assetClass} symbol=${d.symbol} coingeckoId=$cryptoSlug uri=$uri',
-    );
-    if (uri == null || !mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _AssetWebBottomSheet(
-        url: uri,
-        title: AppLocalizations.of(context)?.assetDetailOpenInExchange ?? '',
-      ),
-    );
+  Future<void> _openExchangeView(Uri uri) async {
+    debugPrint('[exchange-view] launching external=$uri');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.assetDetailOpenLinkFailed)),
+      );
+    }
   }
 
   Future<void> _openWebsite(String raw) async {
@@ -1103,102 +1102,3 @@ class _GlassCard extends StatelessWidget {
   }
 }
 
-class _AssetWebBottomSheet extends StatefulWidget {
-  const _AssetWebBottomSheet({
-    required this.url,
-    required this.title,
-  });
-
-  final Uri url;
-  final String title;
-
-  @override
-  State<_AssetWebBottomSheet> createState() => _AssetWebBottomSheetState();
-}
-
-class _AssetWebBottomSheetState extends State<_AssetWebBottomSheet> {
-  late final WebViewController _controller;
-  var _progress = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (value) {
-            if (mounted) setState(() => _progress = value);
-          },
-          onPageFinished: (_) {
-            if (mounted) setState(() => _progress = 100);
-          },
-        ),
-      )
-      ..loadRequest(widget.url);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final h = MediaQuery.sizeOf(context).height * 0.88;
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          height: h,
-          decoration: const BoxDecoration(
-            color: DopamineTheme.purpleBottom,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: DopamineTheme.textPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_progress < 100)
-                  LinearProgressIndicator(
-                    value: _progress > 0 ? _progress / 100 : null,
-                    minHeight: 2,
-                    backgroundColor: Colors.white12,
-                    color: DopamineTheme.neonGreen,
-                  ),
-                Expanded(child: WebViewWidget(controller: _controller)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
