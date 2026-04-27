@@ -71,4 +71,7 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npx vercel@latest deploy build/web --prod --yes --token "$VERCEL_TOKEN"
+          mkdir -p build/web/.vercel
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$VERCEL_ORG_ID" "$VERCEL_PROJECT_ID" > build/web/.vercel/project.json
+          cd build/web
+          npx vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
