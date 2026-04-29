@@ -1,14 +1,18 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/badges/badge_unlock_center.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../community/community_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../profile/profile_screen.dart';
 import 'home_screen.dart';
+
+enum _NudgeType { profile, community }
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, this.initialSharedPostId});
@@ -20,6 +24,26 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
+  bool _profileTooltipShown = false;
+  bool _communityTooltipShown = false;
+  bool _showProfileNudge = false;
+  bool _showCommunityNudge = false;
+  Timer? _nudgeTimer;
+  Timer? _badgeToastTimer;
+  BadgeUnlockToast? _badgeToast;
+
+  void _handleBadgeUnlockCenter() {
+    final toast = BadgeUnlockCenter.instance.pendingToast;
+    if (toast == null) return;
+    _badgeToastTimer?.cancel();
+    setState(() => _badgeToast = toast);
+    BadgeUnlockCenter.instance.clearToast();
+    _badgeToastTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      setState(() => _badgeToast = null);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -29,7 +53,228 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _focusCommunityTabIfNeeded();
+      _scheduleNextNudge();
     });
+    BadgeUnlockCenter.instance.addListener(_handleBadgeUnlockCenter);
+    unawaited(BadgeUnlockCenter.instance.ensureInitialized());
+  }
+
+  void _scheduleNextNudge() {
+    final nav = context.read<HomeShellNavigation>();
+    if (nav.tabIndex != 0) return;
+    if (_showProfileNudge || _showCommunityNudge) return;
+
+    _NudgeType? next;
+    if (!_profileTooltipShown) {
+      next = _NudgeType.profile;
+    } else if (!_communityTooltipShown) {
+      next = _NudgeType.community;
+    }
+    if (next == null) return;
+
+    _nudgeTimer?.cancel();
+    _nudgeTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      final navNow = context.read<HomeShellNavigation>();
+      if (navNow.tabIndex != 0) return;
+      setState(() {
+        if (next == _NudgeType.profile && !_profileTooltipShown) {
+          _profileTooltipShown = true;
+          _showProfileNudge = true;
+          _showCommunityNudge = false;
+        } else if (next == _NudgeType.community && !_communityTooltipShown) {
+          _communityTooltipShown = true;
+          _showCommunityNudge = true;
+          _showProfileNudge = false;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _nudgeTimer?.cancel();
+    _badgeToastTimer?.cancel();
+    BadgeUnlockCenter.instance.removeListener(_handleBadgeUnlockCenter);
+    super.dispose();
+  }
+
+  void _dismissProfileNudge() {
+    if (!mounted) return;
+    setState(() => _showProfileNudge = false);
+    _scheduleNextNudge();
+  }
+
+  void _dismissCommunityNudge() {
+    if (!mounted) return;
+    setState(() => _showCommunityNudge = false);
+  }
+
+  Widget _buildBubble({
+    required String text,
+    required double right,
+    required VoidCallback onTapBubble,
+    required VoidCallback onTapClose,
+    required double tailRight,
+  }) {
+    return Positioned(
+      right: right,
+      bottom: 92 + MediaQuery.of(context).padding.bottom,
+      child: GestureDetector(
+        onTap: onTapBubble,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              constraints: const BoxConstraints(maxWidth: 230),
+              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3B0),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: const TextStyle(
+                        color: Color(0xFF3B1D00),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: onTapClose,
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: Color(0xFF7C2D12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(right: tailRight),
+              child: CustomPaint(
+                size: const Size(16, 10),
+                painter: _BubbleTailPainter(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileNudgeBubble() {
+    return _buildBubble(
+      text: '당신이 누구인지 보여주세요',
+      right: 12,
+      tailRight: 18,
+      onTapBubble: _dismissProfileNudge,
+      onTapClose: _dismissProfileNudge,
+    );
+  }
+
+  Widget _buildCommunityNudgeBubble() {
+    return _buildBubble(
+      text: '커뮤니티에서 다른 사람 의견을 확인해보세요',
+      right: 74,
+      tailRight: 66,
+      onTapBubble: () {
+        context.read<HomeShellNavigation>().setTabIndex(2);
+        _dismissCommunityNudge();
+      },
+      onTapClose: _dismissCommunityNudge,
+    );
+  }
+
+  Widget _buildBadgeUnlockToast() {
+    final toast = _badgeToast;
+    if (toast == null) return const SizedBox.shrink();
+    return Positioned(
+      top: 14 + MediaQuery.of(context).padding.top,
+      left: 14,
+      right: 14,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: const Color(0xFF111827).withValues(alpha: 0.96),
+            border: Border.all(
+              color: const Color(0xFF34D399).withValues(alpha: 0.6),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 16,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  toast.assetPath,
+                  width: 42,
+                  height: 42,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '새 뱃지 획득!',
+                      style: TextStyle(
+                        color: Color(0xFF34D399),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      toast.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => setState(() => _badgeToast = null),
+                icon: const Icon(Icons.close_rounded, size: 18),
+                color: Colors.white70,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -62,14 +307,22 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final nav = context.watch<HomeShellNavigation>();
 
     return Scaffold(
-      body: IndexedStack(
-        index: nav.tabIndex,
-        sizing: StackFit.expand,
+      body: Stack(
         children: [
-          const HomeScreen(),
-          const FavoritesScreen(),
-          CommunityScreen(initialSharedPostId: widget.initialSharedPostId),
-          const ProfileScreen(),
+          IndexedStack(
+            index: nav.tabIndex,
+            sizing: StackFit.expand,
+            children: [
+              const HomeScreen(),
+              const FavoritesScreen(),
+              CommunityScreen(initialSharedPostId: widget.initialSharedPostId),
+              const ProfileScreen(),
+            ],
+          ),
+          if (_showProfileNudge && nav.tabIndex == 0) _buildProfileNudgeBubble(),
+          if (_showCommunityNudge && nav.tabIndex == 0)
+            _buildCommunityNudgeBubble(),
+          if (_badgeToast != null) _buildBadgeUnlockToast(),
         ],
       ),
       extendBody: true,
@@ -86,7 +339,33 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             child: NavigationBar(
               backgroundColor: Colors.transparent,
               selectedIndex: nav.tabIndex,
-              onDestinationSelected: nav.setTabIndex,
+              onDestinationSelected: (index) {
+                if (index == 3) {
+                  setState(() {
+                    _profileTooltipShown = true;
+                    _showProfileNudge = false;
+                    _showCommunityNudge = false;
+                  });
+                  _nudgeTimer?.cancel();
+                } else if (index == 2) {
+                  setState(() {
+                    _communityTooltipShown = true;
+                    _showProfileNudge = false;
+                    _showCommunityNudge = false;
+                  });
+                  _nudgeTimer?.cancel();
+                }
+                nav.setTabIndex(index);
+                if (index == 0) {
+                  _scheduleNextNudge();
+                } else {
+                  setState(() {
+                    _showProfileNudge = false;
+                    _showCommunityNudge = false;
+                  });
+                  _nudgeTimer?.cancel();
+                }
+              },
               destinations: [
                 NavigationDestination(
                   icon: const Icon(Icons.home_outlined),
@@ -115,4 +394,20 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       ),
     );
   }
+}
+
+class _BubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0xFFFFF3B0);
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

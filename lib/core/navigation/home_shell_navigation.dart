@@ -15,8 +15,15 @@ class CommunityNavFilter {
 
 class HomeShellNavigation extends ChangeNotifier {
   int tabIndex = 0;
+  bool _hasVisitedCommunity = false;
   CommunityNavFilter? _pendingFilter;
   String? _pendingCommunityRootCommentId;
+
+  bool get hasVisitedCommunity => _hasVisitedCommunity;
+
+  void _markCommunityVisited() {
+    _hasVisitedCommunity = true;
+  }
 
   /// 프로필 등 다른 화면에서 글이 삭제되면 증가시키고, [CommunityScreen]이 목록을 다시 받아옵니다.
   int communityFeedEpoch = 0;
@@ -31,6 +38,7 @@ class HomeShellNavigation extends ChangeNotifier {
     required String assetClass,
     String? displayName,
   }) {
+    _markCommunityVisited();
     _pendingCommunityRootCommentId = null;
     _pendingFilter = CommunityNavFilter(
       symbol: symbol,
@@ -48,6 +56,7 @@ class HomeShellNavigation extends ChangeNotifier {
     required String rootCommentId,
     String? displayName,
   }) {
+    _markCommunityVisited();
     _pendingFilter = CommunityNavFilter(
       symbol: symbol,
       assetClass: assetClass,
@@ -63,6 +72,7 @@ class HomeShellNavigation extends ChangeNotifier {
     required String rootCommentId,
   }) {
     debugPrint('[UL] nav openCommunitySharedPost id=$rootCommentId');
+    _markCommunityVisited();
     _pendingFilter = null;
     _pendingCommunityRootCommentId = rootCommentId;
     tabIndex = 2;
@@ -100,6 +110,7 @@ class HomeShellNavigation extends ChangeNotifier {
 
   void setTabIndex(int index) {
     if (tabIndex == index) return;
+    if (index == 2) _markCommunityVisited();
     tabIndex = index;
     notifyListeners();
   }

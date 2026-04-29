@@ -11,6 +11,7 @@ import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
+import '../../core/badges/badge_unlock_center.dart';
 import '../../core/config/api_config.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
@@ -68,6 +69,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _pushSocialLike = true;
   bool _pushMarketDaily = true;
   bool _pushHotMoverDiscussion = true;
+  final Set<String> _seenUnlockedBadgeKeys = <String>{};
+  bool _badgeProgressArmed = false;
+  _ProfileBadgeVm? _newBadgeToast;
+  Timer? _newBadgeToastTimer;
 
   bool _isAppSignedIn(AuthProvider<DopamineUser> auth) {
     return auth.isLoggedIn();
@@ -155,7 +160,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _loadError = null;
           _loading = false;
           _nameController.clear();
+          _newBadgeToast = null;
         });
+        _seenUnlockedBadgeKeys.clear();
+        _badgeProgressArmed = false;
       }
     });
   }
@@ -185,6 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _activity = act;
       });
+      _syncBadgeUnlockProgress(allowAnimation: _badgeProgressArmed);
     } catch (_) {
       // 탭 진입 동기화는 조용히 처리합니다.
     }
@@ -204,6 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _newBadgeToastTimer?.cancel();
     _nameController.removeListener(_onNameDraftChanged);
     _shellNav?.removeListener(_handleShellNav);
     _authSub?.cancel();
@@ -402,6 +412,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
         _loading = false;
       });
+      _syncBadgeUnlockProgress(allowAnimation: _badgeProgressArmed);
+      _badgeProgressArmed = true;
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1389,6 +1401,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       stats: ProfileStatsStore.instance.stats!,
                       l10n: l10n,
                     ),
+                  const SizedBox(height: 12),
+                  _buildBadgeSection(context, theme),
                   const SizedBox(height: 22),
                   SizedBox(
                     width: double.infinity,
@@ -1748,6 +1762,450 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  int get _postCount => ProfileStatsStore.instance.stats?.postsCount ?? 0;
+
+  int get _replyCount =>
+      _activity
+          .where((e) => e.kind == 'my_reply' || e.kind == 'reply_on_post')
+          .length;
+
+  int get _likeReceivedCount =>
+      _activity.where((e) => e.kind == 'like_received').length;
+
+  int get _activityCount => _activity.length;
+  bool get _communityExplored => _shellNav?.hasVisitedCommunity ?? false;
+
+  int get _pseudoLevel {
+    final score = (_postCount * 12) + (_replyCount * 6) + (_likeReceivedCount * 2);
+    if (score >= 220) return 10;
+    if (score >= 80) return 5;
+    return 1;
+  }
+
+  void _syncBadgeUnlockProgress({required bool allowAnimation}) {
+    final unlockedNow = _buildBadgeVms().where((b) => b.unlocked).toList();
+    final unlockedKeysNow = unlockedNow.map((b) => b.key).toSet();
+    final newlyUnlockedKeys = unlockedKeysNow.difference(_seenUnlockedBadgeKeys);
+    _seenUnlockedBadgeKeys
+      ..clear()
+      ..addAll(unlockedKeysNow);
+    if (!allowAnimation || newlyUnlockedKeys.isEmpty || !mounted) return;
+    final firstNew = unlockedNow.firstWhere(
+      (b) => newlyUnlockedKeys.contains(b.key),
+      orElse: () => unlockedNow.first,
+    );
+    _showNewBadgeToast(firstNew);
+  }
+
+  void _showNewBadgeToast(_ProfileBadgeVm badge) {
+    _newBadgeToastTimer?.cancel();
+    setState(() => _newBadgeToast = badge);
+    _newBadgeToastTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      setState(() => _newBadgeToast = null);
+    });
+  }
+
+  Widget _buildNewBadgeToast(ThemeData theme) {
+    final badge = _newBadgeToast;
+    if (badge == null) return const SizedBox.shrink();
+    return IgnorePointer(
+      ignoring: false,
+      child: GestureDetector(
+        onTap: () => setState(() => _newBadgeToast = null),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: const Color(0xFF111827).withValues(alpha: 0.96),
+            border: Border.all(
+              color: DopamineTheme.neonGreen.withValues(alpha: 0.55),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 16,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  badge.assetPath,
+                  width: 44,
+                  height: 44,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '새 뱃지 획득!',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: DopamineTheme.neonGreen,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      badge.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: DopamineTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.emoji_events_rounded,
+                color: DopamineTheme.neonGreen.withValues(alpha: 0.9),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<_ProfileBadgeVm> _buildBadgeVms() {
+    final talked = _postCount + _replyCount;
+    return [
+      _ProfileBadgeVm(
+        key: 'first',
+        label: '첫걸음',
+        assetPath: 'assets/badges/badge_first.jpg',
+        unlocked: BadgeUnlockCenter.instance.isUnlocked('first') || true,
+        description: '첫 로그인/첫 진입으로 획득하는 시작 배지',
+        requirementText: '앱 시작 시 자동 획득',
+      ),
+      _ProfileBadgeVm(
+        key: 'explorer',
+        label: '커뮤니티 탐험가',
+        assetPath: 'assets/badges/badge_explorer.jpg',
+        unlocked: BadgeUnlockCenter.instance.isUnlocked('explorer') ||
+            _communityExplored ||
+            _activityCount >= 1,
+        description: '커뮤니티/활동 피드를 처음 탐색한 사용자',
+        requirementText: '커뮤니티 탭 1회 방문',
+      ),
+      _ProfileBadgeVm(
+        key: 'write_first',
+        label: '첫 작성자',
+        assetPath: 'assets/badges/badge_write_first.jpg',
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('write_first') || _postCount >= 1,
+        description: '첫 게시글을 작성해 기여를 시작한 사용자',
+        requirementText: '게시글 1개 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'comment_first',
+        label: '첫 댓글러',
+        assetPath: 'assets/badges/badge_comment_first.jpg',
+        unlocked: BadgeUnlockCenter.instance.isUnlocked('comment_first') ||
+            _replyCount >= 1,
+        description: '첫 댓글/답글로 대화에 참여한 사용자',
+        requirementText: '댓글/답글 1개 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'radar_on',
+        label: '레이더 ON',
+        assetPath: 'assets/badges/badge_rader_on.jpg',
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('radar_on') || _activityCount >= 3,
+        description: '시장 탐색 루프를 본격적으로 시작한 사용자',
+        requirementText: '활동 3회 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'scan_assets',
+        label: '스캐너',
+        assetPath: 'assets/badges/badge_scan_assets.jpg',
+        unlocked: BadgeUnlockCenter.instance.isUnlocked('scan_assets') ||
+            _activityCount >= 50,
+        description: '다양한 자산을 깊게 탐색한 사용자',
+        requirementText: '활동 50회 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'talk_king',
+        label: '토론가',
+        assetPath: 'assets/badges/badge_talk_king.jpg',
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('talk_king') || talked >= 20,
+        description: '의견 교환을 꾸준히 이어가는 토론형 사용자',
+        requirementText: '게시글+댓글 20회 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'heart_king',
+        label: '공감왕',
+        assetPath: 'assets/badges/badge_hart_king.jpg',
+        unlocked: BadgeUnlockCenter.instance.isUnlocked('heart_king') ||
+            _likeReceivedCount >= 50,
+        description: '다른 사용자에게 많은 공감을 받은 사용자',
+        requirementText: '받은 좋아요 50회 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'visit_7',
+        label: '연속 7일',
+        assetPath: 'assets/badges/badge_visit_7.jpg',
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('visit_7') || _activityCount >= 7,
+        description: '꾸준한 방문 습관을 만든 사용자',
+        requirementText: '활동 7회 이상(임시 기준)',
+      ),
+      _ProfileBadgeVm(
+        key: 'level_5',
+        label: '레벨 5',
+        assetPath: 'assets/badges/badge_5_level.jpg',
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('level_5') || _pseudoLevel >= 5,
+        description: '초기 성장 구간을 돌파한 사용자',
+        requirementText: '레벨 5 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'level_10',
+        label: '레벨 10',
+        assetPath: 'assets/badges/badge_level_10.jpg',
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('level_10') || _pseudoLevel >= 10,
+        description: '상위 성장 구간에 도달한 사용자',
+        requirementText: '레벨 10 이상',
+      ),
+      _ProfileBadgeVm(
+        key: 'multi_market',
+        label: '멀티마켓',
+        assetPath: 'assets/badges/badge_multi_market.jpg',
+        unlocked: BadgeUnlockCenter.instance.isUnlocked('multi_market') ||
+            _activityCount >= 12,
+        description: '다양한 시장을 오가며 탐색하는 사용자',
+        requirementText: '활동 12회 이상',
+      ),
+    ];
+  }
+
+  Future<void> _showBadgeDetail(_ProfileBadgeVm badge) async {
+    if (!mounted) return;
+    final theme = Theme.of(context);
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: const Color(0xFF121321),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        badge.label,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: DopamineTheme.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      color: DopamineTheme.textSecondary,
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.asset(
+                      badge.assetPath,
+                      width: 220,
+                      height: 220,
+                      fit: BoxFit.cover,
+                      color: badge.unlocked
+                          ? null
+                          : Colors.black.withValues(alpha: 0.55),
+                      colorBlendMode:
+                          badge.unlocked ? null : BlendMode.srcATop,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  badge.description,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: DopamineTheme.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        badge.unlocked
+                            ? Icons.check_circle_rounded
+                            : Icons.lock_rounded,
+                        size: 16,
+                        color: badge.unlocked
+                            ? DopamineTheme.neonGreen
+                            : DopamineTheme.textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          badge.unlocked
+                              ? '획득 완료'
+                              : '획득 조건: ${badge.requirementText}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: badge.unlocked
+                                ? DopamineTheme.neonGreen
+                                : DopamineTheme.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBadgeSection(BuildContext context, ThemeData theme) {
+    final badges = _buildBadgeVms();
+    final unlocked = badges.where((b) => b.unlocked).length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.06),
+            Colors.black.withValues(alpha: 0.26),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '획득 뱃지',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: DopamineTheme.neonGreen,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '$unlocked / ${badges.length}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: DopamineTheme.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: badges.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.78,
+            ),
+            itemBuilder: (_, i) {
+              final b = badges[i];
+              return GestureDetector(
+                onTap: () => _showBadgeDetail(b),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset(
+                              b.assetPath,
+                              fit: BoxFit.cover,
+                              color: b.unlocked
+                                  ? null
+                                  : Colors.black.withValues(alpha: 0.55),
+                              colorBlendMode:
+                                  b.unlocked ? null : BlendMode.srcATop,
+                            ),
+                            if (!b.unlocked)
+                              Container(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.lock_rounded,
+                                    size: 16,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      b.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: b.unlocked
+                            ? DopamineTheme.textPrimary
+                            : DopamineTheme.textSecondary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1759,62 +2217,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileSaved = appSignedIn;
 
     return Scaffold(
-      body: SafeArea(
-        child: appSignedIn
-            ? ListenableBuilder(
-                listenable: ProfileStatsStore.instance,
-                builder: (context, _) {
-                  final committedName = (auth.userProfile?.displayName ?? '')
-                      .trim();
-                  // displayName 과 같이 Provider 에서 매번 읽는다. 상위 build 의
-                  // profilePhotoUrl 스냅샷을 넘기면 StatsStore 알림만 올 때
-                  // 부모가 안 돌아 아바타 URL 이 갱신되지 않을 수 있다.
-                  final livePhotoUrl = auth.userProfile?.photoUrl;
-                  return _buildSignedInBody(
-                    context,
-                    theme,
-                    l10n,
-                    fb!,
-                    profileSaved,
-                    livePhotoUrl,
-                    locale,
-                    committedName,
-                    showSuspensionBanner: isDopamineUserSuspended(
-                      auth.userProfile,
-                    ),
-                  );
-                },
-              )
-            : Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l10n.profileNotSignedIn,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: DopamineTheme.textSecondary,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: appSignedIn
+                ? ListenableBuilder(
+                    listenable: ProfileStatsStore.instance,
+                    builder: (context, _) {
+                      final committedName = (auth.userProfile?.displayName ?? '')
+                          .trim();
+                      // displayName 과 같이 Provider 에서 매번 읽는다. 상위 build 의
+                      // profilePhotoUrl 스냅샷을 넘기면 StatsStore 알림만 올 때
+                      // 부모가 안 돌아 아바타 URL 이 갱신되지 않을 수 있다.
+                      final livePhotoUrl = auth.userProfile?.photoUrl;
+                      return _buildSignedInBody(
+                        context,
+                        theme,
+                        l10n,
+                        fb!,
+                        profileSaved,
+                        livePhotoUrl,
+                        locale,
+                        committedName,
+                        showSuspensionBanner: isDopamineUserSuspended(
+                          auth.userProfile,
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: () => presentDopamineAuthScreen(context),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: DopamineTheme.neonGreen,
-                          foregroundColor: const Color(0xFF0A0A0A),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 14,
+                      );
+                    },
+                  )
+                : Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            l10n.profileNotSignedIn,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: DopamineTheme.textSecondary,
+                            ),
                           ),
-                        ),
-                        child: Text(l10n.actionLogin),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: () => presentDopamineAuthScreen(context),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: DopamineTheme.neonGreen,
+                              foregroundColor: const Color(0xFF0A0A0A),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 28,
+                                vertical: 14,
+                              ),
+                            ),
+                            child: Text(l10n.actionLogin),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              switchInCurve: Curves.easeOutBack,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(
+                      begin: 0.92,
+                      end: 1,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: _newBadgeToast == null
+                  ? const SizedBox.shrink()
+                  : _buildNewBadgeToast(theme),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1844,6 +2331,24 @@ class _ProfileStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _ProfileStickyHeaderDelegate oldDelegate) {
     return oldDelegate.child != child;
   }
+}
+
+final class _ProfileBadgeVm {
+  const _ProfileBadgeVm({
+    required this.key,
+    required this.label,
+    required this.assetPath,
+    required this.unlocked,
+    required this.description,
+    required this.requirementText,
+  });
+
+  final String key;
+  final String label;
+  final String assetPath;
+  final bool unlocked;
+  final String description;
+  final String requirementText;
 }
 
 /// 계정 영역 — 프로필 사진 카드 (글래스 톤 + 아이콘 액션)

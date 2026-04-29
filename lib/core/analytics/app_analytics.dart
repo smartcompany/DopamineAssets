@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 
+import '../badges/badge_unlock_center.dart';
+
 /// Firebase Analytics 공통 래퍼.
 /// 이벤트명/파라미터를 한 곳에서 관리해 화면별 코드 침습을 줄입니다.
 final class AppAnalytics {
@@ -123,6 +125,15 @@ final class AppAnalytics {
     },
   );
 
+  static Future<void> logCommunityReplySubmitted({
+    required String assetClass,
+  }) => _log(
+    'community_reply_submit',
+    <String, Object>{
+      'asset_class': _normalize(assetClass),
+    },
+  );
+
   static Future<void> logHomeView({
     required String locale,
     required String platform,
@@ -220,6 +231,7 @@ final class AppAnalytics {
   ) async {
     try {
       await _fa.logEvent(name: eventName, parameters: parameters);
+      unawaited(BadgeUnlockCenter.instance.trackEvent(eventName, parameters));
     } catch (e) {
       debugPrint('[analytics] logEvent failed ($eventName): $e');
     }

@@ -10,6 +10,7 @@ import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/navigation/home_shell_navigation.dart';
+import '../../core/analytics/app_analytics.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
 import '../../core/profile/profile_stats_store.dart';
@@ -615,6 +616,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         _threadDirty = true;
       });
       await _loadThread();
+      unawaited(
+        AppAnalytics.logCommunityReplySubmitted(
+          assetClass: _post.assetClass,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException
