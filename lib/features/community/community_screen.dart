@@ -39,6 +39,7 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
   var _sort = 'latest';
+  int _topTabIndex = 0; // 0: posts, 1: activists
   static const int _pageSize = 20;
 
   /// [FutureBuilder] 대신 사용: 연속 검색 시 늦게 도착한 응답이 최신 칩/쿼리를 덮어쓰지 않게 함.
@@ -46,6 +47,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _loading = true;
   Object? _fetchError;
   List<CommunityPost> _posts = const [];
+  bool _activistsLoading = false;
+  Object? _activistsError;
+  List<CommunityPost> _activistPosts = const [];
   int _page = 0;
   bool _hasMore = true;
   bool _loadingMore = false;
@@ -64,6 +68,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   /// 좋아요 API 중인 게시글 id (하트 로딩 표시)
   final Set<String> _likeBusyIds = {};
+  final Set<String> _followBusyUids = {};
+  final Map<String, bool> _followingByUid = {};
   String? _lastOpenedSharedPostId;
   bool _communityViewLogged = false;
 
@@ -84,6 +90,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         );
       }
       _scheduleFetch();
+      _scheduleActivistsFetch();
       _openInitialSharedPostIfNeeded();
     });
   }
@@ -151,11 +158,54 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _hasMore = result.hasMore;
         _loading = false;
       });
+      await _refreshFollowStatusesForUids(
+        _posts.map((p) => p.authorUid),
+      );
     } catch (e) {
       if (!mounted || gen != _fetchGen) return;
       setState(() {
         _fetchError = e;
         _loading = false;
+      });
+    }
+  }
+
+  Future<void> _scheduleActivistsFetch() async {
+    setState(() {
+      _activistsLoading = true;
+      _activistsError = null;
+    });
+    String? idToken;
+    if (mounted) {
+      final auth = context.read<AuthProvider<DopamineUser>>();
+      if (auth.isLoggedIn()) {
+        idToken = await auth.getIdToken();
+      }
+    }
+    try {
+      // 활동가 탭은 종목/본문 필터와 무관하게 전체 커뮤니티 기준으로 집계한다.
+      final result = await DopamineApi.fetchCommunityPostsPage(
+        sort: 'latest',
+        page: 0,
+        limit: 100,
+        symbol: null,
+        assetClass: null,
+        bodyTerms: null,
+        idToken: idToken,
+      );
+      if (!mounted) return;
+      setState(() {
+        _activistPosts = result.items;
+        _activistsLoading = false;
+      });
+      await _refreshFollowStatusesForUids(
+        _activistPosts.map((p) => p.authorUid),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _activistsError = e;
+        _activistsLoading = false;
       });
     }
   }
@@ -197,9 +247,38 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _hasMore = result.hasMore;
         _loadingMore = false;
       });
+      await _refreshFollowStatusesForUids(
+        _posts.map((p) => p.authorUid),
+      );
     } catch (_) {
       if (!mounted || gen != _fetchGen) return;
       setState(() => _loadingMore = false);
+    }
+  }
+
+  Future<void> _refreshFollowStatusesForUids(Iterable<String> uids) async {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    if (!auth.isLoggedIn()) return;
+    final token = await auth.getIdToken();
+    if (token == null || token.isEmpty) return;
+    final myUid = auth.currentUid();
+    final targetUids = uids
+        .where((u) => u.isNotEmpty && u != myUid)
+        .toSet()
+        .toList();
+    if (targetUids.isEmpty) return;
+    try {
+      final statuses = await DopamineApi.fetchFollowStatus(
+        idToken: token,
+        targetUids: targetUids,
+      );
+      if (!mounted) return;
+      setState(() {
+        _followingByUid.addAll(statuses);
+      });
+    } catch (_) {
+      // 조용히 실패 처리
     }
   }
 
@@ -376,12 +455,76 @@ class _CommunityScreenState extends State<CommunityScreen> {
     await _scheduleFetch();
   }
 
+  Future<void> _toggleFollowForAuthor(_ActivistRow row) async {
+    if (_followBusyUids.contains(row.uid)) return;
+    if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
+      return;
+    }
+    if (!mounted) return;
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    if (!auth.isLoggedIn()) return;
+    final token = await auth.getIdToken();
+    if (token == null || token.isEmpty || !mounted) return;
+
+    final current = _followingByUid[row.uid] ?? false;
+    setState(() => _followBusyUids.add(row.uid));
+    try {
+      if (current) {
+        await DopamineApi.unfollowUser(idToken: token, targetUid: row.uid);
+      } else {
+        await DopamineApi.followUser(idToken: token, targetUid: row.uid);
+      }
+      if (!mounted) return;
+      setState(() => _followingByUid[row.uid] = !current);
+      unawaited(ProfileStatsStore.instance.refreshWithCurrentFirebaseUser());
+    } catch (_) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+    } finally {
+      if (mounted) setState(() => _followBusyUids.remove(row.uid));
+    }
+  }
+
   void _onSort(String next) {
     if (next == _sort) return;
     setState(() {
       _sort = next;
       _posts = _applySort(_posts, next);
     });
+  }
+
+  List<_ActivistRow> _buildActivistRows() {
+    final byAuthor = <String, _ActivistRow>{};
+    for (final p in _activistPosts) {
+      final existing = byAuthor[p.authorUid];
+      final baseScore = 10 + (p.likeCount * 3) + (p.replyCount * 2);
+      if (existing == null) {
+        byAuthor[p.authorUid] = _ActivistRow(
+          uid: p.authorUid,
+          name: p.authorDisplayName,
+          photoUrl: p.authorPhotoUrl,
+          postCount: 1,
+          likeSum: p.likeCount,
+          replySum: p.replyCount,
+          score: baseScore,
+        );
+      } else {
+        byAuthor[p.authorUid] = existing.copyWith(
+          postCount: existing.postCount + 1,
+          likeSum: existing.likeSum + p.likeCount,
+          replySum: existing.replySum + p.replyCount,
+          score: existing.score + baseScore,
+          photoUrl: existing.photoUrl ?? p.authorPhotoUrl,
+          name: existing.name.isNotEmpty ? existing.name : p.authorDisplayName,
+        );
+      }
+    }
+    final list = byAuthor.values.toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
+    return list;
   }
 
   void _handleNav() {
@@ -697,404 +840,712 @@ class _CommunityScreenState extends State<CommunityScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_symbolFilterActive || _bodySearchTerms.isNotEmpty) ...[
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        if (_symbolFilterActive && _symbolFilterSymbol != null)
-                          InputChip(
-                            label: Text(_symbolFilterSymbol!),
-                            deleteIcon: const Icon(
-                              Icons.close_rounded,
-                              size: 18,
-                            ),
-                            onDeleted: _removeSymbolFilter,
-                            visualDensity: VisualDensity.compact,
-                            backgroundColor: DopamineTheme.neonGreen.withValues(
-                              alpha: 0.12,
-                            ),
-                            side: BorderSide.none,
-                            labelStyle: theme.textTheme.labelLarge?.copyWith(
-                              color: DopamineTheme.neonGreen,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        for (final term in _bodySearchTerms)
-                          InputChip(
-                            label: Text(term),
-                            deleteIcon: const Icon(
-                              Icons.close_rounded,
-                              size: 18,
-                            ),
-                            onDeleted: () => _removeBodyTerm(term),
-                            visualDensity: VisualDensity.compact,
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.08,
-                            ),
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.18),
-                            ),
-                            labelStyle: theme.textTheme.labelLarge?.copyWith(
-                              color: DopamineTheme.textPrimary,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                  TapRegion(
-                    groupId: 'community_search',
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.28),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.14),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
-                        child: RawAutocomplete<RankedAsset>(
-                          textEditingController: _searchController,
-                          focusNode: _searchFocusNode,
-                          displayStringForOption: (RankedAsset a) => a.symbol,
-                          optionsBuilder: (TextEditingValue value) {
-                            final q = value.text;
-                            if (q.trim().isEmpty) {
-                              return const Iterable<RankedAsset>.empty();
-                            }
-                            return context
-                                .read<HomeAssetSuggestions>()
-                                .matchingAssets(q);
-                          },
-                          onSelected: (RankedAsset a) {
-                            final ac = a.assetClass?.trim();
-                            if (ac == null || ac.isEmpty) return;
-                            setState(() {
-                              _symbolFilterActive = true;
-                              _symbolFilterSymbol = a.symbol;
-                              _symbolFilterClass = ac;
-                              _searchController.clear();
-                            });
-                            _scheduleFetch();
-                          },
-                          fieldViewBuilder:
-                              (
-                                BuildContext context,
-                                TextEditingController controller,
-                                FocusNode focusNode,
-                                VoidCallback onFieldSubmitted,
-                              ) {
-                                return TextField(
-                                  controller: controller,
-                                  focusNode: focusNode,
-                                  groupId: 'community_search',
-                                  onTapOutside: (_) => focusNode.unfocus(),
-                                  textInputAction: TextInputAction.search,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: DopamineTheme.textPrimary,
-                                  ),
-                                  decoration: InputDecoration(
-                                    isDense: true,
-                                    border: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 12,
-                                    ),
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        Icons.search_rounded,
-                                        color: DopamineTheme.textSecondary
-                                            .withValues(alpha: 0.9),
-                                        size: 22,
-                                      ),
-                                      onPressed: () =>
-                                          _submitSearch(_searchController.text),
-                                    ),
-                                    suffixIconConstraints: const BoxConstraints(
-                                      minWidth: 44,
-                                      minHeight: 44,
-                                    ),
-                                  ),
-                                  onSubmitted: (v) {
-                                    onFieldSubmitted();
-                                    _submitSearch(v);
-                                  },
-                                );
-                              },
-                          optionsViewBuilder:
-                              (
-                                BuildContext context,
-                                void Function(RankedAsset) onSelected,
-                                Iterable<RankedAsset> options,
-                              ) {
-                                final list = options.toList();
-                                if (list.isEmpty) {
-                                  return const SizedBox.shrink();
-                                }
-                                return TapRegion(
-                                  groupId: 'community_search',
-                                  child: Align(
-                                    alignment: Alignment.topLeft,
-                                    child: Material(
-                                      elevation: 8,
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: const Color(0xFF1A1525),
-                                      child: ConstrainedBox(
-                                        constraints: const BoxConstraints(
-                                          maxHeight: 240,
-                                        ),
-                                        child: ListView.separated(
-                                          shrinkWrap: true,
-                                          padding: EdgeInsets.zero,
-                                          itemCount: list.length,
-                                          separatorBuilder: (_, _) => Divider(
-                                            height: 1,
-                                            color: Colors.white.withValues(
-                                              alpha: 0.08,
-                                            ),
-                                          ),
-                                          itemBuilder: (context, i) {
-                                            final a = list[i];
-                                            final ac = a.assetClass;
-                                            return ListTile(
-                                              dense: true,
-                                              title: Text(
-                                                a.name,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: theme
-                                                    .textTheme
-                                                    .bodyMedium
-                                                    ?.copyWith(
-                                                      color: DopamineTheme
-                                                          .textPrimary,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                              ),
-                                              subtitle: Text(
-                                                ac != null
-                                                    ? '${a.symbol} · ${_classBadge(ac, l10n)}'
-                                                    : a.symbol,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: theme
-                                                    .textTheme
-                                                    .labelSmall
-                                                    ?.copyWith(
-                                                      color: DopamineTheme
-                                                          .textSecondary,
-                                                    ),
-                                              ),
-                                              onTap: () => onSelected(a),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                        ),
-                      ),
-                    ),
-                  ),
+              child: SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment<int>(value: 0, label: Text('게시글')),
+                  ButtonSegment<int>(value: 1, label: Text('활동가')),
                 ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      _onSort(_sort == 'latest' ? 'popular' : 'latest');
-                    },
-                    style: OutlinedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      foregroundColor: DopamineTheme.textPrimary,
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.25),
-                      ),
-                      backgroundColor: Colors.white.withValues(alpha: 0.08),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                    ),
-                    label: Text(
-                      _sort == 'latest'
-                          ? l10n.communitySortLatest
-                          : l10n.communitySortPopular,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: DopamineTheme.textPrimary,
-                      ),
-                    ),
-                    icon: const Icon(
-                      Icons.bar_chart_rounded,
-                      size: 18,
-                      color: DopamineTheme.neonGreen,
-                    ),
-                    iconAlignment: IconAlignment.end,
+                selected: {_topTabIndex},
+                onSelectionChanged: (s) {
+                  final next = s.first;
+                  if (_topTabIndex == next) return;
+                  setState(() => _topTabIndex = next);
+                  if (next == 1) {
+                    _scheduleActivistsFetch();
+                  }
+                },
+                style: ButtonStyle(
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const Color(0xFF0A0A0A);
+                    }
+                    return DopamineTheme.textPrimary;
+                  }),
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return DopamineTheme.neonGreen;
+                    }
+                    return Colors.white.withValues(alpha: 0.08);
+                  }),
+                  side: WidgetStateProperty.all(
+                    BorderSide(color: Colors.white.withValues(alpha: 0.25)),
                   ),
-                  const Spacer(),
-                  FilledButton.icon(
-                    onPressed: () => _openCompose(context),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: DopamineTheme.neonGreen,
-                      foregroundColor: const Color(0xFF0A0A0A),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                    ),
-                    icon: const Icon(Icons.edit_rounded, size: 20),
-                    label: Text(
-                      l10n.communityWrite,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                color: DopamineTheme.neonGreen,
-                onRefresh: _scheduleFetchForRefreshIndicator,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final minScrollExtent = constraints.maxHeight > 0
-                        ? constraints.maxHeight
-                        : 400.0;
-                    if (_loading) {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(
-                            height: minScrollExtent,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: DopamineTheme.neonGreen,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    if (_fetchError != null) {
-                      final err = _fetchError!;
-                      final msg = err is ApiException
-                          ? err.message
-                          : err.toString();
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(
-                            height: minScrollExtent,
-                            child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      msg,
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: DopamineTheme.accentRed,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    FilledButton(
-                                      onPressed: _scheduleFetch,
-                                      child: Text(l10n.retry),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    final items = _posts;
-                    if (items.isEmpty) {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          SizedBox(
-                            height: minScrollExtent,
-                            child: Center(
-                              child: Text(
-                                l10n.emptyState,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: DopamineTheme.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    final itemCount = items.length + (_loadingMore ? 1 : 0);
-                    return ListView.separated(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        0,
-                        16,
-                        24 + homeShellBottomInset(context),
-                      ),
-                      itemCount: itemCount,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, i) {
-                        if (i >= items.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 14),
-                            child: Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        final p = items[i];
-                        return CommunityPostCard(
-                          post: p,
-                          myUid: myUid,
-                          likeInProgress: _likeBusyIds.contains(p.id),
-                          onOpenAuthorProfile: _openAuthorProfile,
-                          onToggleLike: (post) => _toggleLike(i, post),
-                          onOpenPostDetail: _openPostDetail,
-                          onEditOwnPost: _openEditCompose,
-                          onDeleteOwnPost: _deleteCommunityPost,
-                          onReportPost: _reportCommunityPost,
-                          onBlockAuthor: _blockAuthorFromPost,
-                        );
-                      },
-                    );
-                  },
                 ),
               ),
             ),
+            if (_topTabIndex == 0) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_symbolFilterActive || _bodySearchTerms.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (_symbolFilterActive && _symbolFilterSymbol != null)
+                            InputChip(
+                              label: Text(_symbolFilterSymbol!),
+                              deleteIcon: const Icon(
+                                Icons.close_rounded,
+                                size: 18,
+                              ),
+                              onDeleted: _removeSymbolFilter,
+                              visualDensity: VisualDensity.compact,
+                              backgroundColor: DopamineTheme.neonGreen.withValues(
+                                alpha: 0.12,
+                              ),
+                              side: BorderSide.none,
+                              labelStyle: theme.textTheme.labelLarge?.copyWith(
+                                color: DopamineTheme.neonGreen,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          for (final term in _bodySearchTerms)
+                            InputChip(
+                              label: Text(term),
+                              deleteIcon: const Icon(
+                                Icons.close_rounded,
+                                size: 18,
+                              ),
+                              onDeleted: () => _removeBodyTerm(term),
+                              visualDensity: VisualDensity.compact,
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.08,
+                              ),
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.18),
+                              ),
+                              labelStyle: theme.textTheme.labelLarge?.copyWith(
+                                color: DopamineTheme.textPrimary,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    TapRegion(
+                      groupId: 'community_search',
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.14),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
+                          child: RawAutocomplete<RankedAsset>(
+                            textEditingController: _searchController,
+                            focusNode: _searchFocusNode,
+                            displayStringForOption: (RankedAsset a) => a.symbol,
+                            optionsBuilder: (TextEditingValue value) {
+                              final q = value.text;
+                              if (q.trim().isEmpty) {
+                                return const Iterable<RankedAsset>.empty();
+                              }
+                              return context
+                                  .read<HomeAssetSuggestions>()
+                                  .matchingAssets(q);
+                            },
+                            onSelected: (RankedAsset a) {
+                              final ac = a.assetClass?.trim();
+                              if (ac == null || ac.isEmpty) return;
+                              setState(() {
+                                _symbolFilterActive = true;
+                                _symbolFilterSymbol = a.symbol;
+                                _symbolFilterClass = ac;
+                                _searchController.clear();
+                              });
+                              _scheduleFetch();
+                            },
+                            fieldViewBuilder:
+                                (
+                                  BuildContext context,
+                                  TextEditingController controller,
+                                  FocusNode focusNode,
+                                  VoidCallback onFieldSubmitted,
+                                ) {
+                                  return TextField(
+                                    controller: controller,
+                                    focusNode: focusNode,
+                                    groupId: 'community_search',
+                                    onTapOutside: (_) => focusNode.unfocus(),
+                                    textInputAction: TextInputAction.search,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: DopamineTheme.textPrimary,
+                                    ),
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      border: InputBorder.none,
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 12,
+                                      ),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          Icons.search_rounded,
+                                          color: DopamineTheme.textSecondary
+                                              .withValues(alpha: 0.9),
+                                          size: 22,
+                                        ),
+                                        onPressed: () =>
+                                            _submitSearch(_searchController.text),
+                                      ),
+                                      suffixIconConstraints: const BoxConstraints(
+                                        minWidth: 44,
+                                        minHeight: 44,
+                                      ),
+                                    ),
+                                    onSubmitted: (v) {
+                                      onFieldSubmitted();
+                                      _submitSearch(v);
+                                    },
+                                  );
+                                },
+                            optionsViewBuilder:
+                                (
+                                  BuildContext context,
+                                  void Function(RankedAsset) onSelected,
+                                  Iterable<RankedAsset> options,
+                                ) {
+                                  final list = options.toList();
+                                  if (list.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return TapRegion(
+                                    groupId: 'community_search',
+                                    child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Material(
+                                        elevation: 8,
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: const Color(0xFF1A1525),
+                                        child: ConstrainedBox(
+                                          constraints: const BoxConstraints(
+                                            maxHeight: 240,
+                                          ),
+                                          child: ListView.separated(
+                                            shrinkWrap: true,
+                                            padding: EdgeInsets.zero,
+                                            itemCount: list.length,
+                                            separatorBuilder: (_, _) => Divider(
+                                              height: 1,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.08,
+                                              ),
+                                            ),
+                                            itemBuilder: (context, i) {
+                                              final a = list[i];
+                                              final ac = a.assetClass;
+                                              return ListTile(
+                                                dense: true,
+                                                title: Text(
+                                                  a.name,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        color: DopamineTheme
+                                                            .textPrimary,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                ),
+                                                subtitle: Text(
+                                                  ac != null
+                                                      ? '${a.symbol} · ${_classBadge(ac, l10n)}'
+                                                      : a.symbol,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: theme
+                                                      .textTheme
+                                                      .labelSmall
+                                                      ?.copyWith(
+                                                        color: DopamineTheme
+                                                            .textSecondary,
+                                                      ),
+                                                ),
+                                                onTap: () => onSelected(a),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _onSort(_sort == 'latest' ? 'popular' : 'latest');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        foregroundColor: DopamineTheme.textPrimary,
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.25),
+                        ),
+                        backgroundColor: Colors.white.withValues(alpha: 0.08),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      label: Text(
+                        _sort == 'latest'
+                            ? l10n.communitySortLatest
+                            : l10n.communitySortPopular,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: DopamineTheme.textPrimary,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.bar_chart_rounded,
+                        size: 18,
+                        color: DopamineTheme.neonGreen,
+                      ),
+                      iconAlignment: IconAlignment.end,
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: () => _openCompose(context),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: DopamineTheme.neonGreen,
+                        foregroundColor: const Color(0xFF0A0A0A),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                      ),
+                      icon: const Icon(Icons.edit_rounded, size: 20),
+                      label: Text(
+                        l10n.communityWrite,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  color: DopamineTheme.neonGreen,
+                  onRefresh: _scheduleFetchForRefreshIndicator,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final minScrollExtent = constraints.maxHeight > 0
+                          ? constraints.maxHeight
+                          : 400.0;
+                      if (_loading) {
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: minScrollExtent,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: DopamineTheme.neonGreen,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      if (_fetchError != null) {
+                        final err = _fetchError!;
+                        final msg = err is ApiException
+                            ? err.message
+                            : err.toString();
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: minScrollExtent,
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        msg,
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: DopamineTheme.accentRed,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      FilledButton(
+                                        onPressed: _scheduleFetch,
+                                        child: Text(l10n.retry),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      final items = _posts;
+                      if (items.isEmpty) {
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: minScrollExtent,
+                              child: Center(
+                                child: Text(
+                                  l10n.emptyState,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: DopamineTheme.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      final itemCount = items.length + (_loadingMore ? 1 : 0);
+                      return ListView.separated(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          24 + homeShellBottomInset(context),
+                        ),
+                        itemCount: itemCount,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, i) {
+                          if (i >= items.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 14),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          final p = items[i];
+                          return CommunityPostCard(
+                            post: p,
+                            myUid: myUid,
+                            likeInProgress: _likeBusyIds.contains(p.id),
+                            onOpenAuthorProfile: _openAuthorProfile,
+                            onToggleLike: (post) => _toggleLike(i, post),
+                            onOpenPostDetail: _openPostDetail,
+                            onEditOwnPost: _openEditCompose,
+                            onDeleteOwnPost: _deleteCommunityPost,
+                            onReportPost: _reportCommunityPost,
+                            onBlockAuthor: _blockAuthorFromPost,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ] else ...[
+              Expanded(
+                child: _buildActivistsTab(context, theme, l10n),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildActivistsTab(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations l10n,
+  ) {
+    if (_activistsLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: DopamineTheme.neonGreen,
+        ),
+      );
+    }
+    if (_activistsError != null) {
+      final msg = _activistsError is ApiException
+          ? (_activistsError as ApiException).message
+          : l10n.errorLoadFailed;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            msg,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: DopamineTheme.accentRed,
+            ),
+          ),
+        ),
+      );
+    }
+    final rows = _buildActivistRows();
+    if (rows.isEmpty) {
+      return Center(
+        child: Text(
+          '아직 활동가 데이터가 없어요',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: DopamineTheme.textSecondary,
+          ),
+        ),
+      );
+    }
+    final myUid = context.read<AuthProvider<DopamineUser>>().currentUid();
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 24 + homeShellBottomInset(context)),
+      itemCount: rows.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (_, i) {
+        final row = rows[i];
+        final mine = row.uid == myUid;
+        final following = _followingByUid[row.uid] ?? false;
+        final followBusy = _followBusyUids.contains(row.uid);
+        return InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => PublicProfileScreen.open(
+            context,
+            authorUid: row.uid,
+            authorName: row.name,
+            authorPhotoUrl: row.photoUrl,
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+            child: Row(
+              children: [
+                _buildRankBadge(rank: i + 1, theme: theme),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.white.withValues(alpha: 0.12),
+                  backgroundImage: (row.photoUrl?.trim().isNotEmpty ?? false)
+                      ? NetworkImage(row.photoUrl!.trim())
+                      : null,
+                  child: (row.photoUrl?.trim().isNotEmpty ?? false)
+                      ? null
+                      : Text(
+                          row.name.isEmpty
+                              ? '?'
+                              : String.fromCharCode(row.name.runes.first).toUpperCase(),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: DopamineTheme.textSecondary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: DopamineTheme.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '점수 ${row.score} · 글 ${row.postCount} · 좋아요 ${row.likeSum}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: DopamineTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (mine)
+                  Text(
+                    '나',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: DopamineTheme.neonGreen,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                else if (following)
+                  OutlinedButton(
+                    onPressed: followBusy
+                        ? null
+                        : () => _toggleFollowForAuthor(row),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: DopamineTheme.neonGreen,
+                      side: BorderSide(
+                        color: DopamineTheme.neonGreen.withValues(alpha: 0.85),
+                      ),
+                    ),
+                    child: followBusy
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(l10n.communityUnfollow),
+                  )
+                else
+                  FilledButton(
+                    onPressed: followBusy
+                        ? null
+                        : () => _toggleFollowForAuthor(row),
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: DopamineTheme.neonGreen,
+                      foregroundColor: const Color(0xFF0A0A0A),
+                    ),
+                    child: followBusy
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF0A0A0A),
+                            ),
+                          )
+                        : Text(l10n.communityFollow),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRankBadge({required int rank, required ThemeData theme}) {
+    final isTop3 = rank <= 3;
+    final rankText = '$rank';
+    if (!isTop3) {
+      return SizedBox(
+        width: 32,
+        child: Text(
+          rankText,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: DopamineTheme.neonGreen.withValues(alpha: 0.92),
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.1,
+          ),
+        ),
+      );
+    }
+
+    final (Color start, Color end, Color textColor) = switch (rank) {
+      1 => (const Color(0xFF22FFA6), const Color(0xFF00C97A), const Color(0xFF032314)),
+      2 => (const Color(0xFF9FF0FF), const Color(0xFF53C8E8), const Color(0xFF08222B)),
+      3 => (const Color(0xFFE3B8FF), const Color(0xFFA26BFF), const Color(0xFF1D0A34)),
+      _ => (DopamineTheme.neonGreen, DopamineTheme.neonGreen, const Color(0xFF0A0A0A)),
+    };
+
+    return Container(
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [start, end],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: end.withValues(alpha: 0.45),
+            blurRadius: 12,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Text(
+        rankText,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.w900,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+}
+
+class _ActivistRow {
+  const _ActivistRow({
+    required this.uid,
+    required this.name,
+    required this.photoUrl,
+    required this.postCount,
+    required this.likeSum,
+    required this.replySum,
+    required this.score,
+  });
+
+  final String uid;
+  final String name;
+  final String? photoUrl;
+  final int postCount;
+  final int likeSum;
+  final int replySum;
+  final int score;
+
+  _ActivistRow copyWith({
+    String? uid,
+    String? name,
+    String? photoUrl,
+    int? postCount,
+    int? likeSum,
+    int? replySum,
+    int? score,
+  }) {
+    return _ActivistRow(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      photoUrl: photoUrl ?? this.photoUrl,
+      postCount: postCount ?? this.postCount,
+      likeSum: likeSum ?? this.likeSum,
+      replySum: replySum ?? this.replySum,
+      score: score ?? this.score,
     );
   }
 }

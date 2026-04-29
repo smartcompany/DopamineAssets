@@ -1267,6 +1267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     uploadingPhoto: _uploadingPhoto,
                     onPickPhoto: () => _pickProfilePhoto(l10n),
                     onRemovePhoto: () => _removeProfilePhoto(l10n),
+                    onOpenBadges: () => _showBadgesBottomSheet(context, theme),
                   ),
                   const SizedBox(height: 22),
                   Text(
@@ -1401,8 +1402,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       stats: ProfileStatsStore.instance.stats!,
                       l10n: l10n,
                     ),
-                  const SizedBox(height: 12),
-                  _buildBadgeSection(context, theme),
                   const SizedBox(height: 22),
                   SizedBox(
                     width: double.infinity,
@@ -2095,114 +2094,128 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBadgeSection(BuildContext context, ThemeData theme) {
+  Future<void> _showBadgesBottomSheet(BuildContext context, ThemeData theme) async {
     final badges = _buildBadgeVms();
     final unlocked = badges.where((b) => b.unlocked).length;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.06),
-            Colors.black.withValues(alpha: 0.26),
-          ],
-        ),
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF121321),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                '획득 뱃지',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: DopamineTheme.neonGreen,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '$unlocked / ${badges.length}',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: DopamineTheme.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: badges.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 0.78,
+      builder: (ctx) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              16 + MediaQuery.of(ctx).padding.bottom,
             ),
-            itemBuilder: (_, i) {
-              final b = badges[i];
-              return GestureDetector(
-                onTap: () => _showBadgeDetail(b),
-                child: Column(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.asset(
-                              b.assetPath,
-                              fit: BoxFit.cover,
-                              color: b.unlocked
-                                  ? null
-                                  : Colors.black.withValues(alpha: 0.55),
-                              colorBlendMode:
-                                  b.unlocked ? null : BlendMode.srcATop,
-                            ),
-                            if (!b.unlocked)
-                              Container(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.lock_rounded,
-                                    size: 16,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+                    Text(
+                      '획득 뱃지',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: DopamineTheme.neonGreen,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const Spacer(),
                     Text(
-                      b.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: b.unlocked
-                            ? DopamineTheme.textPrimary
-                            : DopamineTheme.textSecondary,
-                        fontSize: 10,
+                      '$unlocked / ${badges.length}',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: DopamineTheme.textSecondary,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
                 ),
-              );
-            },
+                const SizedBox(height: 12),
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    itemCount: badges.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                      childAspectRatio: 0.78,
+                    ),
+                    itemBuilder: (_, i) {
+                      final b = badges[i];
+                      return GestureDetector(
+                        onTap: () => _showBadgeDetail(b),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.asset(
+                                      b.assetPath,
+                                      fit: BoxFit.cover,
+                                      color: b.unlocked
+                                          ? null
+                                          : Colors.black.withValues(alpha: 0.55),
+                                      colorBlendMode:
+                                          b.unlocked ? null : BlendMode.srcATop,
+                                    ),
+                                    if (!b.unlocked)
+                                      Container(
+                                        color: Colors.black.withValues(alpha: 0.35),
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.lock_rounded,
+                                            size: 16,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              b.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: b.unlocked
+                                    ? DopamineTheme.textPrimary
+                                    : DopamineTheme.textSecondary,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -2361,6 +2374,7 @@ class _AccountProfilePhotoCard extends StatelessWidget {
     required this.uploadingPhoto,
     required this.onPickPhoto,
     required this.onRemovePhoto,
+    required this.onOpenBadges,
   });
 
   final ThemeData theme;
@@ -2370,6 +2384,7 @@ class _AccountProfilePhotoCard extends StatelessWidget {
   final bool uploadingPhoto;
   final VoidCallback onPickPhoto;
   final VoidCallback onRemovePhoto;
+  final VoidCallback onOpenBadges;
 
   @override
   Widget build(BuildContext context) {
@@ -2399,7 +2414,21 @@ class _AccountProfilePhotoCard extends StatelessWidget {
         ],
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            right: 0,
+            child: _ProfilePhotoIconAction(
+              icon: Icons.emoji_events_rounded,
+              tooltip: '획득 뱃지',
+              foreground: const Color(0xFFFFC857),
+              background: const Color(0xFFFFC857).withValues(alpha: 0.14),
+              borderColor: const Color(0xFFFFC857).withValues(alpha: 0.35),
+              onPressed: onOpenBadges,
+            ),
+          ),
+          Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
@@ -2491,6 +2520,8 @@ class _AccountProfilePhotoCard extends StatelessWidget {
               ],
             ],
           ),
+        ],
+      ),
         ],
       ),
     );
