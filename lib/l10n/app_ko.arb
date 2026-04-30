@@ -16,6 +16,7 @@
   "profilePhotoRemove": "사진 삭제",
   "profilePhotoSaved": "프로필 사진을 저장했습니다.",
   "profilePhotoRemoved": "프로필 사진을 삭제했습니다.",
+  "profilePhotoCompressFailed": "이미지 변환에 실패했어요. 다른 사진으로 시도해 주세요.",
   "profileEmail": "이메일",
   "profileUid": "사용자 ID",
   "profileNoEmail": "없음 (소셜 로그인)",
@@ -30,6 +31,57 @@
   "profileRequiresRecentLogin": "보안을 위해 다시 로그인한 뒤 시도해 주세요.",
   "profileNotSignedIn": "로그인하면 계정 정보를 볼 수 있습니다.",
   "profileSaveDisplayName": "저장",
+  "profileBioLabel": "본인 소개 (선택)",
+  "profileBioSectionTitle": "소개",
+  "profileSaveBio": "소개 저장",
+  "profileBioSaved": "본인 소개를 저장했습니다.",
+  "profileBadgeToastUnlocked": "새 배지 획득!",
+  "profileBadgeSectionTitle": "획득 배지",
+  "profileBadgeUnlocked": "획득 완료",
+  "profileBadgeRequirement": "획득 조건: {requirement}",
+  "@profileBadgeRequirement": {
+    "placeholders": {
+      "requirement": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBadgeFirstTitle": "첫걸음",
+  "profileBadgeFirstDescription": "첫 로그인/첫 진입으로 획득하는 시작 배지",
+  "profileBadgeFirstRequirement": "앱 시작 시 자동 획득",
+  "profileBadgeExplorerTitle": "커뮤니티 탐험가",
+  "profileBadgeExplorerDescription": "커뮤니티/활동 피드를 처음 탐색한 사용자",
+  "profileBadgeExplorerRequirement": "커뮤니티 탭 1회 방문",
+  "profileBadgeWriteFirstTitle": "첫 작성자",
+  "profileBadgeWriteFirstDescription": "첫 게시글을 작성해 기여를 시작한 사용자",
+  "profileBadgeWriteFirstRequirement": "게시글 1개 이상",
+  "profileBadgeCommentFirstTitle": "첫 댓글러",
+  "profileBadgeCommentFirstDescription": "첫 댓글/답글로 대화에 참여한 사용자",
+  "profileBadgeCommentFirstRequirement": "댓글/답글 1개 이상",
+  "profileBadgeRadarOnTitle": "레이더 ON",
+  "profileBadgeRadarOnDescription": "시장 탐색 루프를 본격적으로 시작한 사용자",
+  "profileBadgeRadarOnRequirement": "활동 3회 이상",
+  "profileBadgeScanAssetsTitle": "스캐너",
+  "profileBadgeScanAssetsDescription": "다양한 자산을 깊게 탐색한 사용자",
+  "profileBadgeScanAssetsRequirement": "활동 50회 이상",
+  "profileBadgeTalkKingTitle": "토론가",
+  "profileBadgeTalkKingDescription": "의견 교환을 꾸준히 이어가는 토론형 사용자",
+  "profileBadgeTalkKingRequirement": "게시글+댓글 20회 이상",
+  "profileBadgeHeartKingTitle": "공감왕",
+  "profileBadgeHeartKingDescription": "다른 사용자에게 많은 공감을 받은 사용자",
+  "profileBadgeHeartKingRequirement": "받은 좋아요 50회 이상",
+  "profileBadgeVisit7Title": "연속 7일",
+  "profileBadgeVisit7Description": "꾸준한 방문 습관을 만든 사용자",
+  "profileBadgeVisit7Requirement": "활동 7회 이상(임시 기준)",
+  "profileBadgeLevel5Title": "레벨 5",
+  "profileBadgeLevel5Description": "초기 성장 구간을 돌파한 사용자",
+  "profileBadgeLevel5Requirement": "레벨 5 이상",
+  "profileBadgeLevel10Title": "레벨 10",
+  "profileBadgeLevel10Description": "상위 성장 구간에 도달한 사용자",
+  "profileBadgeLevel10Requirement": "레벨 10 이상",
+  "profileBadgeMultiMarketTitle": "멀티마켓",
+  "profileBadgeMultiMarketDescription": "다양한 시장을 오가며 탐색하는 사용자",
+  "profileBadgeMultiMarketRequirement": "활동 12회 이상",
   "profileDisplayNameHint": "게시글에 표시되는 이름",
   "profileDisplayNameInputPlaceholder": "닉네임을 입력해 주세요",
   "profileCheckDisplayNameDuplicate": "중복 확인",
@@ -222,6 +274,8 @@
   "homeInterestSurgeInfoTitle": "오늘 관심 폭주 안내",
   "homeInterestSurgeInfoBody": "이 목록은 AI가 최근 시장 이슈·뉴스·투자자 관심 흐름 등을 바탕으로, 미국·한국 주식, 암호화폐, 원자재 중에서 주목할 만한 자산을 고르고 0~100 사이의 '트렌드' 상대 점수를 추정해 만듭니다.\n\n점수는 서버에서 하루 단위로 정리·저장되며, 앱은 그 결과를 보여 줍니다.\n\n참고용 정보일 뿐이며 투자 권유나 수익을 보장하지 않습니다.",
   "homeInterestSurgeInfoDismiss": "확인",
+  "homeProfileNudge": "당신이 누구인지 보여주세요",
+  "homeCommunityNudge": "커뮤니티에서 다른 사람 의견을 확인해보세요",
   "homeTrendScoreLabel": "트렌드",
   "homeRankingShowMoreTooltip": "더 보기",
   "homeInterestSurgeShowMoreWithAd": "광고 보고 더 보기",
@@ -310,6 +364,24 @@
   "assetDetailPriceChange": "가격 변동 (피드)",
   "communitySortLatest": "최신순",
   "communitySortPopular": "인기순",
+  "communityTopTabPosts": "게시글",
+  "communityTopTabActivists": "활동가",
+  "communityActivistsEmpty": "아직 활동가 데이터가 없어요",
+  "communityMe": "나",
+  "communityActivistStats": "점수 {score} · 글 {postCount} · 좋아요 {likeCount}",
+  "@communityActivistStats": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "postCount": {
+        "type": "int"
+      },
+      "likeCount": {
+        "type": "int"
+      }
+    }
+  },
   "communityReplyCount": "답글 {count}개",
   "@communityReplyCount": {
     "placeholders": {

@@ -13,6 +13,7 @@ import '../../auth/present_dopamine_auth_screen.dart';
 import '../community/community_post_card.dart';
 import '../community/community_post_detail_screen.dart';
 import '../community/community_report_sheet.dart';
+import '../../widgets/community_translated_body.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   const PublicProfileScreen({
@@ -53,6 +54,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Object? _error;
   String _displayName = '';
   String? _photoUrl;
+  String? _bio;
   int _postsCount = 0;
   int _followersCount = 0;
   int _followingCount = 0;
@@ -120,6 +122,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         _followingCount = (profile['followingCount'] as num?)?.toInt() ?? 0;
         _isFollowing = profile['isFollowing'] as bool? ?? false;
         _blockedByMe = profile['blockedByMe'] as bool? ?? false;
+        final rawBio = (profile['bio'] as String?)?.trim();
+        _bio =
+            rawBio != null && rawBio.isNotEmpty ? rawBio : null;
         _posts = postsAligned;
         _loading = false;
       });
@@ -313,6 +318,64 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
   }
 
+  Widget _publicBioSection(ThemeData theme, AppLocalizations l10n) {
+    final text = _bio?.trim();
+    if (text == null || text.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: DopamineTheme.neonGreen.withValues(alpha: 0.30),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 17,
+                    color: DopamineTheme.neonGreen.withValues(alpha: 0.62),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.profileBioSectionTitle,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: DopamineTheme.neonGreen.withValues(alpha: 0.90),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        fontSize: (theme.textTheme.labelSmall?.fontSize ?? 11) * 0.95,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              CommunityTranslatedBody(
+                body: text,
+                localeName: l10n.localeName,
+                showOriginalLabel: l10n.communityShowOriginal,
+                showTranslatedLabel: l10n.communityShowTranslated,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: DopamineTheme.textPrimary,
+                  height: 1.42,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -351,6 +414,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     ),
                   ],
                 ),
+                _publicBioSection(theme, l10n),
                 const SizedBox(height: 10),
                 Row(
                   children: [

@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/badges/badge_unlock_center.dart';
 import '../../core/navigation/home_shell_navigation.dart';
+import '../../theme/dopamine_theme.dart';
 import '../community/community_screen.dart';
 import '../favorites/favorites_screen.dart';
 import '../profile/profile_screen.dart';
@@ -63,9 +65,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final nav = context.read<HomeShellNavigation>();
     if (nav.tabIndex != 0) return;
     if (_showProfileNudge || _showCommunityNudge) return;
+    final signedIn = FirebaseAuth.instance.currentUser != null;
 
     _NudgeType? next;
-    if (!_profileTooltipShown) {
+    if (!signedIn && !_profileTooltipShown) {
       next = _NudgeType.profile;
     } else if (!_communityTooltipShown) {
       next = _NudgeType.community;
@@ -77,8 +80,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       if (!mounted) return;
       final navNow = context.read<HomeShellNavigation>();
       if (navNow.tabIndex != 0) return;
+      final signedInNow = FirebaseAuth.instance.currentUser != null;
       setState(() {
-        if (next == _NudgeType.profile && !_profileTooltipShown) {
+        if (next == _NudgeType.profile && !signedInNow && !_profileTooltipShown) {
           _profileTooltipShown = true;
           _showProfileNudge = true;
           _showCommunityNudge = false;
@@ -179,8 +183,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   Widget _buildProfileNudgeBubble() {
+    final l10n = AppLocalizations.of(context)!;
     return _buildBubble(
-      text: '당신이 누구인지 보여주세요',
+      text: l10n.homeProfileNudge,
       right: 12,
       tailRight: 18,
       onTapBubble: _dismissProfileNudge,
@@ -189,8 +194,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   Widget _buildCommunityNudgeBubble() {
+    final l10n = AppLocalizations.of(context)!;
     return _buildBubble(
-      text: '커뮤니티에서 다른 사람 의견을 확인해보세요',
+      text: l10n.homeCommunityNudge,
       right: 74,
       tailRight: 66,
       onTapBubble: () {
@@ -204,6 +210,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Widget _buildBadgeUnlockToast() {
     final toast = _badgeToast;
     if (toast == null) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
     return Positioned(
       top: 14 + MediaQuery.of(context).padding.top,
       left: 14,
@@ -230,12 +237,25 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  toast.assetPath,
-                  width: 42,
-                  height: 42,
-                  fit: BoxFit.cover,
-                ),
+                child: (toast.imagePath.startsWith('http://') ||
+                        toast.imagePath.startsWith('https://'))
+                    ? Image.network(
+                        toast.imagePath,
+                        width: 42,
+                        height: 42,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        width: 42,
+                        height: 42,
+                        color: Colors.white.withValues(alpha: 0.08),
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.emoji_events_rounded,
+                          color: DopamineTheme.neonGreen.withValues(alpha: 0.85),
+                          size: 26,
+                        ),
+                      ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -243,9 +263,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      '새 뱃지 획득!',
-                      style: TextStyle(
+                    Text(
+                      l10n.profileBadgeToastUnlocked,
+                      style: const TextStyle(
                         color: Color(0xFF34D399),
                         fontWeight: FontWeight.w800,
                         fontSize: 12,
@@ -305,6 +325,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final nav = context.watch<HomeShellNavigation>();
+    final signedIn = FirebaseAuth.instance.currentUser != null;
 
     return Scaffold(
       body: Stack(
@@ -319,7 +340,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               const ProfileScreen(),
             ],
           ),
-          if (_showProfileNudge && nav.tabIndex == 0) _buildProfileNudgeBubble(),
+          if (!signedIn && _showProfileNudge && nav.tabIndex == 0)
+            _buildProfileNudgeBubble(),
           if (_showCommunityNudge && nav.tabIndex == 0)
             _buildCommunityNudgeBubble(),
           if (_badgeToast != null) _buildBadgeUnlockToast(),

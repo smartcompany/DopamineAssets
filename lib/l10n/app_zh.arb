@@ -16,6 +16,7 @@
   "profilePhotoRemove": "移除照片",
   "profilePhotoSaved": "个人头像已保存。",
   "profilePhotoRemoved": "个人头像已删除。",
+  "profilePhotoCompressFailed": "图片转换失败。请换一张照片重试。",
   "profileEmail": "电子邮箱",
   "profileUid": "用户ID",
   "profileNoEmail": "未设置（社交登录）",
@@ -30,6 +31,57 @@
   "profileRequiresRecentLogin": "请重新登录并重试（安全）。",
   "profileNotSignedIn": "登录到你的账户。",
   "profileSaveDisplayName": "确认保存",
+  "profileBioLabel": "个人简介（选填）",
+  "profileBioSectionTitle": "简介",
+  "profileSaveBio": "保存简介",
+  "profileBioSaved": "已保存简介。",
+  "profileBadgeToastUnlocked": "已解锁新徽章！",
+  "profileBadgeSectionTitle": "已获得徽章",
+  "profileBadgeUnlocked": "已解锁",
+  "profileBadgeRequirement": "解锁条件：{requirement}",
+  "@profileBadgeRequirement": {
+    "placeholders": {
+      "requirement": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBadgeFirstTitle": "第一步",
+  "profileBadgeFirstDescription": "首次登录/首次进入时获得的起始徽章",
+  "profileBadgeFirstRequirement": "启动应用时自动获得",
+  "profileBadgeExplorerTitle": "社区探索者",
+  "profileBadgeExplorerDescription": "首次浏览社区/活动动态的用户",
+  "profileBadgeExplorerRequirement": "访问社区标签 1 次",
+  "profileBadgeWriteFirstTitle": "首位作者",
+  "profileBadgeWriteFirstDescription": "通过首篇帖子开始贡献的用户",
+  "profileBadgeWriteFirstRequirement": "至少发布 1 篇帖子",
+  "profileBadgeCommentFirstTitle": "首条评论",
+  "profileBadgeCommentFirstDescription": "通过首条评论/回复参与对话的用户",
+  "profileBadgeCommentFirstRequirement": "至少 1 条评论/回复",
+  "profileBadgeRadarOnTitle": "雷达开启",
+  "profileBadgeRadarOnDescription": "正式开始市场探索循环的用户",
+  "profileBadgeRadarOnRequirement": "活动次数至少 3 次",
+  "profileBadgeScanAssetsTitle": "扫描者",
+  "profileBadgeScanAssetsDescription": "深入探索多种资产的用户",
+  "profileBadgeScanAssetsRequirement": "活动次数至少 50 次",
+  "profileBadgeTalkKingTitle": "讨论达人",
+  "profileBadgeTalkKingDescription": "持续进行观点交流的讨论型用户",
+  "profileBadgeTalkKingRequirement": "帖子+评论至少 20 次",
+  "profileBadgeHeartKingTitle": "共鸣之王",
+  "profileBadgeHeartKingDescription": "获得其他用户大量点赞的用户",
+  "profileBadgeHeartKingRequirement": "收到点赞至少 50 次",
+  "profileBadgeVisit7Title": "连续 7 天",
+  "profileBadgeVisit7Description": "养成持续访问习惯的用户",
+  "profileBadgeVisit7Requirement": "活动次数至少 7 次（临时规则）",
+  "profileBadgeLevel5Title": "等级 5",
+  "profileBadgeLevel5Description": "突破早期成长阶段的用户",
+  "profileBadgeLevel5Requirement": "达到等级 5 及以上",
+  "profileBadgeLevel10Title": "等级 10",
+  "profileBadgeLevel10Description": "达到更高成长阶段的用户",
+  "profileBadgeLevel10Requirement": "达到等级 10 及以上",
+  "profileBadgeMultiMarketTitle": "多市场",
+  "profileBadgeMultiMarketDescription": "在多个市场间探索机会的用户",
+  "profileBadgeMultiMarketRequirement": "活动次数至少 12 次",
   "profileDisplayNameHint": "您的姓名在帖子中的显示方式",
   "profileDisplayNameInputPlaceholder": "输入显示名",
   "profileCheckDisplayNameDuplicate": "检查名称是否可用",
@@ -222,6 +274,8 @@
   "homeInterestSurgeInfoTitle": "关于今日关注飙升",
   "homeInterestSurgeInfoBody": "该列表由 AI 生成：结合近期市场环境、新闻与投资者关注度信号，从美股、韩股、加密货币与大宗商品中筛选值得关注的标的，并为每个标的估算 0–100 的相对「热度」分数。\n\n分数每天在我们的服务器上处理并存储一次；应用展示最新快照。\n\n仅供参考，不构成投资建议，也不保证收益。",
   "homeInterestSurgeInfoDismiss": "确定",
+  "homeProfileNudge": "展示一下你是谁",
+  "homeCommunityNudge": "去社区看看大家都在聊什么",
   "homeTrendScoreLabel": "热度",
   "homeRankingShowMoreTooltip": "展开更多",
   "homeInterestSurgeShowMoreWithAd": "观看广告以显示更多",
@@ -310,6 +364,24 @@
   "assetDetailPriceChange": "涨跌幅（数据源）",
   "communitySortLatest": "最新",
   "communitySortPopular": "热门",
+  "communityTopTabPosts": "帖子",
+  "communityTopTabActivists": "活跃作者",
+  "communityActivistsEmpty": "暂无活跃作者数据",
+  "communityMe": "我",
+  "communityActivistStats": "分数 {score} · 帖子 {postCount} · 点赞 {likeCount}",
+  "@communityActivistStats": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "postCount": {
+        "type": "int"
+      },
+      "likeCount": {
+        "type": "int"
+      }
+    }
+  },
   "communityReplyCount": "回复：{count}",
   "@communityReplyCount": {
     "placeholders": {

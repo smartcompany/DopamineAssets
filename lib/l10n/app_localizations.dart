@@ -198,6 +198,12 @@ abstract class AppLocalizations {
   /// **'Profile photo removed.'**
   String get profilePhotoRemoved;
 
+  /// No description provided for @profilePhotoCompressFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Image conversion failed. Try a different photo.'**
+  String get profilePhotoCompressFailed;
+
   /// No description provided for @profileEmail.
   ///
   /// In en, this message translates to:
@@ -281,6 +287,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get profileSaveDisplayName;
+
+  /// No description provided for @profileBioLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio (optional)'**
+  String get profileBioLabel;
+
+  /// No description provided for @profileBioSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get profileBioSectionTitle;
+
+  /// No description provided for @profileSaveBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Save bio'**
+  String get profileSaveBio;
+
+  /// No description provided for @profileBioSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio saved.'**
+  String get profileBioSaved;
+
+  /// No description provided for @profileBadgeToastUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'New badge unlocked!'**
+  String get profileBadgeToastUnlocked;
+
+  /// No description provided for @profileBadgeSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges earned'**
+  String get profileBadgeSectionTitle;
+
+  /// No description provided for @profileBadgeUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get profileBadgeUnlocked;
+
+  /// No description provided for @profileBadgeRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Requirement: {requirement}'**
+  String profileBadgeRequirement(String requirement);
+
+  /// No description provided for @profileBadgeFirstTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'First Step'**
+  String get profileBadgeFirstTitle;
+
+  /// No description provided for @profileBadgeFirstDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Starter badge earned on your first sign-in/entry'**
+  String get profileBadgeFirstDescription;
+
+  /// No description provided for @profileBadgeFirstRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically unlocked on app start'**
+  String get profileBadgeFirstRequirement;
+
+  /// No description provided for @profileBadgeExplorerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Explorer'**
+  String get profileBadgeExplorerTitle;
+
+  /// No description provided for @profileBadgeExplorerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Visited the community/activity feed for the first time'**
+  String get profileBadgeExplorerDescription;
+
+  /// No description provided for @profileBadgeExplorerRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit the Community tab once'**
+  String get profileBadgeExplorerRequirement;
+
+  /// No description provided for @profileBadgeWriteFirstTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'First Author'**
+  String get profileBadgeWriteFirstTitle;
+
+  /// No description provided for @profileBadgeWriteFirstDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Started contributing with the first post'**
+  String get profileBadgeWriteFirstDescription;
+
+  /// No description provided for @profileBadgeWriteFirstRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 1 post'**
+  String get profileBadgeWriteFirstRequirement;
+
+  /// No description provided for @profileBadgeCommentFirstTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'First Commenter'**
+  String get profileBadgeCommentFirstTitle;
+
+  /// No description provided for @profileBadgeCommentFirstDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined the conversation with the first comment/reply'**
+  String get profileBadgeCommentFirstDescription;
+
+  /// No description provided for @profileBadgeCommentFirstRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 1 comment/reply'**
+  String get profileBadgeCommentFirstRequirement;
+
+  /// No description provided for @profileBadgeRadarOnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Radar ON'**
+  String get profileBadgeRadarOnTitle;
+
+  /// No description provided for @profileBadgeRadarOnDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Started actively exploring market opportunities'**
+  String get profileBadgeRadarOnDescription;
+
+  /// No description provided for @profileBadgeRadarOnRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 3 activities'**
+  String get profileBadgeRadarOnRequirement;
+
+  /// No description provided for @profileBadgeScanAssetsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanner'**
+  String get profileBadgeScanAssetsTitle;
+
+  /// No description provided for @profileBadgeScanAssetsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Explored many assets in depth'**
+  String get profileBadgeScanAssetsDescription;
+
+  /// No description provided for @profileBadgeScanAssetsRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 50 activities'**
+  String get profileBadgeScanAssetsRequirement;
+
+  /// No description provided for @profileBadgeTalkKingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Debater'**
+  String get profileBadgeTalkKingTitle;
+
+  /// No description provided for @profileBadgeTalkKingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps discussions going with steady interactions'**
+  String get profileBadgeTalkKingDescription;
+
+  /// No description provided for @profileBadgeTalkKingRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts + comments at least 20'**
+  String get profileBadgeTalkKingRequirement;
+
+  /// No description provided for @profileBadgeHeartKingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Most Liked'**
+  String get profileBadgeHeartKingTitle;
+
+  /// No description provided for @profileBadgeHeartKingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Received lots of positive reactions from other users'**
+  String get profileBadgeHeartKingDescription;
+
+  /// No description provided for @profileBadgeHeartKingRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Received likes at least 50'**
+  String get profileBadgeHeartKingRequirement;
+
+  /// No description provided for @profileBadgeVisit7Title.
+  ///
+  /// In en, this message translates to:
+  /// **'7-Day Streak'**
+  String get profileBadgeVisit7Title;
+
+  /// No description provided for @profileBadgeVisit7Description.
+  ///
+  /// In en, this message translates to:
+  /// **'Built a consistent habit of returning'**
+  String get profileBadgeVisit7Description;
+
+  /// No description provided for @profileBadgeVisit7Requirement.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 7 activities (temporary rule)'**
+  String get profileBadgeVisit7Requirement;
+
+  /// No description provided for @profileBadgeLevel5Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Level 5'**
+  String get profileBadgeLevel5Title;
+
+  /// No description provided for @profileBadgeLevel5Description.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed an early growth milestone'**
+  String get profileBadgeLevel5Description;
+
+  /// No description provided for @profileBadgeLevel5Requirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Level 5 or above'**
+  String get profileBadgeLevel5Requirement;
+
+  /// No description provided for @profileBadgeLevel10Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Level 10'**
+  String get profileBadgeLevel10Title;
+
+  /// No description provided for @profileBadgeLevel10Description.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached a higher growth tier'**
+  String get profileBadgeLevel10Description;
+
+  /// No description provided for @profileBadgeLevel10Requirement.
+  ///
+  /// In en, this message translates to:
+  /// **'Level 10 or above'**
+  String get profileBadgeLevel10Requirement;
+
+  /// No description provided for @profileBadgeMultiMarketTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-Market'**
+  String get profileBadgeMultiMarketTitle;
+
+  /// No description provided for @profileBadgeMultiMarketDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Explores opportunities across multiple markets'**
+  String get profileBadgeMultiMarketDescription;
+
+  /// No description provided for @profileBadgeMultiMarketRequirement.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 12 activities'**
+  String get profileBadgeMultiMarketRequirement;
 
   /// No description provided for @profileDisplayNameHint.
   ///
@@ -1140,6 +1410,18 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get homeInterestSurgeInfoDismiss;
 
+  /// No description provided for @homeProfileNudge.
+  ///
+  /// In en, this message translates to:
+  /// **'Show who you are'**
+  String get homeProfileNudge;
+
+  /// No description provided for @homeCommunityNudge.
+  ///
+  /// In en, this message translates to:
+  /// **'Check what others are saying in Community'**
+  String get homeCommunityNudge;
+
   /// No description provided for @homeTrendScoreLabel.
   ///
   /// In en, this message translates to:
@@ -1541,6 +1823,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Popular'**
   String get communitySortPopular;
+
+  /// No description provided for @communityTopTabPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get communityTopTabPosts;
+
+  /// No description provided for @communityTopTabActivists.
+  ///
+  /// In en, this message translates to:
+  /// **'Top contributors'**
+  String get communityTopTabActivists;
+
+  /// No description provided for @communityActivistsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No contributor data yet.'**
+  String get communityActivistsEmpty;
+
+  /// No description provided for @communityMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get communityMe;
+
+  /// No description provided for @communityActivistStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Score {score} · Posts {postCount} · Likes {likeCount}'**
+  String communityActivistStats(int score, int postCount, int likeCount);
 
   /// No description provided for @communityReplyCount.
   ///

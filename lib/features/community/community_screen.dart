@@ -841,9 +841,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment<int>(value: 0, label: Text('게시글')),
-                  ButtonSegment<int>(value: 1, label: Text('활동가')),
+                segments: [
+                  ButtonSegment<int>(value: 0, label: Text(l10n.communityTopTabPosts)),
+                  ButtonSegment<int>(
+                    value: 1,
+                    label: Text(l10n.communityTopTabActivists),
+                  ),
                 ],
                 selected: {_topTabIndex},
                 onSelectionChanged: (s) {
@@ -1316,7 +1319,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (rows.isEmpty) {
       return Center(
         child: Text(
-          '아직 활동가 데이터가 없어요',
+          l10n.communityActivistsEmpty,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: DopamineTheme.textSecondary,
           ),
@@ -1386,7 +1389,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '점수 ${row.score} · 글 ${row.postCount} · 좋아요 ${row.likeSum}',
+                        l10n.communityActivistStats(
+                          row.score,
+                          row.postCount,
+                          row.likeSum,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelSmall?.copyWith(
@@ -1399,10 +1406,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 const SizedBox(width: 8),
                 if (mine)
                   Text(
-                    '나',
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    l10n.communityMe,
+                    style: theme.textTheme.titleSmall?.copyWith(
                       color: DopamineTheme.neonGreen,
                       fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                      letterSpacing: 0.1,
                     ),
                   )
                 else if (following)

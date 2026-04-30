@@ -855,6 +855,10 @@ abstract final class DopamineApi {
     final photoUrl = rawPhoto != null && rawPhoto.trim().isNotEmpty
         ? rawPhoto.trim()
         : null;
+    final rawBio = profile['bio'] as String?;
+    final bio = rawBio != null && rawBio.trim().isNotEmpty
+        ? rawBio.trim()
+        : null;
     final rawSus = profile['suspendedUntil'] as String?;
     final suspendedUntil = rawSus != null && rawSus.trim().isNotEmpty
         ? DateTime.tryParse(rawSus.trim())
@@ -868,8 +872,21 @@ abstract final class DopamineApi {
       uid: uid,
       displayName: displayName,
       photoUrl: photoUrl,
+      bio: bio,
       suspendedUntil: suspendedUntil,
     );
+  }
+
+  static Future<void> patchProfileBio({
+    required String idToken,
+    required String? bio,
+  }) async {
+    final response = await _client.patch(
+      _uri('/api/profile/me'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({'bio': bio ?? ''}),
+    );
+    _ensureOk(response);
   }
 
   static Future<void> patchProfileDisplayName({
@@ -1169,6 +1186,55 @@ abstract final class DopamineApi {
     );
   }
 
+  static Future<BadgeCatalogResponse> fetchBadgeCatalog() async {
+    final response = await _client.get(
+      _uri('/api/badges/catalog'),
+      headers: _jsonHeaders,
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid badge catalog payload');
+    }
+    return BadgeCatalogResponse.fromJson(decoded);
+  }
+
+  static Future<BadgeStateResponse> fetchMyBadges({
+    required String idToken,
+  }) async {
+    final response = await _client.get(
+      _uri('/api/profile/badges'),
+      headers: _bearerHeaders(idToken),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid my badges payload');
+    }
+    return BadgeStateResponse.fromJson(decoded);
+  }
+
+  static Future<BadgeEventResponse> postBadgeEvent({
+    required String idToken,
+    required String eventName,
+    required Map<String, Object> params,
+  }) async {
+    final response = await _client.post(
+      _uri('/api/profile/badges'),
+      headers: _jsonBearerHeaders(idToken),
+      body: jsonEncode({
+        'eventName': eventName,
+        'params': params,
+      }),
+    );
+    _ensureOk(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic>) {
+      throw ApiException('Invalid badge event payload');
+    }
+    return BadgeEventResponse.fromJson(decoded);
+  }
+
   static Map<String, String> _bearerHeaders(String idToken) => {
     'Accept': 'application/json',
     'Authorization': 'Bearer $idToken',
@@ -1273,5 +1339,110 @@ abstract final class DopamineApi {
       if (e is ApiException) rethrow;
     }
     throw ApiException('HTTP ${response.statusCode}');
+  }
+}
+
+final class BadgeCatalogItem {
+  const BadgeCatalogItem({
+    required this.key,
+    required this.label,
+    required this.imageUrl,
+  });
+
+  final String key;
+  final String label;
+  final String imageUrl;
+
+  factory BadgeCatalogItem.fromJson(Map<String, dynamic> json) {
+    return BadgeCatalogItem(
+      key: (json['key'] as String? ?? '').trim(),
+      label: (json['label'] as String? ?? '').trim(),
+      imageUrl: (json['imageUrl'] as String? ?? '').trim(),
+    );
+  }
+}
+
+final class BadgeCatalogResponse {
+  const BadgeCatalogResponse({required this.version, required this.catalog});
+  final int version;
+  final List<BadgeCatalogItem> catalog;
+
+  factory BadgeCatalogResponse.fromJson(Map<String, dynamic> json) {
+    final raw = json['badges'];
+    final list = raw is List
+        ? raw
+              .whereType<Map<String, dynamic>>()
+              .map(BadgeCatalogItem.fromJson)
+              .toList()
+        : const <BadgeCatalogItem>[];
+    return BadgeCatalogResponse(
+      version: (json['version'] as num?)?.toInt() ?? 0,
+      catalog: list,
+    );
+  }
+}
+
+final class BadgeStateResponse {
+  const BadgeStateResponse({
+    required this.unlockedKeys,
+    required this.counters,
+    required this.catalog,
+  });
+
+  final Set<String> unlockedKeys;
+  final Map<String, int> counters;
+  final List<BadgeCatalogItem> catalog;
+
+  factory BadgeStateResponse.fromJson(Map<String, dynamic> json) {
+    final state = json['state'] as Map<String, dynamic>? ?? const {};
+    final unlocked = (state['unlockedKeys'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
+    final countersRaw = state['counters'] as Map<String, dynamic>? ?? const {};
+    final counters = <String, int>{};
+    for (final e in countersRaw.entries) {
+      final n = e.value;
+      if (n is num) counters[e.key] = n.toInt();
+    }
+    final rawCatalog = json['catalog'];
+    final catalog = rawCatalog is List
+        ? rawCatalog
+              .whereType<Map<String, dynamic>>()
+              .map(BadgeCatalogItem.fromJson)
+              .toList()
+        : const <BadgeCatalogItem>[];
+    return BadgeStateResponse(
+      unlockedKeys: unlocked,
+      counters: counters,
+      catalog: catalog,
+    );
+  }
+}
+
+final class BadgeEventResponse extends BadgeStateResponse {
+  const BadgeEventResponse({
+    required super.unlockedKeys,
+    required super.counters,
+    required super.catalog,
+    required this.newlyUnlocked,
+  });
+
+  final List<String> newlyUnlocked;
+
+  factory BadgeEventResponse.fromJson(Map<String, dynamic> json) {
+    final base = BadgeStateResponse.fromJson(json);
+    final newlyUnlocked = (json['newlyUnlocked'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    return BadgeEventResponse(
+      unlockedKeys: base.unlockedKeys,
+      counters: base.counters,
+      catalog: base.catalog,
+      newlyUnlocked: newlyUnlocked,
+    );
   }
 }

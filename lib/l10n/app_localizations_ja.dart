@@ -57,6 +57,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get profilePhotoRemoved => 'プロフィール写真を削除しました。';
 
   @override
+  String get profilePhotoCompressFailed => '画像の変換に失敗しました。別の写真でお試しください。';
+
+  @override
   String get profileEmail => 'メール';
 
   @override
@@ -97,6 +100,140 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get profileSaveDisplayName => '保存';
+
+  @override
+  String get profileBioLabel => '自己紹介（任意）';
+
+  @override
+  String get profileBioSectionTitle => '自己紹介';
+
+  @override
+  String get profileSaveBio => '保存';
+
+  @override
+  String get profileBioSaved => '自己紹介を保存しました。';
+
+  @override
+  String get profileBadgeToastUnlocked => '新しいバッジを獲得！';
+
+  @override
+  String get profileBadgeSectionTitle => '獲得バッジ';
+
+  @override
+  String get profileBadgeUnlocked => '獲得済み';
+
+  @override
+  String profileBadgeRequirement(String requirement) {
+    return '獲得条件: $requirement';
+  }
+
+  @override
+  String get profileBadgeFirstTitle => 'はじめの一歩';
+
+  @override
+  String get profileBadgeFirstDescription => '初回ログイン/初回利用で獲得する開始バッジ';
+
+  @override
+  String get profileBadgeFirstRequirement => 'アプリ起動時に自動獲得';
+
+  @override
+  String get profileBadgeExplorerTitle => 'コミュニティ探検家';
+
+  @override
+  String get profileBadgeExplorerDescription => 'コミュニティ/アクティビティフィードを初めて閲覧';
+
+  @override
+  String get profileBadgeExplorerRequirement => 'コミュニティタブを1回訪問';
+
+  @override
+  String get profileBadgeWriteFirstTitle => '初投稿者';
+
+  @override
+  String get profileBadgeWriteFirstDescription => '最初の投稿で参加を開始したユーザー';
+
+  @override
+  String get profileBadgeWriteFirstRequirement => '投稿1件以上';
+
+  @override
+  String get profileBadgeCommentFirstTitle => '初コメント';
+
+  @override
+  String get profileBadgeCommentFirstDescription => '最初のコメント/返信で会話に参加したユーザー';
+
+  @override
+  String get profileBadgeCommentFirstRequirement => 'コメント/返信1件以上';
+
+  @override
+  String get profileBadgeRadarOnTitle => 'レーダー ON';
+
+  @override
+  String get profileBadgeRadarOnDescription => '市場探索ループを本格的に始めたユーザー';
+
+  @override
+  String get profileBadgeRadarOnRequirement => 'アクティビティ3回以上';
+
+  @override
+  String get profileBadgeScanAssetsTitle => 'スキャナー';
+
+  @override
+  String get profileBadgeScanAssetsDescription => '多様な資産を深く探索したユーザー';
+
+  @override
+  String get profileBadgeScanAssetsRequirement => 'アクティビティ50回以上';
+
+  @override
+  String get profileBadgeTalkKingTitle => 'ディスカッサー';
+
+  @override
+  String get profileBadgeTalkKingDescription => '意見交換を継続している討論型ユーザー';
+
+  @override
+  String get profileBadgeTalkKingRequirement => '投稿+コメント20回以上';
+
+  @override
+  String get profileBadgeHeartKingTitle => '共感王';
+
+  @override
+  String get profileBadgeHeartKingDescription => '他のユーザーから多くの共感を得たユーザー';
+
+  @override
+  String get profileBadgeHeartKingRequirement => '獲得いいね50回以上';
+
+  @override
+  String get profileBadgeVisit7Title => '連続7日';
+
+  @override
+  String get profileBadgeVisit7Description => '継続的に訪問する習慣を作ったユーザー';
+
+  @override
+  String get profileBadgeVisit7Requirement => 'アクティビティ7回以上（暫定）';
+
+  @override
+  String get profileBadgeLevel5Title => 'レベル 5';
+
+  @override
+  String get profileBadgeLevel5Description => '初期成長区間を突破したユーザー';
+
+  @override
+  String get profileBadgeLevel5Requirement => 'レベル5以上';
+
+  @override
+  String get profileBadgeLevel10Title => 'レベル 10';
+
+  @override
+  String get profileBadgeLevel10Description => '上位成長区間に到達したユーザー';
+
+  @override
+  String get profileBadgeLevel10Requirement => 'レベル10以上';
+
+  @override
+  String get profileBadgeMultiMarketTitle => 'マルチマーケット';
+
+  @override
+  String get profileBadgeMultiMarketDescription => '複数市場を行き来しながら探索するユーザー';
+
+  @override
+  String get profileBadgeMultiMarketRequirement => 'アクティビティ12回以上';
 
   @override
   String get profileDisplayNameHint => '投稿に名前が表示される仕組み';
@@ -560,6 +697,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get homeInterestSurgeInfoDismiss => 'OK';
 
   @override
+  String get homeProfileNudge => 'あなたが誰かを見せてください';
+
+  @override
+  String get homeCommunityNudge => 'コミュニティで他の人の意見を見てみましょう';
+
+  @override
   String get homeTrendScoreLabel => 'トレンド';
 
   @override
@@ -766,6 +909,23 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get communitySortPopular => '人気';
+
+  @override
+  String get communityTopTabPosts => '投稿';
+
+  @override
+  String get communityTopTabActivists => '活動家';
+
+  @override
+  String get communityActivistsEmpty => 'まだ活動家データがありません';
+
+  @override
+  String get communityMe => '自分';
+
+  @override
+  String communityActivistStats(int score, int postCount, int likeCount) {
+    return 'スコア $score · 投稿 $postCount · いいね $likeCount';
+  }
 
   @override
   String communityReplyCount(int count) {

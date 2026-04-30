@@ -16,6 +16,7 @@
   "profilePhotoRemove": "写真を削除",
   "profilePhotoSaved": "プロフィール写真を保存しました。",
   "profilePhotoRemoved": "プロフィール写真を削除しました。",
+  "profilePhotoCompressFailed": "画像の変換に失敗しました。別の写真でお試しください。",
   "profileEmail": "メール",
   "profileUid": "ユーザーID",
   "profileNoEmail": "設定されていません（ソーシャルログイン）",
@@ -30,6 +31,57 @@
   "profileRequiresRecentLogin": "もう一度サインインして、もう一度お試しください（セキュリティ）。",
   "profileNotSignedIn": "あなたのアカウントにサインイン",
   "profileSaveDisplayName": "保存",
+  "profileBioLabel": "自己紹介（任意）",
+  "profileBioSectionTitle": "自己紹介",
+  "profileSaveBio": "保存",
+  "profileBioSaved": "自己紹介を保存しました。",
+  "profileBadgeToastUnlocked": "新しいバッジを獲得！",
+  "profileBadgeSectionTitle": "獲得バッジ",
+  "profileBadgeUnlocked": "獲得済み",
+  "profileBadgeRequirement": "獲得条件: {requirement}",
+  "@profileBadgeRequirement": {
+    "placeholders": {
+      "requirement": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBadgeFirstTitle": "はじめの一歩",
+  "profileBadgeFirstDescription": "初回ログイン/初回利用で獲得する開始バッジ",
+  "profileBadgeFirstRequirement": "アプリ起動時に自動獲得",
+  "profileBadgeExplorerTitle": "コミュニティ探検家",
+  "profileBadgeExplorerDescription": "コミュニティ/アクティビティフィードを初めて閲覧",
+  "profileBadgeExplorerRequirement": "コミュニティタブを1回訪問",
+  "profileBadgeWriteFirstTitle": "初投稿者",
+  "profileBadgeWriteFirstDescription": "最初の投稿で参加を開始したユーザー",
+  "profileBadgeWriteFirstRequirement": "投稿1件以上",
+  "profileBadgeCommentFirstTitle": "初コメント",
+  "profileBadgeCommentFirstDescription": "最初のコメント/返信で会話に参加したユーザー",
+  "profileBadgeCommentFirstRequirement": "コメント/返信1件以上",
+  "profileBadgeRadarOnTitle": "レーダー ON",
+  "profileBadgeRadarOnDescription": "市場探索ループを本格的に始めたユーザー",
+  "profileBadgeRadarOnRequirement": "アクティビティ3回以上",
+  "profileBadgeScanAssetsTitle": "スキャナー",
+  "profileBadgeScanAssetsDescription": "多様な資産を深く探索したユーザー",
+  "profileBadgeScanAssetsRequirement": "アクティビティ50回以上",
+  "profileBadgeTalkKingTitle": "ディスカッサー",
+  "profileBadgeTalkKingDescription": "意見交換を継続している討論型ユーザー",
+  "profileBadgeTalkKingRequirement": "投稿+コメント20回以上",
+  "profileBadgeHeartKingTitle": "共感王",
+  "profileBadgeHeartKingDescription": "他のユーザーから多くの共感を得たユーザー",
+  "profileBadgeHeartKingRequirement": "獲得いいね50回以上",
+  "profileBadgeVisit7Title": "連続7日",
+  "profileBadgeVisit7Description": "継続的に訪問する習慣を作ったユーザー",
+  "profileBadgeVisit7Requirement": "アクティビティ7回以上（暫定）",
+  "profileBadgeLevel5Title": "レベル 5",
+  "profileBadgeLevel5Description": "初期成長区間を突破したユーザー",
+  "profileBadgeLevel5Requirement": "レベル5以上",
+  "profileBadgeLevel10Title": "レベル 10",
+  "profileBadgeLevel10Description": "上位成長区間に到達したユーザー",
+  "profileBadgeLevel10Requirement": "レベル10以上",
+  "profileBadgeMultiMarketTitle": "マルチマーケット",
+  "profileBadgeMultiMarketDescription": "複数市場を行き来しながら探索するユーザー",
+  "profileBadgeMultiMarketRequirement": "アクティビティ12回以上",
   "profileDisplayNameHint": "投稿に名前が表示される仕組み",
   "profileDisplayNameInputPlaceholder": "表示名を入力",
   "profileCheckDisplayNameDuplicate": "空室状況を確認する",
@@ -222,6 +274,8 @@
   "homeInterestSurgeInfoTitle": "本日の金利上昇について",
   "homeInterestSurgeInfoBody": "このリストはAIを使用して作成されています。最近の市場状況、ニュース、投資家の利益シグナルから注目に値すると思われる米国と韓国の株式、暗号通貨、および商品を選択し、それぞれの相対的な0〜100の「トレンド」スコアを推定します。\n\nスコアは1日に1回処理され、サーバーに保存されます。アプリには最新のスナップショットが表示されます。\n\n情報のみ-投資アドバイスではなく、リターンの保証ではありません。",
   "homeInterestSurgeInfoDismiss": "OK",
+  "homeProfileNudge": "あなたが誰かを見せてください",
+  "homeCommunityNudge": "コミュニティで他の人の意見を見てみましょう",
   "homeTrendScoreLabel": "トレンド",
   "homeRankingShowMoreTooltip": "もっと表示",
   "homeInterestSurgeShowMoreWithAd": "広告を視聴して詳細を表示",
@@ -310,6 +364,24 @@
   "assetDetailPriceChange": "価格変更（フィード）",
   "communitySortLatest": "最新",
   "communitySortPopular": "人気",
+  "communityTopTabPosts": "投稿",
+  "communityTopTabActivists": "活動家",
+  "communityActivistsEmpty": "まだ活動家データがありません",
+  "communityMe": "自分",
+  "communityActivistStats": "スコア {score} · 投稿 {postCount} · いいね {likeCount}",
+  "@communityActivistStats": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "postCount": {
+        "type": "int"
+      },
+      "likeCount": {
+        "type": "int"
+      }
+    }
+  },
   "communityReplyCount": "返信： {count}",
   "@communityReplyCount": {
     "placeholders": {

@@ -57,6 +57,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profilePhotoRemoved => '个人头像已删除。';
 
   @override
+  String get profilePhotoCompressFailed => '图片转换失败。请换一张照片重试。';
+
+  @override
   String get profileEmail => '电子邮箱';
 
   @override
@@ -97,6 +100,140 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profileSaveDisplayName => '确认保存';
+
+  @override
+  String get profileBioLabel => '个人简介（选填）';
+
+  @override
+  String get profileBioSectionTitle => '简介';
+
+  @override
+  String get profileSaveBio => '保存简介';
+
+  @override
+  String get profileBioSaved => '已保存简介。';
+
+  @override
+  String get profileBadgeToastUnlocked => '已解锁新徽章！';
+
+  @override
+  String get profileBadgeSectionTitle => '已获得徽章';
+
+  @override
+  String get profileBadgeUnlocked => '已解锁';
+
+  @override
+  String profileBadgeRequirement(String requirement) {
+    return '解锁条件：$requirement';
+  }
+
+  @override
+  String get profileBadgeFirstTitle => '第一步';
+
+  @override
+  String get profileBadgeFirstDescription => '首次登录/首次进入时获得的起始徽章';
+
+  @override
+  String get profileBadgeFirstRequirement => '启动应用时自动获得';
+
+  @override
+  String get profileBadgeExplorerTitle => '社区探索者';
+
+  @override
+  String get profileBadgeExplorerDescription => '首次浏览社区/活动动态的用户';
+
+  @override
+  String get profileBadgeExplorerRequirement => '访问社区标签 1 次';
+
+  @override
+  String get profileBadgeWriteFirstTitle => '首位作者';
+
+  @override
+  String get profileBadgeWriteFirstDescription => '通过首篇帖子开始贡献的用户';
+
+  @override
+  String get profileBadgeWriteFirstRequirement => '至少发布 1 篇帖子';
+
+  @override
+  String get profileBadgeCommentFirstTitle => '首条评论';
+
+  @override
+  String get profileBadgeCommentFirstDescription => '通过首条评论/回复参与对话的用户';
+
+  @override
+  String get profileBadgeCommentFirstRequirement => '至少 1 条评论/回复';
+
+  @override
+  String get profileBadgeRadarOnTitle => '雷达开启';
+
+  @override
+  String get profileBadgeRadarOnDescription => '正式开始市场探索循环的用户';
+
+  @override
+  String get profileBadgeRadarOnRequirement => '活动次数至少 3 次';
+
+  @override
+  String get profileBadgeScanAssetsTitle => '扫描者';
+
+  @override
+  String get profileBadgeScanAssetsDescription => '深入探索多种资产的用户';
+
+  @override
+  String get profileBadgeScanAssetsRequirement => '活动次数至少 50 次';
+
+  @override
+  String get profileBadgeTalkKingTitle => '讨论达人';
+
+  @override
+  String get profileBadgeTalkKingDescription => '持续进行观点交流的讨论型用户';
+
+  @override
+  String get profileBadgeTalkKingRequirement => '帖子+评论至少 20 次';
+
+  @override
+  String get profileBadgeHeartKingTitle => '共鸣之王';
+
+  @override
+  String get profileBadgeHeartKingDescription => '获得其他用户大量点赞的用户';
+
+  @override
+  String get profileBadgeHeartKingRequirement => '收到点赞至少 50 次';
+
+  @override
+  String get profileBadgeVisit7Title => '连续 7 天';
+
+  @override
+  String get profileBadgeVisit7Description => '养成持续访问习惯的用户';
+
+  @override
+  String get profileBadgeVisit7Requirement => '活动次数至少 7 次（临时规则）';
+
+  @override
+  String get profileBadgeLevel5Title => '等级 5';
+
+  @override
+  String get profileBadgeLevel5Description => '突破早期成长阶段的用户';
+
+  @override
+  String get profileBadgeLevel5Requirement => '达到等级 5 及以上';
+
+  @override
+  String get profileBadgeLevel10Title => '等级 10';
+
+  @override
+  String get profileBadgeLevel10Description => '达到更高成长阶段的用户';
+
+  @override
+  String get profileBadgeLevel10Requirement => '达到等级 10 及以上';
+
+  @override
+  String get profileBadgeMultiMarketTitle => '多市场';
+
+  @override
+  String get profileBadgeMultiMarketDescription => '在多个市场间探索机会的用户';
+
+  @override
+  String get profileBadgeMultiMarketRequirement => '活动次数至少 12 次';
 
   @override
   String get profileDisplayNameHint => '您的姓名在帖子中的显示方式';
@@ -552,6 +689,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeInterestSurgeInfoDismiss => '确定';
 
   @override
+  String get homeProfileNudge => '展示一下你是谁';
+
+  @override
+  String get homeCommunityNudge => '去社区看看大家都在聊什么';
+
+  @override
   String get homeTrendScoreLabel => '热度';
 
   @override
@@ -757,6 +900,23 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get communitySortPopular => '热门';
+
+  @override
+  String get communityTopTabPosts => '帖子';
+
+  @override
+  String get communityTopTabActivists => '活跃作者';
+
+  @override
+  String get communityActivistsEmpty => '暂无活跃作者数据';
+
+  @override
+  String get communityMe => '我';
+
+  @override
+  String communityActivistStats(int score, int postCount, int likeCount) {
+    return '分数 $score · 帖子 $postCount · 点赞 $likeCount';
+  }
 
   @override
   String communityReplyCount(int count) {

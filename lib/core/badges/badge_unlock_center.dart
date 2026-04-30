@@ -3,16 +3,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/api_config.dart';
+import '../network/dopamine_api.dart';
+
 final class BadgeUnlockToast {
   const BadgeUnlockToast({
     required this.badgeKey,
     required this.label,
-    required this.assetPath,
+    required this.imagePath,
   });
 
   final String badgeKey;
   final String label;
-  final String assetPath;
+  final String imagePath;
 }
 
 final class BadgeUnlockCenter extends ChangeNotifier {
@@ -21,16 +24,22 @@ final class BadgeUnlockCenter extends ChangeNotifier {
 
   static const _kUnlocked = 'badge_unlocked_keys_v1';
   static const _kCounters = 'badge_counters_v1';
+  static const _kCatalog = 'badge_catalog_v1';
 
   final Set<String> _unlocked = <String>{};
   final Map<String, int> _counters = <String, int>{};
-  final Set<String> _marketClasses = <String>{};
-  final Set<String> _homeVisitDays = <String>{};
+  final Map<String, _BadgeCatalogMeta> _catalog = <String, _BadgeCatalogMeta>{};
 
   BadgeUnlockToast? _pendingToast;
   BadgeUnlockToast? get pendingToast => _pendingToast;
 
   bool _initialized = false;
+  Future<String?> Function()? _idTokenProvider;
+
+  void registerIdTokenProvider(Future<String?> Function() provider) {
+    _idTokenProvider = provider;
+  }
+
   Future<void> ensureInitialized() async {
     if (_initialized) return;
     final p = await SharedPreferences.getInstance();
@@ -47,10 +56,34 @@ final class BadgeUnlockCenter extends ChangeNotifier {
         }
       } catch (_) {}
     }
+    final rawCatalog = p.getString(_kCatalog);
+    if (rawCatalog != null && rawCatalog.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawCatalog);
+        if (decoded is List) {
+          for (final row in decoded) {
+            if (row is! Map) continue;
+            final key = (row['key'] as String? ?? '').trim();
+            final label = (row['label'] as String? ?? '').trim();
+            final imagePath = (row['imagePath'] as String? ?? '').trim();
+            if (key.isEmpty || imagePath.isEmpty) continue;
+            if (!_isRemoteBadgeUrl(imagePath)) continue;
+            _catalog[key] = _BadgeCatalogMeta(
+              label: label.isEmpty ? key : label,
+              imagePath: imagePath,
+            );
+          }
+        }
+      } catch (_) {}
+    }
     _initialized = true;
+    await _bootstrapFromServer();
   }
 
   bool isUnlocked(String key) => _unlocked.contains(key);
+  /// 서버 카탈로그에만 존재. 없으면 빈 문자열.
+  String imageFor(String key) => _catalog[key]?.imagePath ?? '';
+  String labelFor(String key) => _catalog[key]?.label ?? key;
 
   void clearToast() {
     _pendingToast = null;
@@ -62,106 +95,127 @@ final class BadgeUnlockCenter extends ChangeNotifier {
     Map<String, Object> params,
   ) async {
     await ensureInitialized();
-
-    switch (eventName) {
-      case 'home_view':
-        _increment('home_view_count');
-        final day = DateTime.now().toIso8601String().substring(0, 10);
-        if (_homeVisitDays.add(day)) {
-          _counters['home_unique_days'] = _homeVisitDays.length;
-        }
-        _unlock('first');
-        if ((_counters['home_unique_days'] ?? 0) >= 7) _unlock('visit_7');
-        break;
-      case 'community_view':
-        _increment('community_view_count');
-        _unlock('explorer');
-        break;
-      case 'community_post_submit':
-        if (params['is_edit'] == true) break;
-        _increment('post_count');
-        _unlock('write_first');
-        if ((_counters['post_count'] ?? 0) + (_counters['reply_count'] ?? 0) >=
-            20) {
-          _unlock('talk_king');
-        }
-        break;
-      case 'community_reply_submit':
-        _increment('reply_count');
-        _unlock('comment_first');
-        if ((_counters['post_count'] ?? 0) + (_counters['reply_count'] ?? 0) >=
-            20) {
-          _unlock('talk_king');
-        }
-        break;
-      case 'favorite_toggled':
-        if (params['favored'] == true) {
-          _increment('favored_count');
-          if ((_counters['favored_count'] ?? 0) >= 3) _unlock('radar_on');
-        }
-        break;
-      case 'asset_detail_open':
-        _increment('asset_open_count');
-        if ((_counters['asset_open_count'] ?? 0) >= 50) _unlock('scan_assets');
-        final ac = (params['asset_class'] ?? '').toString();
-        if (ac.isNotEmpty && ac != 'unknown') {
-          _marketClasses.add(ac);
-          _counters['market_class_count'] = _marketClasses.length;
-          if (_marketClasses.length >= 4) _unlock('multi_market');
-        }
-        break;
-      case 'community_like_toggled':
-        if (params['liked'] == true) {
-          _increment('like_given_count');
-          if ((_counters['like_given_count'] ?? 0) >= 100) {
-            _unlock('heart_king');
-          }
-        }
-        break;
+    final token = await _idTokenProvider?.call();
+    if (token == null || token.isEmpty) {
+      return;
     }
-
-    final levelScore = (_counters['post_count'] ?? 0) * 12 +
-        (_counters['reply_count'] ?? 0) * 6 +
-        (_counters['like_given_count'] ?? 0) * 2;
-    if (levelScore >= 80) _unlock('level_5');
-    if (levelScore >= 220) _unlock('level_10');
-
-    await _persist();
+    try {
+      final response = await DopamineApi.postBadgeEvent(
+        idToken: token,
+        eventName: eventName,
+        params: params,
+      );
+      _applyServerState(
+        unlockedKeys: response.unlockedKeys,
+        counters: response.counters,
+        catalog: response.catalog,
+      );
+      if (response.newlyUnlocked.isNotEmpty) {
+        final badgeKey = response.newlyUnlocked.first;
+        _pendingToast = BadgeUnlockToast(
+          badgeKey: badgeKey,
+          label: labelFor(badgeKey),
+          imagePath: imageFor(badgeKey),
+        );
+      }
+      await _persist();
+      notifyListeners();
+    } catch (e, st) {
+      debugPrint('[badges] postBadgeEvent failed: $e\n$st');
+    }
   }
 
-  void _increment(String key) {
-    _counters[key] = (_counters[key] ?? 0) + 1;
-  }
-
-  void _unlock(String key) {
-    if (_unlocked.contains(key)) return;
-    _unlocked.add(key);
-    _pendingToast = BadgeUnlockToast(
-      badgeKey: key,
-      label: _badgeMeta[key]?.$1 ?? key,
-      assetPath: _badgeMeta[key]?.$2 ?? 'assets/badges/badge_first.jpg',
-    );
+  Future<void> _bootstrapFromServer() async {
+    try {
+      final catalog = await DopamineApi.fetchBadgeCatalog();
+      _applyCatalog(catalog.catalog);
+    } catch (_) {}
+    final token = await _idTokenProvider?.call();
+    if (token == null || token.isEmpty) {
+      await _persist();
+      notifyListeners();
+      return;
+    }
+    try {
+      final state = await DopamineApi.fetchMyBadges(idToken: token);
+      _applyServerState(
+        unlockedKeys: state.unlockedKeys,
+        counters: state.counters,
+        catalog: state.catalog,
+      );
+      await _persist();
+    } catch (_) {
+      await _persist();
+    }
     notifyListeners();
+  }
+
+  bool _isRemoteBadgeUrl(String path) {
+    return path.startsWith('http://') || path.startsWith('https://');
+  }
+
+  void _applyServerState({
+    required Set<String> unlockedKeys,
+    required Map<String, int> counters,
+    required List<BadgeCatalogItem> catalog,
+  }) {
+    _unlocked
+      ..clear()
+      ..addAll(unlockedKeys);
+    _counters
+      ..clear()
+      ..addAll(counters);
+    _applyCatalog(catalog);
+  }
+
+  void _applyCatalog(List<BadgeCatalogItem> list) {
+    if (list.isEmpty) return;
+    _catalog.clear();
+    for (final item in list) {
+      if (item.key.isEmpty) continue;
+      final path = _resolveImagePath(item.imageUrl);
+      if (path.isEmpty) continue;
+      _catalog[item.key] = _BadgeCatalogMeta(
+        label: item.label.isEmpty ? item.key : item.label,
+        imagePath: path,
+      );
+    }
+  }
+
+  /// 상대경로(`/badges/...`)는 API 베이스 URL 기준으로 절대 URL만 반환한다.
+  String _resolveImagePath(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return '';
+    if (v.startsWith('http://') || v.startsWith('https://')) return v;
+    if (v.startsWith('/')) {
+      final base = Uri.parse(ApiConfig.baseUrl);
+      return base.resolve(v).toString();
+    }
+    return '';
   }
 
   Future<void> _persist() async {
     final p = await SharedPreferences.getInstance();
     await p.setStringList(_kUnlocked, _unlocked.toList()..sort());
     await p.setString(_kCounters, jsonEncode(_counters));
+    await p.setString(
+      _kCatalog,
+      jsonEncode([
+        for (final e in _catalog.entries)
+          if (_isRemoteBadgeUrl(e.value.imagePath))
+            {
+              'key': e.key,
+              'label': e.value.label,
+              'imagePath': e.value.imagePath,
+            },
+      ]),
+    );
   }
 }
 
-const Map<String, (String, String)> _badgeMeta = {
-  'first': ('첫걸음', 'assets/badges/badge_first.jpg'),
-  'explorer': ('커뮤니티 탐험가', 'assets/badges/badge_explorer.jpg'),
-  'write_first': ('첫 작성자', 'assets/badges/badge_write_first.jpg'),
-  'comment_first': ('첫 댓글러', 'assets/badges/badge_comment_first.jpg'),
-  'radar_on': ('레이더 ON', 'assets/badges/badge_rader_on.jpg'),
-  'scan_assets': ('스캐너', 'assets/badges/badge_scan_assets.jpg'),
-  'talk_king': ('토론가', 'assets/badges/badge_talk_king.jpg'),
-  'heart_king': ('공감왕', 'assets/badges/badge_hart_king.jpg'),
-  'visit_7': ('연속 7일', 'assets/badges/badge_visit_7.jpg'),
-  'level_5': ('레벨 5', 'assets/badges/badge_5_level.jpg'),
-  'level_10': ('레벨 10', 'assets/badges/badge_level_10.jpg'),
-  'multi_market': ('멀티마켓', 'assets/badges/badge_multi_market.jpg'),
-};
+final class _BadgeCatalogMeta {
+  const _BadgeCatalogMeta({required this.label, required this.imagePath});
+
+  final String label;
+  final String imagePath;
+}

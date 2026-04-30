@@ -16,6 +16,7 @@
   "profilePhotoRemove": "Remove photo",
   "profilePhotoSaved": "Profile photo saved.",
   "profilePhotoRemoved": "Profile photo removed.",
+  "profilePhotoCompressFailed": "Image conversion failed. Try a different photo.",
   "profileEmail": "Email",
   "profileUid": "User ID",
   "profileNoEmail": "Not set (social login)",
@@ -30,6 +31,57 @@
   "profileRequiresRecentLogin": "Please sign in again and retry (security).",
   "profileNotSignedIn": "Sign in to see your account.",
   "profileSaveDisplayName": "Save",
+  "profileBioLabel": "Bio (optional)",
+  "profileBioSectionTitle": "About",
+  "profileSaveBio": "Save bio",
+  "profileBioSaved": "Bio saved.",
+  "profileBadgeToastUnlocked": "New badge unlocked!",
+  "profileBadgeSectionTitle": "Badges earned",
+  "profileBadgeUnlocked": "Unlocked",
+  "profileBadgeRequirement": "Requirement: {requirement}",
+  "@profileBadgeRequirement": {
+    "placeholders": {
+      "requirement": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBadgeFirstTitle": "First Step",
+  "profileBadgeFirstDescription": "Starter badge earned on your first sign-in/entry",
+  "profileBadgeFirstRequirement": "Automatically unlocked on app start",
+  "profileBadgeExplorerTitle": "Community Explorer",
+  "profileBadgeExplorerDescription": "Visited the community/activity feed for the first time",
+  "profileBadgeExplorerRequirement": "Visit the Community tab once",
+  "profileBadgeWriteFirstTitle": "First Author",
+  "profileBadgeWriteFirstDescription": "Started contributing with the first post",
+  "profileBadgeWriteFirstRequirement": "At least 1 post",
+  "profileBadgeCommentFirstTitle": "First Commenter",
+  "profileBadgeCommentFirstDescription": "Joined the conversation with the first comment/reply",
+  "profileBadgeCommentFirstRequirement": "At least 1 comment/reply",
+  "profileBadgeRadarOnTitle": "Radar ON",
+  "profileBadgeRadarOnDescription": "Started actively exploring market opportunities",
+  "profileBadgeRadarOnRequirement": "At least 3 activities",
+  "profileBadgeScanAssetsTitle": "Scanner",
+  "profileBadgeScanAssetsDescription": "Explored many assets in depth",
+  "profileBadgeScanAssetsRequirement": "At least 50 activities",
+  "profileBadgeTalkKingTitle": "Debater",
+  "profileBadgeTalkKingDescription": "Keeps discussions going with steady interactions",
+  "profileBadgeTalkKingRequirement": "Posts + comments at least 20",
+  "profileBadgeHeartKingTitle": "Most Liked",
+  "profileBadgeHeartKingDescription": "Received lots of positive reactions from other users",
+  "profileBadgeHeartKingRequirement": "Received likes at least 50",
+  "profileBadgeVisit7Title": "7-Day Streak",
+  "profileBadgeVisit7Description": "Built a consistent habit of returning",
+  "profileBadgeVisit7Requirement": "At least 7 activities (temporary rule)",
+  "profileBadgeLevel5Title": "Level 5",
+  "profileBadgeLevel5Description": "Passed an early growth milestone",
+  "profileBadgeLevel5Requirement": "Level 5 or above",
+  "profileBadgeLevel10Title": "Level 10",
+  "profileBadgeLevel10Description": "Reached a higher growth tier",
+  "profileBadgeLevel10Requirement": "Level 10 or above",
+  "profileBadgeMultiMarketTitle": "Multi-Market",
+  "profileBadgeMultiMarketDescription": "Explores opportunities across multiple markets",
+  "profileBadgeMultiMarketRequirement": "At least 12 activities",
   "profileDisplayNameHint": "How your name appears on posts",
   "profileDisplayNameInputPlaceholder": "Enter a display name",
   "profileCheckDisplayNameDuplicate": "Check availability",
@@ -222,6 +274,8 @@
   "homeInterestSurgeInfoTitle": "About today's interest surge",
   "homeInterestSurgeInfoBody": "This list is built with AI: it picks US and Korean stocks, crypto, and commodities that look attention-worthy from recent market context, news, and investor-interest signals, then estimates a relative 0–100 \"trend\" score for each.\n\nScores are processed and stored on our servers once per day; the app shows the latest snapshot.\n\nFor information only—not investment advice, and not a guarantee of returns.",
   "homeInterestSurgeInfoDismiss": "OK",
+  "homeProfileNudge": "Show who you are",
+  "homeCommunityNudge": "Check what others are saying in Community",
   "homeTrendScoreLabel": "Trend",
   "homeRankingShowMoreTooltip": "Show more",
   "homeInterestSurgeShowMoreWithAd": "Watch ad to show more",
@@ -310,6 +364,24 @@
   "assetDetailPriceChange": "Price change (feed)",
   "communitySortLatest": "Latest",
   "communitySortPopular": "Popular",
+  "communityTopTabPosts": "Posts",
+  "communityTopTabActivists": "Top contributors",
+  "communityActivistsEmpty": "No contributor data yet.",
+  "communityMe": "Me",
+  "communityActivistStats": "Score {score} · Posts {postCount} · Likes {likeCount}",
+  "@communityActivistStats": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "postCount": {
+        "type": "int"
+      },
+      "likeCount": {
+        "type": "int"
+      }
+    }
+  },
   "communityReplyCount": "Replies: {count}",
   "@communityReplyCount": {
     "placeholders": {

@@ -72,6 +72,10 @@ final class DopamineAuthService implements AuthServiceInterface {
     final rawPhoto = profile['photoUrl'] as String?;
     final photoUrl =
         rawPhoto != null && rawPhoto.trim().isNotEmpty ? rawPhoto.trim() : null;
+    final rawBio = profile['bio'] as String?;
+    final bio = rawBio != null && rawBio.trim().isNotEmpty
+        ? rawBio.trim()
+        : null;
     final rawSus = profile['suspendedUntil'] as String?;
     final suspendedUntil = rawSus != null && rawSus.trim().isNotEmpty
         ? DateTime.tryParse(rawSus.trim())
@@ -85,6 +89,7 @@ final class DopamineAuthService implements AuthServiceInterface {
       uid: uid,
       displayName: displayName,
       photoUrl: photoUrl,
+      bio: bio,
       suspendedUntil: suspendedUntil,
     );
   }

@@ -57,6 +57,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profilePhotoRemoved => '프로필 사진을 삭제했습니다.';
 
   @override
+  String get profilePhotoCompressFailed => '이미지 변환에 실패했어요. 다른 사진으로 시도해 주세요.';
+
+  @override
   String get profileEmail => '이메일';
 
   @override
@@ -97,6 +100,140 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get profileSaveDisplayName => '저장';
+
+  @override
+  String get profileBioLabel => '본인 소개 (선택)';
+
+  @override
+  String get profileBioSectionTitle => '소개';
+
+  @override
+  String get profileSaveBio => '소개 저장';
+
+  @override
+  String get profileBioSaved => '본인 소개를 저장했습니다.';
+
+  @override
+  String get profileBadgeToastUnlocked => '새 배지 획득!';
+
+  @override
+  String get profileBadgeSectionTitle => '획득 배지';
+
+  @override
+  String get profileBadgeUnlocked => '획득 완료';
+
+  @override
+  String profileBadgeRequirement(String requirement) {
+    return '획득 조건: $requirement';
+  }
+
+  @override
+  String get profileBadgeFirstTitle => '첫걸음';
+
+  @override
+  String get profileBadgeFirstDescription => '첫 로그인/첫 진입으로 획득하는 시작 배지';
+
+  @override
+  String get profileBadgeFirstRequirement => '앱 시작 시 자동 획득';
+
+  @override
+  String get profileBadgeExplorerTitle => '커뮤니티 탐험가';
+
+  @override
+  String get profileBadgeExplorerDescription => '커뮤니티/활동 피드를 처음 탐색한 사용자';
+
+  @override
+  String get profileBadgeExplorerRequirement => '커뮤니티 탭 1회 방문';
+
+  @override
+  String get profileBadgeWriteFirstTitle => '첫 작성자';
+
+  @override
+  String get profileBadgeWriteFirstDescription => '첫 게시글을 작성해 기여를 시작한 사용자';
+
+  @override
+  String get profileBadgeWriteFirstRequirement => '게시글 1개 이상';
+
+  @override
+  String get profileBadgeCommentFirstTitle => '첫 댓글러';
+
+  @override
+  String get profileBadgeCommentFirstDescription => '첫 댓글/답글로 대화에 참여한 사용자';
+
+  @override
+  String get profileBadgeCommentFirstRequirement => '댓글/답글 1개 이상';
+
+  @override
+  String get profileBadgeRadarOnTitle => '레이더 ON';
+
+  @override
+  String get profileBadgeRadarOnDescription => '시장 탐색 루프를 본격적으로 시작한 사용자';
+
+  @override
+  String get profileBadgeRadarOnRequirement => '활동 3회 이상';
+
+  @override
+  String get profileBadgeScanAssetsTitle => '스캐너';
+
+  @override
+  String get profileBadgeScanAssetsDescription => '다양한 자산을 깊게 탐색한 사용자';
+
+  @override
+  String get profileBadgeScanAssetsRequirement => '활동 50회 이상';
+
+  @override
+  String get profileBadgeTalkKingTitle => '토론가';
+
+  @override
+  String get profileBadgeTalkKingDescription => '의견 교환을 꾸준히 이어가는 토론형 사용자';
+
+  @override
+  String get profileBadgeTalkKingRequirement => '게시글+댓글 20회 이상';
+
+  @override
+  String get profileBadgeHeartKingTitle => '공감왕';
+
+  @override
+  String get profileBadgeHeartKingDescription => '다른 사용자에게 많은 공감을 받은 사용자';
+
+  @override
+  String get profileBadgeHeartKingRequirement => '받은 좋아요 50회 이상';
+
+  @override
+  String get profileBadgeVisit7Title => '연속 7일';
+
+  @override
+  String get profileBadgeVisit7Description => '꾸준한 방문 습관을 만든 사용자';
+
+  @override
+  String get profileBadgeVisit7Requirement => '활동 7회 이상(임시 기준)';
+
+  @override
+  String get profileBadgeLevel5Title => '레벨 5';
+
+  @override
+  String get profileBadgeLevel5Description => '초기 성장 구간을 돌파한 사용자';
+
+  @override
+  String get profileBadgeLevel5Requirement => '레벨 5 이상';
+
+  @override
+  String get profileBadgeLevel10Title => '레벨 10';
+
+  @override
+  String get profileBadgeLevel10Description => '상위 성장 구간에 도달한 사용자';
+
+  @override
+  String get profileBadgeLevel10Requirement => '레벨 10 이상';
+
+  @override
+  String get profileBadgeMultiMarketTitle => '멀티마켓';
+
+  @override
+  String get profileBadgeMultiMarketDescription => '다양한 시장을 오가며 탐색하는 사용자';
+
+  @override
+  String get profileBadgeMultiMarketRequirement => '활동 12회 이상';
 
   @override
   String get profileDisplayNameHint => '게시글에 표시되는 이름';
@@ -560,6 +697,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeInterestSurgeInfoDismiss => '확인';
 
   @override
+  String get homeProfileNudge => '당신이 누구인지 보여주세요';
+
+  @override
+  String get homeCommunityNudge => '커뮤니티에서 다른 사람 의견을 확인해보세요';
+
+  @override
   String get homeTrendScoreLabel => '트렌드';
 
   @override
@@ -766,6 +909,23 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get communitySortPopular => '인기순';
+
+  @override
+  String get communityTopTabPosts => '게시글';
+
+  @override
+  String get communityTopTabActivists => '활동가';
+
+  @override
+  String get communityActivistsEmpty => '아직 활동가 데이터가 없어요';
+
+  @override
+  String get communityMe => '나';
+
+  @override
+  String communityActivistStats(int score, int postCount, int likeCount) {
+    return '점수 $score · 글 $postCount · 좋아요 $likeCount';
+  }
 
   @override
   String communityReplyCount(int count) {

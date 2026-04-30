@@ -43,7 +43,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const int _maxBioLength = 400;
   final _nameController = TextEditingController();
+  final _bioController = TextEditingController();
   StreamSubscription<User?>? _authSub;
   HomeShellNavigation? _shellNav;
   AuthProvider<DopamineUser>? _authProvider;
@@ -57,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final Set<String> _activityLikeBusyIds = {};
 
   bool _savingName = false;
+  bool _savingBio = false;
 
   /// [TextEditingController.text] trim 값이 중복 확인을 통과한 경우에만 저장 허용.
   String? _verifiedTrimmedName;
@@ -94,6 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         auth.setUserProfile(existing);
         if (!mounted) return;
         _syncNameField(existing.displayName);
+        _syncBioField(existing.bio);
         return;
       }
 
@@ -113,6 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (!mounted) return;
           auth.setUserProfile(null);
           _nameController.clear();
+          _bioController.clear();
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             unawaited(_showDuplicateSocialNameDialog(firebaseName));
@@ -124,6 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       auth.setUserProfile(null);
       _nameController.clear();
+      _bioController.clear();
     } catch (e) {
       debugPrint('[Profile] sync profile from server failed: $e');
     } finally {
@@ -141,9 +147,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _onBadgeCatalogChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+    BadgeUnlockCenter.instance.addListener(_onBadgeCatalogChanged);
+    unawaited(BadgeUnlockCenter.instance.ensureInitialized());
     _nameController.addListener(_onNameDraftChanged);
     _authProvider = context.read<AuthProvider<DopamineUser>>();
     _authProvider!.addListener(_handleAuthProviderUpdate);
@@ -213,18 +226,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    BadgeUnlockCenter.instance.removeListener(_onBadgeCatalogChanged);
     _newBadgeToastTimer?.cancel();
     _nameController.removeListener(_onNameDraftChanged);
     _shellNav?.removeListener(_handleShellNav);
     _authSub?.cancel();
     _authProvider?.removeListener(_handleAuthProviderUpdate);
     _nameController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
   void _handleAuthProviderUpdate() {
     if (!mounted) return;
-    if (_savingName) return; // 사용자가 입력 중일 때는 덮어쓰지 않습니다.
+    if (_savingName || _savingBio) return;
 
     final p = _authProvider?.userProfile;
     if (p == null) return;
@@ -234,6 +249,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // provider 업데이트를 감지해서 컨트롤러를 다시 채웁니다. (빈 닉네임도 반영)
     final normalized = p.displayName.trim();
     final nameChanged = _nameController.text.trim() != normalized;
+    final bioNormalized = (p.bio ?? '').trim();
+    final bioChanged = _bioController.text.trim() != bioNormalized;
     // 닉네임만 바뀔 때만 setState 하면 photoUrl 만 갱신될 때 화면이 안 돌아가
     // (앱 재시작 후에는 정상) — 프로필 사진 표시 누락 원인.
     setState(() {
@@ -241,12 +258,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _nameController.text = normalized;
         _verifiedTrimmedName = null;
       }
+      if (bioChanged) {
+        _bioController.text = bioNormalized;
+      }
     });
   }
 
   void _syncNameField(String? displayName) {
     _nameController.text = (displayName ?? '').trim();
     _verifiedTrimmedName = null;
+  }
+
+  void _syncBioField(String? bio) {
+    _bioController.text = (bio ?? '').trim();
   }
 
   String _extFromPath(String path) {
@@ -282,11 +306,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       maxWidth: 1080,
       maxHeight: 1080,
       quality: 72,
-      compressFailureMessage: '이미지 변환에 실패했어요. 다른 사진으로 시도해 주세요.',
+      compressFailureMessage: l10n.profilePhotoCompressFailed,
     );
-    debugPrint(
-      '[profile-photo] picker result files=${files?.length ?? -1}',
-    );
+    debugPrint('[profile-photo] picker result files=${files?.length ?? -1}');
     if (files == null || files.isEmpty) return;
     final x = files.first;
     if (!mounted) return;
@@ -316,6 +338,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           uid: current?.uid ?? fb.uid,
           displayName: current?.displayName ?? (fb.displayName?.trim() ?? ''),
           photoUrl: url,
+          bio: current?.bio,
           suspendedUntil: current?.suspendedUntil,
         ),
       );
@@ -350,6 +373,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           uid: current?.uid ?? fb.uid,
           displayName: current?.displayName ?? (fb.displayName?.trim() ?? ''),
           photoUrl: null,
+          bio: current?.bio,
           suspendedUntil: current?.suspendedUntil,
         ),
       );
@@ -371,9 +395,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
 
-    _syncNameField(
-      context.read<AuthProvider<DopamineUser>>().userProfile?.displayName,
-    );
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    _syncNameField(auth.userProfile?.displayName);
+    _syncBioField(auth.userProfile?.bio);
 
     final token = await fb.getIdToken();
     if (token == null || token.isEmpty) return;
@@ -389,6 +413,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (me != null && mounted) {
         context.read<AuthProvider<DopamineUser>>().setUserProfile(me);
         _syncNameField(me.displayName);
+        _syncBioField(me.bio);
       }
       final results = await Future.wait<dynamic>([
         DopamineApi.fetchProfileStats(idToken: token),
@@ -645,6 +670,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           uid: fb.uid,
           displayName: text,
           photoUrl: current?.photoUrl,
+          bio: current?.bio,
           suspendedUntil: current?.suspendedUntil,
         ),
       );
@@ -666,6 +692,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _savingName = false);
+    }
+  }
+
+  Future<void> _saveBio(AppLocalizations l10n) async {
+    final draft = _bioController.text.trim();
+    if (draft.length > _maxBioLength) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+      return;
+    }
+
+    final bad = UgcBannedWords.firstMatch(draft);
+    if (bad != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.ugcBannedWordsMessage(bad))));
+      return;
+    }
+
+    final fb = FirebaseAuth.instance.currentUser;
+    if (fb == null) return;
+
+    final auth = context.read<AuthProvider<DopamineUser>>();
+    final committed = (auth.userProfile?.bio ?? '').trim();
+    final unchanged = draft == committed;
+    if (unchanged) return;
+
+    setState(() => _savingBio = true);
+    try {
+      final token = await fb.getIdToken();
+      if (token == null || token.isEmpty) return;
+
+      await DopamineApi.patchProfileBio(
+        idToken: token,
+        bio: draft.isEmpty ? null : draft,
+      );
+      if (!mounted) return;
+      final current = auth.userProfile;
+      final nextBio = draft.isEmpty ? null : draft;
+      auth.setUserProfile(
+        DopamineUser(
+          uid: fb.uid,
+          displayName: current?.displayName ?? '',
+          photoUrl: current?.photoUrl,
+          bio: nextBio,
+          suspendedUntil: current?.suspendedUntil,
+        ),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.profileBioSaved)));
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } finally {
+      if (mounted) setState(() => _savingBio = false);
     }
   }
 
@@ -1174,7 +1259,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool profileSaved,
     String? profilePhotoUrl,
     String locale,
-    String committedDisplayNameTrimmed, {
+    String committedDisplayNameTrimmed,
+    String committedBioTrimmed, {
     required bool showSuspensionBanner,
   }) {
     return NestedScrollView(
@@ -1368,6 +1454,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       );
                     },
+                  ),
+                  const SizedBox(height: 22),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: DopamineTheme.neonGreen.withValues(alpha: 0.24),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                      child: Builder(
+                        builder: (ctx) {
+                          final draftBio = _bioController.text.trim();
+                          final bioDirty = draftBio != committedBioTrimmed;
+                          final bioAction = _savingBio
+                              ? null
+                              : bioDirty
+                              ? () => _saveBio(l10n)
+                              : null;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 18,
+                                      color: DopamineTheme.neonGreen.withValues(
+                                        alpha: 0.62,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      l10n.profileBioLabel,
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
+                                            color: DopamineTheme.neonGreen
+                                                .withValues(alpha: 0.92),
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.15,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _bioController,
+                                onChanged: (_) => setState(() {}),
+                                maxLength: _maxBioLength,
+                                maxLines: 5,
+                                minLines: 3,
+                                onTapOutside: (_) {
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                },
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: DopamineTheme.textPrimary,
+                                  height: 1.38,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: '',
+                                  filled: true,
+                                  fillColor: Colors.black.withValues(
+                                    alpha: 0.28,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.10,
+                                      ),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: DopamineTheme.neonGreen.withValues(
+                                        alpha: 0.50,
+                                      ),
+                                    ),
+                                  ),
+                                  counterText: '',
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.fromLTRB(
+                                    14,
+                                    14,
+                                    14,
+                                    14,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '${_bioController.text.characters.length}/$_maxBioLength',
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: DopamineTheme.textSecondary
+                                                .withValues(alpha: 0.9),
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                    ),
+                                    const Spacer(),
+                                    FilledButton(
+                                      onPressed: bioAction,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor:
+                                            DopamineTheme.neonGreen,
+                                        foregroundColor: const Color(
+                                          0xFF0A0A0A,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 18,
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                      child: _savingBio
+                                          ? const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Color(0xFF0A0A0A),
+                                              ),
+                                            )
+                                          : Text(l10n.profileSaveBio),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (ProfileStatsStore.instance.stats == null && _loading)
@@ -1763,10 +1996,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   int get _postCount => ProfileStatsStore.instance.stats?.postsCount ?? 0;
 
-  int get _replyCount =>
-      _activity
-          .where((e) => e.kind == 'my_reply' || e.kind == 'reply_on_post')
-          .length;
+  int get _replyCount => _activity
+      .where((e) => e.kind == 'my_reply' || e.kind == 'reply_on_post')
+      .length;
 
   int get _likeReceivedCount =>
       _activity.where((e) => e.kind == 'like_received').length;
@@ -1775,7 +2007,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool get _communityExplored => _shellNav?.hasVisitedCommunity ?? false;
 
   int get _pseudoLevel {
-    final score = (_postCount * 12) + (_replyCount * 6) + (_likeReceivedCount * 2);
+    final score =
+        (_postCount * 12) + (_replyCount * 6) + (_likeReceivedCount * 2);
     if (score >= 220) return 10;
     if (score >= 80) return 5;
     return 1;
@@ -1784,7 +2017,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _syncBadgeUnlockProgress({required bool allowAnimation}) {
     final unlockedNow = _buildBadgeVms().where((b) => b.unlocked).toList();
     final unlockedKeysNow = unlockedNow.map((b) => b.key).toSet();
-    final newlyUnlockedKeys = unlockedKeysNow.difference(_seenUnlockedBadgeKeys);
+    final newlyUnlockedKeys = unlockedKeysNow.difference(
+      _seenUnlockedBadgeKeys,
+    );
     _seenUnlockedBadgeKeys
       ..clear()
       ..addAll(unlockedKeysNow);
@@ -1808,6 +2043,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildNewBadgeToast(ThemeData theme) {
     final badge = _newBadgeToast;
     if (badge == null) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
     return IgnorePointer(
       ignoring: false,
       child: GestureDetector(
@@ -1833,7 +2069,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
+                child: _buildBadgeImage(
                   badge.assetPath,
                   width: 44,
                   height: 44,
@@ -1847,7 +2083,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '새 뱃지 획득!',
+                      l10n.profileBadgeToastUnlocked,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: DopamineTheme.neonGreen,
                         fontWeight: FontWeight.w800,
@@ -1879,116 +2115,164 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildBadgeImage(
+    String path, {
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+  }) {
+    final w = width;
+    final h = height;
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(
+        path,
+        width: w,
+        height: h,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: w,
+          height: h,
+          color: Colors.white.withValues(alpha: 0.06),
+          alignment: Alignment.center,
+          child: const Icon(Icons.broken_image_rounded, color: Colors.white54),
+        ),
+      );
+    }
+    return Container(
+      width: w,
+      height: h,
+      color: Colors.white.withValues(alpha: 0.06),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.image_outlined,
+        color: Colors.white.withValues(alpha: 0.35),
+        size: ((w ?? h ?? 28) > 120) ? 48 : 22,
+      ),
+    );
+  }
+
   List<_ProfileBadgeVm> _buildBadgeVms() {
+    final l10n = AppLocalizations.of(context)!;
+    String imageFor(String key) => BadgeUnlockCenter.instance.imageFor(key);
     final talked = _postCount + _replyCount;
     return [
       _ProfileBadgeVm(
         key: 'first',
-        label: '첫걸음',
-        assetPath: 'assets/badges/badge_first.jpg',
+        label: l10n.profileBadgeFirstTitle,
+        assetPath: imageFor('first'),
         unlocked: BadgeUnlockCenter.instance.isUnlocked('first') || true,
-        description: '첫 로그인/첫 진입으로 획득하는 시작 배지',
-        requirementText: '앱 시작 시 자동 획득',
+        description: l10n.profileBadgeFirstDescription,
+        requirementText: l10n.profileBadgeFirstRequirement,
       ),
       _ProfileBadgeVm(
         key: 'explorer',
-        label: '커뮤니티 탐험가',
-        assetPath: 'assets/badges/badge_explorer.jpg',
-        unlocked: BadgeUnlockCenter.instance.isUnlocked('explorer') ||
+        label: l10n.profileBadgeExplorerTitle,
+        assetPath: imageFor('explorer'),
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('explorer') ||
             _communityExplored ||
             _activityCount >= 1,
-        description: '커뮤니티/활동 피드를 처음 탐색한 사용자',
-        requirementText: '커뮤니티 탭 1회 방문',
+        description: l10n.profileBadgeExplorerDescription,
+        requirementText: l10n.profileBadgeExplorerRequirement,
       ),
       _ProfileBadgeVm(
         key: 'write_first',
-        label: '첫 작성자',
-        assetPath: 'assets/badges/badge_write_first.jpg',
+        label: l10n.profileBadgeWriteFirstTitle,
+        assetPath: imageFor('write_first'),
         unlocked:
-            BadgeUnlockCenter.instance.isUnlocked('write_first') || _postCount >= 1,
-        description: '첫 게시글을 작성해 기여를 시작한 사용자',
-        requirementText: '게시글 1개 이상',
+            BadgeUnlockCenter.instance.isUnlocked('write_first') ||
+            _postCount >= 1,
+        description: l10n.profileBadgeWriteFirstDescription,
+        requirementText: l10n.profileBadgeWriteFirstRequirement,
       ),
       _ProfileBadgeVm(
         key: 'comment_first',
-        label: '첫 댓글러',
-        assetPath: 'assets/badges/badge_comment_first.jpg',
-        unlocked: BadgeUnlockCenter.instance.isUnlocked('comment_first') ||
+        label: l10n.profileBadgeCommentFirstTitle,
+        assetPath: imageFor('comment_first'),
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('comment_first') ||
             _replyCount >= 1,
-        description: '첫 댓글/답글로 대화에 참여한 사용자',
-        requirementText: '댓글/답글 1개 이상',
+        description: l10n.profileBadgeCommentFirstDescription,
+        requirementText: l10n.profileBadgeCommentFirstRequirement,
       ),
       _ProfileBadgeVm(
         key: 'radar_on',
-        label: '레이더 ON',
-        assetPath: 'assets/badges/badge_rader_on.jpg',
+        label: l10n.profileBadgeRadarOnTitle,
+        assetPath: imageFor('radar_on'),
         unlocked:
-            BadgeUnlockCenter.instance.isUnlocked('radar_on') || _activityCount >= 3,
-        description: '시장 탐색 루프를 본격적으로 시작한 사용자',
-        requirementText: '활동 3회 이상',
+            BadgeUnlockCenter.instance.isUnlocked('radar_on') ||
+            _activityCount >= 3,
+        description: l10n.profileBadgeRadarOnDescription,
+        requirementText: l10n.profileBadgeRadarOnRequirement,
       ),
       _ProfileBadgeVm(
         key: 'scan_assets',
-        label: '스캐너',
-        assetPath: 'assets/badges/badge_scan_assets.jpg',
-        unlocked: BadgeUnlockCenter.instance.isUnlocked('scan_assets') ||
+        label: l10n.profileBadgeScanAssetsTitle,
+        assetPath: imageFor('scan_assets'),
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('scan_assets') ||
             _activityCount >= 50,
-        description: '다양한 자산을 깊게 탐색한 사용자',
-        requirementText: '활동 50회 이상',
+        description: l10n.profileBadgeScanAssetsDescription,
+        requirementText: l10n.profileBadgeScanAssetsRequirement,
       ),
       _ProfileBadgeVm(
         key: 'talk_king',
-        label: '토론가',
-        assetPath: 'assets/badges/badge_talk_king.jpg',
+        label: l10n.profileBadgeTalkKingTitle,
+        assetPath: imageFor('talk_king'),
         unlocked:
             BadgeUnlockCenter.instance.isUnlocked('talk_king') || talked >= 20,
-        description: '의견 교환을 꾸준히 이어가는 토론형 사용자',
-        requirementText: '게시글+댓글 20회 이상',
+        description: l10n.profileBadgeTalkKingDescription,
+        requirementText: l10n.profileBadgeTalkKingRequirement,
       ),
       _ProfileBadgeVm(
         key: 'heart_king',
-        label: '공감왕',
-        assetPath: 'assets/badges/badge_hart_king.jpg',
-        unlocked: BadgeUnlockCenter.instance.isUnlocked('heart_king') ||
+        label: l10n.profileBadgeHeartKingTitle,
+        assetPath: imageFor('heart_king'),
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('heart_king') ||
             _likeReceivedCount >= 50,
-        description: '다른 사용자에게 많은 공감을 받은 사용자',
-        requirementText: '받은 좋아요 50회 이상',
+        description: l10n.profileBadgeHeartKingDescription,
+        requirementText: l10n.profileBadgeHeartKingRequirement,
       ),
       _ProfileBadgeVm(
         key: 'visit_7',
-        label: '연속 7일',
-        assetPath: 'assets/badges/badge_visit_7.jpg',
+        label: l10n.profileBadgeVisit7Title,
+        assetPath: imageFor('visit_7'),
         unlocked:
-            BadgeUnlockCenter.instance.isUnlocked('visit_7') || _activityCount >= 7,
-        description: '꾸준한 방문 습관을 만든 사용자',
-        requirementText: '활동 7회 이상(임시 기준)',
+            BadgeUnlockCenter.instance.isUnlocked('visit_7') ||
+            _activityCount >= 7,
+        description: l10n.profileBadgeVisit7Description,
+        requirementText: l10n.profileBadgeVisit7Requirement,
       ),
       _ProfileBadgeVm(
         key: 'level_5',
-        label: '레벨 5',
-        assetPath: 'assets/badges/badge_5_level.jpg',
+        label: l10n.profileBadgeLevel5Title,
+        assetPath: imageFor('level_5'),
         unlocked:
-            BadgeUnlockCenter.instance.isUnlocked('level_5') || _pseudoLevel >= 5,
-        description: '초기 성장 구간을 돌파한 사용자',
-        requirementText: '레벨 5 이상',
+            BadgeUnlockCenter.instance.isUnlocked('level_5') ||
+            _pseudoLevel >= 5,
+        description: l10n.profileBadgeLevel5Description,
+        requirementText: l10n.profileBadgeLevel5Requirement,
       ),
       _ProfileBadgeVm(
         key: 'level_10',
-        label: '레벨 10',
-        assetPath: 'assets/badges/badge_level_10.jpg',
+        label: l10n.profileBadgeLevel10Title,
+        assetPath: imageFor('level_10'),
         unlocked:
-            BadgeUnlockCenter.instance.isUnlocked('level_10') || _pseudoLevel >= 10,
-        description: '상위 성장 구간에 도달한 사용자',
-        requirementText: '레벨 10 이상',
+            BadgeUnlockCenter.instance.isUnlocked('level_10') ||
+            _pseudoLevel >= 10,
+        description: l10n.profileBadgeLevel10Description,
+        requirementText: l10n.profileBadgeLevel10Requirement,
       ),
       _ProfileBadgeVm(
         key: 'multi_market',
-        label: '멀티마켓',
-        assetPath: 'assets/badges/badge_multi_market.jpg',
-        unlocked: BadgeUnlockCenter.instance.isUnlocked('multi_market') ||
+        label: l10n.profileBadgeMultiMarketTitle,
+        assetPath: imageFor('multi_market'),
+        unlocked:
+            BadgeUnlockCenter.instance.isUnlocked('multi_market') ||
             _activityCount >= 12,
-        description: '다양한 시장을 오가며 탐색하는 사용자',
-        requirementText: '활동 12회 이상',
+        description: l10n.profileBadgeMultiMarketDescription,
+        requirementText: l10n.profileBadgeMultiMarketRequirement,
       ),
     ];
   }
@@ -1996,13 +2280,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _showBadgeDetail(_ProfileBadgeVm badge) async {
     if (!mounted) return;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.7),
       builder: (ctx) {
         return Dialog(
           backgroundColor: const Color(0xFF121321),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
             child: Column(
@@ -2014,9 +2301,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Expanded(
                       child: Text(
                         badge.label,
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleLarge?.copyWith(
                           color: DopamineTheme.textPrimary,
                           fontWeight: FontWeight.w800,
+                          fontSize: 22,
                         ),
                       ),
                     ),
@@ -2031,30 +2319,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Center(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Image.asset(
-                      badge.assetPath,
-                      width: 220,
-                      height: 220,
-                      fit: BoxFit.cover,
-                      color: badge.unlocked
-                          ? null
-                          : Colors.black.withValues(alpha: 0.55),
-                      colorBlendMode:
-                          badge.unlocked ? null : BlendMode.srcATop,
+                    child: ColorFiltered(
+                      colorFilter: badge.unlocked
+                          ? const ColorFilter.mode(
+                              Colors.transparent,
+                              BlendMode.dst,
+                            )
+                          : ColorFilter.mode(
+                              Colors.black.withValues(alpha: 0.55),
+                              BlendMode.srcATop,
+                            ),
+                      child: _buildBadgeImage(
+                        badge.assetPath,
+                        width: 220,
+                        height: 220,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 Text(
                   badge.description,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     color: DopamineTheme.textSecondary,
-                    height: 1.4,
+                    fontSize: 16,
+                    height: 1.45,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     color: Colors.white.withValues(alpha: 0.06),
@@ -2065,21 +2363,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         badge.unlocked
                             ? Icons.check_circle_rounded
                             : Icons.lock_rounded,
-                        size: 16,
+                        size: 20,
                         color: badge.unlocked
                             ? DopamineTheme.neonGreen
                             : DopamineTheme.textSecondary,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           badge.unlocked
-                              ? '획득 완료'
-                              : '획득 조건: ${badge.requirementText}',
-                          style: theme.textTheme.labelMedium?.copyWith(
+                              ? l10n.profileBadgeUnlocked
+                              : l10n.profileBadgeRequirement(badge.requirementText),
+                          style: theme.textTheme.titleSmall?.copyWith(
                             color: badge.unlocked
                                 ? DopamineTheme.neonGreen
                                 : DopamineTheme.textSecondary,
+                            fontSize: 15,
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -2094,7 +2395,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _showBadgesBottomSheet(BuildContext context, ThemeData theme) async {
+  Future<void> _showBadgesBottomSheet(
+    BuildContext context,
+    ThemeData theme,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
     final badges = _buildBadgeVms();
     final unlocked = badges.where((b) => b.unlocked).length;
     await showModalBottomSheet<void>(
@@ -2129,7 +2434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   children: [
                     Text(
-                      '획득 뱃지',
+                      l10n.profileBadgeSectionTitle,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: DopamineTheme.neonGreen,
                         fontWeight: FontWeight.w800,
@@ -2150,12 +2455,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: GridView.builder(
                     shrinkWrap: true,
                     itemCount: badges.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 0.78,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 0.70,
+                        ),
                     itemBuilder: (_, i) {
                       final b = badges[i];
                       return GestureDetector(
@@ -2168,18 +2474,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Stack(
                                   fit: StackFit.expand,
                                   children: [
-                                    Image.asset(
-                                      b.assetPath,
-                                      fit: BoxFit.cover,
-                                      color: b.unlocked
-                                          ? null
-                                          : Colors.black.withValues(alpha: 0.55),
-                                      colorBlendMode:
-                                          b.unlocked ? null : BlendMode.srcATop,
+                                    ColorFiltered(
+                                      colorFilter: b.unlocked
+                                          ? const ColorFilter.mode(
+                                              Colors.transparent,
+                                              BlendMode.dst,
+                                            )
+                                          : ColorFilter.mode(
+                                              Colors.black.withValues(
+                                                alpha: 0.55,
+                                              ),
+                                              BlendMode.srcATop,
+                                            ),
+                                      child: _buildBadgeImage(
+                                        b.assetPath,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                     if (!b.unlocked)
                                       Container(
-                                        color: Colors.black.withValues(alpha: 0.35),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.35,
+                                        ),
                                         child: const Center(
                                           child: Icon(
                                             Icons.lock_rounded,
@@ -2192,17 +2508,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
                               b.label,
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: theme.textTheme.labelMedium?.copyWith(
                                 color: b.unlocked
                                     ? DopamineTheme.textPrimary
                                     : DopamineTheme.textSecondary,
-                                fontSize: 10,
+                                fontSize: 13,
+                                height: 1.2,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -2237,8 +2555,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? ListenableBuilder(
                     listenable: ProfileStatsStore.instance,
                     builder: (context, _) {
-                      final committedName = (auth.userProfile?.displayName ?? '')
-                          .trim();
+                      final committedName =
+                          (auth.userProfile?.displayName ?? '').trim();
+                      final committedBio = (auth.userProfile?.bio ?? '').trim();
                       // displayName 과 같이 Provider 에서 매번 읽는다. 상위 build 의
                       // profilePhotoUrl 스냅샷을 넘기면 StatsStore 알림만 올 때
                       // 부모가 안 돌아 아바타 URL 이 갱신되지 않을 수 있다.
@@ -2252,6 +2571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         livePhotoUrl,
                         locale,
                         committedName,
+                        committedBio,
                         showSuspensionBanner: isDopamineUserSuspended(
                           auth.userProfile,
                         ),
@@ -2421,7 +2741,7 @@ class _AccountProfilePhotoCard extends StatelessWidget {
             right: 0,
             child: _ProfilePhotoIconAction(
               icon: Icons.emoji_events_rounded,
-              tooltip: '획득 뱃지',
+              tooltip: AppLocalizations.of(context)!.profileBadgeSectionTitle,
               foreground: const Color(0xFFFFC857),
               background: const Color(0xFFFFC857).withValues(alpha: 0.14),
               borderColor: const Color(0xFFFFC857).withValues(alpha: 0.35),
@@ -2429,99 +2749,107 @@ class _AccountProfilePhotoCard extends StatelessWidget {
             ),
           ),
           Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                GestureDetector(
-                  onTap: uploadingPhoto ? null : onPickPhoto,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: DopamineTheme.neonGreen.withValues(
-                            alpha: 0.12,
-                          ),
-                          blurRadius: 20,
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            borderGlow,
-                            DopamineTheme.neonGreen.withValues(alpha: 0.12),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    GestureDetector(
+                      onTap: uploadingPhoto ? null : onPickPhoto,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: DopamineTheme.neonGreen.withValues(
+                                alpha: 0.12,
+                              ),
+                              blurRadius: 20,
+                              spreadRadius: 0,
+                            ),
                           ],
                         ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 44,
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        child: ClipOval(
-                          child: _profileAvatarChild(normalizedPhotoUrl),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                if (uploadingPhoto)
-                  Positioned.fill(
-                    child: Container(
-                      margin: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: SizedBox(
-                          width: 30,
-                          height: 30,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: DopamineTheme.neonGreen,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                borderGlow,
+                                DopamineTheme.neonGreen.withValues(alpha: 0.12),
+                              ],
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 44,
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.1,
+                            ),
+                            child: ClipOval(
+                              child: _profileAvatarChild(normalizedPhotoUrl),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _ProfilePhotoIconAction(
-                icon: Icons.add_photo_alternate_rounded,
-                tooltip: l10n.profilePhotoTitle,
-                foreground: DopamineTheme.neonGreen,
-                background: DopamineTheme.neonGreen.withValues(alpha: 0.14),
-                borderColor: DopamineTheme.neonGreen.withValues(alpha: 0.35),
-                onPressed: uploadingPhoto ? null : onPickPhoto,
-              ),
-              if (hasPhoto) ...[
-                const SizedBox(width: 14),
-                _ProfilePhotoIconAction(
-                  icon: Icons.delete_outline_rounded,
-                  tooltip: l10n.profilePhotoRemove,
-                  foreground: DopamineTheme.accentRed,
-                  background: DopamineTheme.accentRed.withValues(alpha: 0.12),
-                  borderColor: DopamineTheme.accentRed.withValues(alpha: 0.35),
-                  onPressed: uploadingPhoto ? null : onRemovePhoto,
+                    if (uploadingPhoto)
+                      Positioned.fill(
+                        child: Container(
+                          margin: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 30,
+                              height: 30,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: DopamineTheme.neonGreen,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _ProfilePhotoIconAction(
+                    icon: Icons.add_photo_alternate_rounded,
+                    tooltip: l10n.profilePhotoTitle,
+                    foreground: DopamineTheme.neonGreen,
+                    background: DopamineTheme.neonGreen.withValues(alpha: 0.14),
+                    borderColor: DopamineTheme.neonGreen.withValues(
+                      alpha: 0.35,
+                    ),
+                    onPressed: uploadingPhoto ? null : onPickPhoto,
+                  ),
+                  if (hasPhoto) ...[
+                    const SizedBox(width: 14),
+                    _ProfilePhotoIconAction(
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: l10n.profilePhotoRemove,
+                      foreground: DopamineTheme.accentRed,
+                      background: DopamineTheme.accentRed.withValues(
+                        alpha: 0.12,
+                      ),
+                      borderColor: DopamineTheme.accentRed.withValues(
+                        alpha: 0.35,
+                      ),
+                      onPressed: uploadingPhoto ? null : onRemovePhoto,
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
-        ],
-      ),
         ],
       ),
     );

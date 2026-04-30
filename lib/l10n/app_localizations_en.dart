@@ -58,6 +58,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePhotoRemoved => 'Profile photo removed.';
 
   @override
+  String get profilePhotoCompressFailed =>
+      'Image conversion failed. Try a different photo.';
+
+  @override
   String get profileEmail => 'Email';
 
   @override
@@ -100,6 +104,153 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileSaveDisplayName => 'Save';
+
+  @override
+  String get profileBioLabel => 'Bio (optional)';
+
+  @override
+  String get profileBioSectionTitle => 'About';
+
+  @override
+  String get profileSaveBio => 'Save bio';
+
+  @override
+  String get profileBioSaved => 'Bio saved.';
+
+  @override
+  String get profileBadgeToastUnlocked => 'New badge unlocked!';
+
+  @override
+  String get profileBadgeSectionTitle => 'Badges earned';
+
+  @override
+  String get profileBadgeUnlocked => 'Unlocked';
+
+  @override
+  String profileBadgeRequirement(String requirement) {
+    return 'Requirement: $requirement';
+  }
+
+  @override
+  String get profileBadgeFirstTitle => 'First Step';
+
+  @override
+  String get profileBadgeFirstDescription =>
+      'Starter badge earned on your first sign-in/entry';
+
+  @override
+  String get profileBadgeFirstRequirement =>
+      'Automatically unlocked on app start';
+
+  @override
+  String get profileBadgeExplorerTitle => 'Community Explorer';
+
+  @override
+  String get profileBadgeExplorerDescription =>
+      'Visited the community/activity feed for the first time';
+
+  @override
+  String get profileBadgeExplorerRequirement => 'Visit the Community tab once';
+
+  @override
+  String get profileBadgeWriteFirstTitle => 'First Author';
+
+  @override
+  String get profileBadgeWriteFirstDescription =>
+      'Started contributing with the first post';
+
+  @override
+  String get profileBadgeWriteFirstRequirement => 'At least 1 post';
+
+  @override
+  String get profileBadgeCommentFirstTitle => 'First Commenter';
+
+  @override
+  String get profileBadgeCommentFirstDescription =>
+      'Joined the conversation with the first comment/reply';
+
+  @override
+  String get profileBadgeCommentFirstRequirement => 'At least 1 comment/reply';
+
+  @override
+  String get profileBadgeRadarOnTitle => 'Radar ON';
+
+  @override
+  String get profileBadgeRadarOnDescription =>
+      'Started actively exploring market opportunities';
+
+  @override
+  String get profileBadgeRadarOnRequirement => 'At least 3 activities';
+
+  @override
+  String get profileBadgeScanAssetsTitle => 'Scanner';
+
+  @override
+  String get profileBadgeScanAssetsDescription =>
+      'Explored many assets in depth';
+
+  @override
+  String get profileBadgeScanAssetsRequirement => 'At least 50 activities';
+
+  @override
+  String get profileBadgeTalkKingTitle => 'Debater';
+
+  @override
+  String get profileBadgeTalkKingDescription =>
+      'Keeps discussions going with steady interactions';
+
+  @override
+  String get profileBadgeTalkKingRequirement => 'Posts + comments at least 20';
+
+  @override
+  String get profileBadgeHeartKingTitle => 'Most Liked';
+
+  @override
+  String get profileBadgeHeartKingDescription =>
+      'Received lots of positive reactions from other users';
+
+  @override
+  String get profileBadgeHeartKingRequirement => 'Received likes at least 50';
+
+  @override
+  String get profileBadgeVisit7Title => '7-Day Streak';
+
+  @override
+  String get profileBadgeVisit7Description =>
+      'Built a consistent habit of returning';
+
+  @override
+  String get profileBadgeVisit7Requirement =>
+      'At least 7 activities (temporary rule)';
+
+  @override
+  String get profileBadgeLevel5Title => 'Level 5';
+
+  @override
+  String get profileBadgeLevel5Description =>
+      'Passed an early growth milestone';
+
+  @override
+  String get profileBadgeLevel5Requirement => 'Level 5 or above';
+
+  @override
+  String get profileBadgeLevel10Title => 'Level 10';
+
+  @override
+  String get profileBadgeLevel10Description => 'Reached a higher growth tier';
+
+  @override
+  String get profileBadgeLevel10Requirement => 'Level 10 or above';
+
+  @override
+  String get profileBadgeMultiMarketTitle => 'Multi-Market';
+
+  @override
+  String get profileBadgeMultiMarketDescription =>
+      'Explores opportunities across multiple markets';
+
+  @override
+  String get profileBadgeMultiMarketRequirement => 'At least 12 activities';
 
   @override
   String get profileDisplayNameHint => 'How your name appears on posts';
@@ -567,6 +718,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeInterestSurgeInfoDismiss => 'OK';
 
   @override
+  String get homeProfileNudge => 'Show who you are';
+
+  @override
+  String get homeCommunityNudge => 'Check what others are saying in Community';
+
+  @override
   String get homeTrendScoreLabel => 'Trend';
 
   @override
@@ -774,6 +931,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get communitySortPopular => 'Popular';
+
+  @override
+  String get communityTopTabPosts => 'Posts';
+
+  @override
+  String get communityTopTabActivists => 'Top contributors';
+
+  @override
+  String get communityActivistsEmpty => 'No contributor data yet.';
+
+  @override
+  String get communityMe => 'Me';
+
+  @override
+  String communityActivistStats(int score, int postCount, int likeCount) {
+    return 'Score $score · Posts $postCount · Likes $likeCount';
+  }
 
   @override
   String communityReplyCount(int count) {
