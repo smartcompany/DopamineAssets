@@ -134,7 +134,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
     try {
       final result = await DopamineApi.fetchCommunityPostsPage(
-        sort: 'latest',
+        sort: _sort,
         page: 0,
         limit: _pageSize,
         symbol: _symbolFilterActive ? _symbolFilterSymbol : null,
@@ -173,7 +173,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
     try {
       final result = await DopamineApi.fetchCommunityPostsPage(
-        sort: 'latest',
+        sort: _sort,
         page: _page + 1,
         limit: _pageSize,
         symbol: _symbolFilterActive ? _symbolFilterSymbol : null,
@@ -325,7 +325,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  Future<void> _toggleLike(int index, CommunityPost p) async {
+  Future<void> _toggleLike(CommunityPost p) async {
     final l10n = AppLocalizations.of(context)!;
     if (_likeBusyIds.contains(p.id)) return;
     if (!await ensureCommunityIdentity(context, showLoginHintSnack: true)) {
@@ -343,7 +343,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (!mounted) return;
       setState(() {
         final next = List<CommunityPost>.from(_posts);
-        next[index] = p.copyWith(likeCount: r.likeCount, likedByMe: r.liked);
+        final index = next.indexWhere((post) => post.id == p.id);
+        if (index < 0) return;
+        next[index] = next[index].copyWith(
+          likeCount: r.likeCount,
+          likedByMe: r.liked,
+        );
         _posts = next;
       });
       unawaited(
@@ -380,8 +385,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (next == _sort) return;
     setState(() {
       _sort = next;
-      _posts = _applySort(_posts, next);
     });
+    unawaited(_scheduleFetch());
   }
 
   void _handleNav() {
@@ -1079,7 +1084,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           myUid: myUid,
                           likeInProgress: _likeBusyIds.contains(p.id),
                           onOpenAuthorProfile: _openAuthorProfile,
-                          onToggleLike: (post) => _toggleLike(i, post),
+                          onToggleLike: _toggleLike,
                           onOpenPostDetail: _openPostDetail,
                           onEditOwnPost: _openEditCompose,
                           onDeleteOwnPost: _deleteCommunityPost,
