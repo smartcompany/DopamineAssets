@@ -687,6 +687,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (uid == null || uid.isEmpty) return;
 
     try {
+      final fb = FirebaseAuth.instance.currentUser;
+      if (_shouldRequireRecentLoginBeforeDelete(fb)) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.profileRequiresRecentLogin)),
+        );
+        return;
+      }
+
       final token = await auth.getIdToken();
       if (token == null || token.isEmpty) {
         throw StateError('invalid-id-token');
@@ -741,6 +749,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!context.mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
     }
+  }
+
+  bool _shouldRequireRecentLoginBeforeDelete(User? user) {
+    final lastSignIn = user?.metadata.lastSignInTime;
+    if (lastSignIn == null) return true;
+
+    // Firebase rejects stale credentials for account deletion. Keep this guard
+    // ahead of backend data deletion so stale sessions cannot partially delete.
+    final age = DateTime.now().toUtc().difference(lastSignIn.toUtc());
+    return age > const Duration(minutes: 2);
   }
 
   Future<void> _logout(BuildContext context) async {
