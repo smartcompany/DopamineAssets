@@ -16,6 +16,12 @@ val keystoreProperties = Properties().apply {
         load(keystoreFile.inputStream())
     }
 }
+val hasReleaseSigningConfig = listOf(
+    "storeFile",
+    "storePassword",
+    "keyAlias",
+    "keyPassword",
+).all { key -> keystoreProperties[key]?.toString()?.isNotBlank() == true }
 
 android {
     namespace = "com.smartcompany.dopamineAssets"
@@ -40,18 +46,23 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = keystoreProperties["storeFile"]?.let { file(it.toString()) }
-            storePassword = keystoreProperties["storePassword"]?.toString()
-            keyAlias = keystoreProperties["keyAlias"]?.toString()
-            keyPassword = keystoreProperties["keyPassword"]?.toString()
+        if (hasReleaseSigningConfig) {
+            create("release") {
+                storeFile = file(keystoreProperties["storeFile"].toString())
+                storePassword = keystoreProperties["storePassword"].toString()
+                keyAlias = keystoreProperties["keyAlias"].toString()
+                keyPassword = keystoreProperties["keyPassword"].toString()
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseSigningConfig) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
 
             isMinifyEnabled = false
             isShrinkResources = false
