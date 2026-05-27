@@ -9,6 +9,7 @@ import '../../core/analytics/app_analytics.dart';
 import '../../core/config/api_config.dart';
 import '../../core/news_ai_digest.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/network/safe_web_view_url.dart';
 import '../../core/translation/news_title_translator.dart';
 import '../../data/models/asset_news.dart';
 import '../../l10n/app_localizations.dart';
@@ -541,7 +542,7 @@ class _NewsTile extends StatelessWidget {
         child: InkWell(
           onTap: () async {
             final u = Uri.tryParse(item.url);
-            if (u == null) {
+            if (u == null || !isSafeWebViewUrl(u)) {
               onOpenFailed();
               return;
             }
