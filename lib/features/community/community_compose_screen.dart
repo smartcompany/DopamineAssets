@@ -44,14 +44,39 @@ abstract final class _CommunityComposeBodyFieldText {
 
 const String communityComposeNoSymbolSentinel = "__none__";
 
+bool isConcreteCommunityPostTarget({
+  required String? symbol,
+  required String? assetClass,
+}) {
+  final normalizedSymbol = symbol?.trim();
+  final normalizedAssetClass = assetClass?.trim();
+  return normalizedSymbol != null &&
+      normalizedSymbol.isNotEmpty &&
+      normalizedSymbol != communityComposeNoSymbolSentinel &&
+      normalizedAssetClass != null &&
+      normalizedAssetClass.isNotEmpty;
+}
+
 bool isConcreteCommunityComposeSelection(RankedAsset? asset) {
-  final symbol = asset?.symbol.trim();
-  final assetClass = asset?.assetClass?.trim();
-  return symbol != null &&
-      symbol.isNotEmpty &&
-      symbol != communityComposeNoSymbolSentinel &&
-      assetClass != null &&
-      assetClass.isNotEmpty;
+  return isConcreteCommunityPostTarget(
+    symbol: asset?.symbol,
+    assetClass: asset?.assetClass,
+  );
+}
+
+({String symbol, String assetClass})? concreteCommunityPostTarget({
+  required String? symbol,
+  required String? assetClass,
+}) {
+  final normalizedSymbol = symbol?.trim();
+  final normalizedAssetClass = assetClass?.trim();
+  if (!isConcreteCommunityPostTarget(
+    symbol: normalizedSymbol,
+    assetClass: normalizedAssetClass,
+  )) {
+    return null;
+  }
+  return (symbol: normalizedSymbol!, assetClass: normalizedAssetClass!);
 }
 
 /// [patch] 응답으로 목록·상세에 넘길 [CommunityPost]를 만듭니다.
@@ -647,12 +672,11 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
       final sel = _selectedAsset!;
       final urls = await uploadNewPicks();
-      final symbol = sel.symbol.trim();
-      final ac = sel.assetClass?.trim();
-      if (symbol.isEmpty ||
-          symbol == communityComposeNoSymbolSentinel ||
-          ac == null ||
-          ac.isEmpty) {
+      final target = concreteCommunityPostTarget(
+        symbol: sel.symbol,
+        assetClass: sel.assetClass,
+      );
+      if (target == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.communityComposeNeedSymbol)),
@@ -662,8 +686,8 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       }
 
       await DopamineApi.postAssetComment(
-        symbol: symbol,
-        assetClass: ac,
+        symbol: target.symbol,
+        assetClass: target.assetClass,
         body: body,
         parentId: null,
         title: titleText.isEmpty ? null : titleText,

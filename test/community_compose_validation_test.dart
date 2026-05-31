@@ -3,6 +3,28 @@ import 'package:dopamine_assets/features/community/community_compose_screen.dart
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('concreteCommunityPostTarget', () {
+    test('normalizes valid post targets', () {
+      expect(
+        concreteCommunityPostTarget(
+          symbol: ' AAPL ',
+          assetClass: ' us_stock ',
+        ),
+        (symbol: 'AAPL', assetClass: 'us_stock'),
+      );
+    });
+
+    test('rejects placeholder post targets', () {
+      expect(
+        concreteCommunityPostTarget(
+          symbol: communityComposeNoSymbolSentinel,
+          assetClass: 'us_stock',
+        ),
+        isNull,
+      );
+    });
+  });
+
   group('isConcreteCommunityComposeSelection', () {
     test('rejects no-selection placeholders', () {
       expect(isConcreteCommunityComposeSelection(null), isFalse);
