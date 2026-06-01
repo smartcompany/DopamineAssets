@@ -774,6 +774,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     BuildContext context,
     ProfileActivityItem item,
   ) async {
+    if (isCommunityPostWithoutAsset(item.assetSymbol)) {
+      await _openActivityThreadPost(context, item);
+      return;
+    }
     AssetDetailScreen.open(
       context,
       RankedAsset.communityShell(
@@ -1034,6 +1038,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ProfileActivityItem item,
   ) {
     final timeStr = DateFormat.yMMMd(locale).add_jm().format(item.at.toLocal());
+    final activityAssetName = isCommunityPostWithoutAsset(item.assetSymbol)
+        ? l10n.notAvailable
+        : ((item.assetDisplayName?.trim().isNotEmpty == true)
+              ? item.assetDisplayName!.trim()
+              : item.assetSymbol);
 
     final cardShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(14),
@@ -1064,10 +1073,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Text(
                           item.kind == 'my_post'
                               ? l10n.profileActivityPostOnAsset(
-                                  (item.assetDisplayName?.trim().isNotEmpty ==
-                                          true)
-                                      ? item.assetDisplayName!.trim()
-                                      : item.assetSymbol,
+                                  activityAssetName,
                                 )
                               : _activityKindLabel(l10n, item.kind),
                           style: theme.textTheme.labelLarge?.copyWith(

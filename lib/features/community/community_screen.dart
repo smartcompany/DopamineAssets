@@ -266,7 +266,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         authorDisplayName: c.authorDisplayName,
         authorPhotoUrl: c.authorPhotoUrl,
         createdAt: c.createdAt,
-        assetSymbol: sym.isEmpty ? '-' : sym,
+        assetSymbol: sym,
         assetClass: cls.isEmpty ? 'unknown' : cls,
         assetDisplayName: c.assetDisplayName,
         replyCount: 0,

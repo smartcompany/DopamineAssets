@@ -118,7 +118,6 @@ class CommunityComposeScreen extends StatefulWidget {
 class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   static const _maxImages = 6;
   static const double _mobileComposeMediaIconSize = 30;
-  static const String _noSymbolSentinel = "__none__";
 
   /// 제목 필드와 동일한 한 줄 입력 높이(패딩) — 드롭다운 기본 터치 타깃 여백 제거용
   static const EdgeInsets _composeFieldContentPadding = EdgeInsets.symmetric(
@@ -204,7 +203,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
   RankedAsset _noneAsset(String assetClass, AppLocalizations l10n) {
     return RankedAsset.communityShell(
-      symbol: _noSymbolSentinel,
+      symbol: communityNoSymbolSentinel,
       assetClass: assetClass,
       displayName: l10n.notAvailable,
     );
@@ -647,14 +646,14 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       }
 
       await DopamineApi.postAssetComment(
-        symbol: sel.symbol,
+        symbol: communityAssetSymbolForApi(sel.symbol),
         assetClass: ac,
         body: body,
         parentId: null,
         title: titleText.isEmpty ? null : titleText,
         imageUrls: urls.isEmpty ? null : urls,
         assetDisplayName:
-            sel.symbol == _noSymbolSentinel || sel.name.trim().isEmpty
+            isCommunityPostWithoutAsset(sel.symbol) || sel.name.trim().isEmpty
             ? null
             : sel.name.trim(),
         idToken: token,

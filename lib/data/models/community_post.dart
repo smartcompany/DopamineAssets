@@ -1,3 +1,14 @@
+const communityNoSymbolSentinel = '__none__';
+
+bool isCommunityPostWithoutAsset(String? symbol) {
+  final s = symbol?.trim();
+  return s == null || s.isEmpty || s == communityNoSymbolSentinel;
+}
+
+String communityAssetSymbolForApi(String symbol) {
+  return isCommunityPostWithoutAsset(symbol) ? '' : symbol.trim();
+}
+
 final class CommunityPost {
   const CommunityPost({
     required this.id,
