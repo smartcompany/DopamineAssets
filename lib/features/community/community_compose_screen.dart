@@ -42,6 +42,43 @@ abstract final class _CommunityComposeBodyFieldText {
   static const double hintAlpha = 0.75;
 }
 
+const String communityComposeNoSymbolSentinel = "__none__";
+
+bool isConcreteCommunityPostTarget({
+  required String? symbol,
+  required String? assetClass,
+}) {
+  final normalizedSymbol = symbol?.trim();
+  final normalizedAssetClass = assetClass?.trim();
+  return normalizedSymbol != null &&
+      normalizedSymbol.isNotEmpty &&
+      normalizedSymbol != communityComposeNoSymbolSentinel &&
+      normalizedAssetClass != null &&
+      normalizedAssetClass.isNotEmpty;
+}
+
+bool isConcreteCommunityComposeSelection(RankedAsset? asset) {
+  return isConcreteCommunityPostTarget(
+    symbol: asset?.symbol,
+    assetClass: asset?.assetClass,
+  );
+}
+
+({String symbol, String assetClass})? concreteCommunityPostTarget({
+  required String? symbol,
+  required String? assetClass,
+}) {
+  final normalizedSymbol = symbol?.trim();
+  final normalizedAssetClass = assetClass?.trim();
+  if (!isConcreteCommunityPostTarget(
+    symbol: normalizedSymbol,
+    assetClass: normalizedAssetClass,
+  )) {
+    return null;
+  }
+  return (symbol: normalizedSymbol!, assetClass: normalizedAssetClass!);
+}
+
 /// [patch] 응답으로 목록·상세에 넘길 [CommunityPost]를 만듭니다.
 CommunityPost _communityPostAfterPatch(
   AssetComment updated, {
@@ -118,7 +155,6 @@ class CommunityComposeScreen extends StatefulWidget {
 class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   static const _maxImages = 6;
   static const double _mobileComposeMediaIconSize = 30;
-  static const String _noSymbolSentinel = "__none__";
 
   /// 제목 필드와 동일한 한 줄 입력 높이(패딩) — 드롭다운 기본 터치 타깃 여백 제거용
   static const EdgeInsets _composeFieldContentPadding = EdgeInsets.symmetric(
@@ -204,7 +240,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
   RankedAsset _noneAsset(String assetClass, AppLocalizations l10n) {
     return RankedAsset.communityShell(
-      symbol: _noSymbolSentinel,
+      symbol: communityComposeNoSymbolSentinel,
       assetClass: assetClass,
       displayName: l10n.notAvailable,
     );
@@ -568,7 +604,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
     final editId = _effectiveEditId;
     if (editId == null) {
       final sel = _selectedAsset;
-      if (sel == null) {
+      if (!isConcreteCommunityComposeSelection(sel)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.communityComposeNeedSymbol)),
         );
@@ -636,8 +672,11 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
 
       final sel = _selectedAsset!;
       final urls = await uploadNewPicks();
-      final ac = sel.assetClass;
-      if (ac == null || ac.isEmpty) {
+      final target = concreteCommunityPostTarget(
+        symbol: sel.symbol,
+        assetClass: sel.assetClass,
+      );
+      if (target == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.communityComposeNeedSymbol)),
@@ -647,16 +686,13 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       }
 
       await DopamineApi.postAssetComment(
-        symbol: sel.symbol,
-        assetClass: ac,
+        symbol: target.symbol,
+        assetClass: target.assetClass,
         body: body,
         parentId: null,
         title: titleText.isEmpty ? null : titleText,
         imageUrls: urls.isEmpty ? null : urls,
-        assetDisplayName:
-            sel.symbol == _noSymbolSentinel || sel.name.trim().isEmpty
-            ? null
-            : sel.name.trim(),
+        assetDisplayName: sel.name.trim().isEmpty ? null : sel.name.trim(),
         idToken: token,
       );
 
@@ -664,7 +700,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       unawaited(
         AppAnalytics.logCommunityPostSubmitted(
           isEdit: false,
-          assetClass: ac,
+          assetClass: target.assetClass,
           imageCount: urls.length,
         ),
       );
