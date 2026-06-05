@@ -325,7 +325,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                 localeLanguageCode: exchangeLocaleLang,
                 assetClass: d.assetClass,
                 symbol: d.symbol,
-                cryptoSlug: widget.rankedAsset.coingeckoId,
+                cryptoId: widget.rankedAsset.coingeckoId,
               );
               final exchangeName = exchangeDisplayName(
                 localeLanguageCode: exchangeLocaleLang,

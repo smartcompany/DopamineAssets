@@ -61,15 +61,15 @@ void main() {
   });
 
   group('exchangeViewUri', () {
-    test('ko + crypto opens CoinMarketCap', () {
+    test('ko + crypto opens CoinGecko by CoinGecko id', () {
       expect(
         exchangeViewUri(
           localeLanguageCode: 'ko',
           assetClass: 'crypto',
           symbol: 'BTC-USD',
-          cryptoSlug: 'bitcoin',
+          cryptoId: 'bitcoin',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/bitcoin/'),
+        Uri.parse('https://www.coingecko.com/en/coins/bitcoin'),
       );
       expect(
         exchangeViewUri(
@@ -84,30 +84,60 @@ void main() {
           localeLanguageCode: 'ko',
           assetClass: 'crypto',
           symbol: 'SIREN',
-          cryptoSlug: 'siren-2',
+          cryptoId: 'siren-2',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/siren/'),
+        Uri.parse('https://www.coingecko.com/en/coins/siren-2'),
       );
       expect(
         exchangeViewUri(
           localeLanguageCode: 'ko',
           assetClass: 'crypto',
           symbol: 'BTC',
-          cryptoSlug: 'bitcoin',
+          cryptoId: 'bitcoin',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/bitcoin/'),
+        Uri.parse('https://www.coingecko.com/en/coins/bitcoin'),
       );
     });
 
-    test('non-ko crypto also routes to CoinMarketCap', () {
+    test('non-ko crypto also routes to CoinGecko', () {
       expect(
         exchangeViewUri(
           localeLanguageCode: 'en',
           assetClass: 'crypto',
           symbol: 'BTC-USD',
-          cryptoSlug: 'bitcoin',
+          cryptoId: 'bitcoin',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/bitcoin/'),
+        Uri.parse('https://www.coingecko.com/en/coins/bitcoin'),
+      );
+    });
+
+    test('CoinGecko ids that are not CoinMarketCap slugs stay valid', () {
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'en',
+          assetClass: 'crypto',
+          symbol: 'BNB',
+          cryptoId: 'binancecoin',
+        ),
+        Uri.parse('https://www.coingecko.com/en/coins/binancecoin'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'en',
+          assetClass: 'crypto',
+          symbol: 'WLD',
+          cryptoId: 'worldcoin-wld',
+        ),
+        Uri.parse('https://www.coingecko.com/en/coins/worldcoin-wld'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'en',
+          assetClass: 'crypto',
+          symbol: 'TON',
+          cryptoId: 'the-open-network',
+        ),
+        Uri.parse('https://www.coingecko.com/en/coins/the-open-network'),
       );
     });
 
