@@ -92,6 +92,33 @@ void main() {
         exchangeViewUri(
           localeLanguageCode: 'ko',
           assetClass: 'crypto',
+          symbol: 'BNB',
+          cryptoSlug: 'binancecoin',
+        ),
+        Uri.parse('https://coinmarketcap.com/currencies/bnb/'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'ko',
+          assetClass: 'crypto',
+          symbol: 'XRP',
+          cryptoSlug: 'ripple',
+        ),
+        Uri.parse('https://coinmarketcap.com/currencies/xrp/'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'ko',
+          assetClass: 'crypto',
+          symbol: 'AVAX',
+          cryptoSlug: 'avalanche-2',
+        ),
+        Uri.parse('https://coinmarketcap.com/currencies/avalanche/'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'ko',
+          assetClass: 'crypto',
           symbol: 'BTC',
           cryptoSlug: 'bitcoin',
         ),
