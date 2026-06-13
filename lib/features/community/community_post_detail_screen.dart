@@ -109,9 +109,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     super.initState();
     _following = widget.followingByUid?[_post.authorUid] ?? false;
     _loadThread();
-    unawaited(
-      DopamineApi.recordCommunityRootPostView(rootCommentId: _post.id),
-    );
+    unawaited(DopamineApi.recordCommunityRootPostView(rootCommentId: _post.id));
   }
 
   @override
@@ -166,8 +164,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             authorDisplayName: rootRow.authorDisplayName,
             authorPhotoUrl: _post.authorPhotoUrl,
             createdAt: _post.createdAt,
-            assetSymbol: _post.assetSymbol,
-            assetClass: _post.assetClass,
+            assetSymbol: _nonEmpty(rootRow.assetSymbol) ?? _post.assetSymbol,
+            assetClass: _nonEmpty(rootRow.assetClass) ?? _post.assetClass,
             assetDisplayName:
                 rootRow.assetDisplayName ?? _post.assetDisplayName,
             replyCount: _totalReplyCount(list),
@@ -619,8 +617,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       if (!mounted) return;
       final msg = e is ApiException
           ? (e.message == 'user_suspended'
-              ? l10n.accountSuspendedSnack
-              : e.message)
+                ? l10n.accountSuspendedSnack
+                : e.message)
           : l10n.assetPostsSendError;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
@@ -714,14 +712,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 
   Uri _shareUrl() => Uri(
-        scheme: 'https',
-        host: 'dopamine-assets.vercel.app',
-        path: '/communityPost',
-        queryParameters: {
-          'postId': _post.id,
-          'from': 'share',
-        },
-      );
+    scheme: 'https',
+    host: 'dopamine-assets.vercel.app',
+    path: '/communityPost',
+    queryParameters: {'postId': _post.id, 'from': 'share'},
+  );
 
   Future<void> _sharePost() async {
     await CommonShareUI.showShareOptionsDialog(
@@ -743,8 +738,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final showOwnMenu = myUid != null && c.authorUid == myUid;
     final showOtherMenu = myUid != null && c.authorUid != myUid;
     final showGuestCommentMenu = myUid == null;
-    final relativeTime =
-        formatRelativeCommentTime(c.createdAt, l10n.localeName);
+    final relativeTime = formatRelativeCommentTime(
+      c.createdAt,
+      l10n.localeName,
+    );
 
     return Padding(
       padding: EdgeInsets.only(left: depth * 12.0, bottom: 12),
@@ -808,7 +805,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                                 ),
                               ),
                             ),
-                            if (showOwnMenu || showOtherMenu || showGuestCommentMenu)
+                            if (showOwnMenu ||
+                                showOtherMenu ||
+                                showGuestCommentMenu)
                               PopupMenuButton<String>(
                                 tooltip: l10n.communityMoreMenu,
                                 icon: Icon(
@@ -864,9 +863,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                                                   DopamineTheme.textSecondary,
                                             ),
                                             const SizedBox(width: 10),
-                                            Text(
-                                              l10n.communityReportPostShort,
-                                            ),
+                                            Text(l10n.communityReportPostShort),
                                           ],
                                         ),
                                       ),
@@ -1667,6 +1664,12 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       ],
     );
   }
+}
+
+String? _nonEmpty(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) return null;
+  return trimmed;
 }
 
 class _PostImagesViewer extends StatefulWidget {

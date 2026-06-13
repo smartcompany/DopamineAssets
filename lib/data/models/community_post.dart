@@ -23,16 +23,19 @@ final class CommunityPost {
   final List<String> imageUrls;
   final String authorUid;
   final String authorDisplayName;
+
   /// 프로필 사진 URL (없으면 플레이스홀더)
   final String? authorPhotoUrl;
   final DateTime createdAt;
   final String assetSymbol;
   final String assetClass;
+
   /// 글 작성 시 저장한 종목 표시명(없으면 랭킹·심볼만으로 표시)
   final String? assetDisplayName;
   final int replyCount;
   final int likeCount;
   final bool likedByMe;
+
   /// 신고 등으로 타인에게 비노출(작성자 본인은 열람·활동 목록 가능)
   final bool moderationHiddenFromPublic;
 
@@ -72,14 +75,26 @@ final class CommunityPost {
     required String authorDisplayName,
     String? authorPhotoUrl,
     required DateTime createdAt,
-    required String assetSymbol,
-    required String assetClass,
+    required String? assetSymbol,
+    required String? assetClass,
+    String? fallbackAssetSymbol,
+    String? fallbackAssetClass,
     String? assetDisplayName,
     int replyCount = 0,
     int likeCount = 0,
     bool likedByMe = false,
     bool moderationHiddenFromPublic = false,
   }) {
+    final resolvedAssetSymbol = _firstNonEmpty(
+      assetSymbol,
+      fallbackAssetSymbol,
+    );
+    final resolvedAssetClass = _firstNonEmpty(assetClass, fallbackAssetClass);
+    if (resolvedAssetSymbol == null || resolvedAssetClass == null) {
+      throw ArgumentError(
+        'Community root comments require asset symbol and class metadata.',
+      );
+    }
     return CommunityPost(
       id: id,
       body: body,
@@ -89,8 +104,8 @@ final class CommunityPost {
       authorDisplayName: authorDisplayName,
       authorPhotoUrl: authorPhotoUrl,
       createdAt: createdAt,
-      assetSymbol: assetSymbol,
-      assetClass: assetClass,
+      assetSymbol: resolvedAssetSymbol,
+      assetClass: resolvedAssetClass,
       assetDisplayName: assetDisplayName,
       replyCount: replyCount,
       likeCount: likeCount,
@@ -101,8 +116,9 @@ final class CommunityPost {
 
   factory CommunityPost.fromJson(Map<String, dynamic> json) {
     final rawName = json['author_display_name'] as String?;
-    final name =
-        rawName == null || rawName.trim().isEmpty ? 'User' : rawName.trim();
+    final name = rawName == null || rawName.trim().isEmpty
+        ? 'User'
+        : rawName.trim();
     final rawPhoto = json['author_photo_url'];
     final photoUrl = rawPhoto is String && rawPhoto.trim().isNotEmpty
         ? rawPhoto.trim()
@@ -132,3 +148,10 @@ final class CommunityPost {
   }
 }
 
+String? _firstNonEmpty(String? first, String? second) {
+  final a = first?.trim();
+  if (a != null && a.isNotEmpty) return a;
+  final b = second?.trim();
+  if (b != null && b.isNotEmpty) return b;
+  return null;
+}
