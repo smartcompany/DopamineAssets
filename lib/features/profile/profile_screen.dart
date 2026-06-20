@@ -31,6 +31,7 @@ import '../asset/asset_news_webview_screen.dart';
 import '../community/community_compose_screen.dart';
 import '../community/community_post_card.dart';
 import '../community/community_post_detail_screen.dart';
+import 'account_deletion_flow.dart';
 import 'blocked_users_screen.dart';
 import 'follow_list_screen.dart';
 
@@ -687,51 +688,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (uid == null || uid.isEmpty) return;
 
     try {
-      final token = await auth.getIdToken();
-      if (token == null || token.isEmpty) {
-        throw StateError('invalid-id-token');
-      }
-      debugPrint(
-        '[Dopamine][delete-account] request /api/profile/me uid=$uid tokenLen=${token.length}',
+      await runAccountDeletionFlow(
+        getIdToken: auth.getIdToken,
+        deleteAuthAccount: auth.deleteAccount,
+        deleteProfileData: (idToken) =>
+            DopamineApi.deleteProfileData(idToken: idToken),
+        clearLocalConsent: clearPrivacyProcessingConsent,
+        debugLog: debugPrint,
+        uidForLog: uid,
       );
-
-      try {
-        await DopamineApi.deleteProfileData(idToken: token);
-      } on ApiException catch (e) {
-        debugPrint(
-          '[Dopamine][delete-account] deleteProfileData failed: ${e.message}',
-        );
-        if (!context.mounted) return;
-        messenger.showSnackBar(SnackBar(content: Text(e.message)));
-        return;
-      } catch (e) {
-        debugPrint('[Dopamine][delete-account] deleteProfileData failed: $e');
-        if (!context.mounted) return;
-        messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
-        return;
-      }
-
-      try {
-        await auth.deleteAccount();
-        await clearPrivacyProcessingConsent();
-      } on FirebaseAuthException catch (e) {
-        debugPrint(
-          '[Dopamine][delete-account] auth.deleteAccount failed: code=${e.code} message=${e.message}',
-        );
-        if (!context.mounted) return;
-        if (e.code == 'requires-recent-login') {
-          messenger.showSnackBar(
-            SnackBar(content: Text(l10n.profileRequiresRecentLogin)),
+    } on AccountDeletionException catch (e) {
+      if (!context.mounted) return;
+      switch (e.step) {
+        case AccountDeletionFailureStep.idToken:
+          messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+          return;
+        case AccountDeletionFailureStep.authAccount:
+          final cause = e.cause;
+          if (cause is FirebaseAuthException) {
+            debugPrint(
+              '[Dopamine][delete-account] auth.deleteAccount failed: code=${cause.code} message=${cause.message}',
+            );
+            if (cause.code == 'requires-recent-login') {
+              messenger.showSnackBar(
+                SnackBar(content: Text(l10n.profileRequiresRecentLogin)),
+              );
+            } else {
+              messenger.showSnackBar(
+                SnackBar(content: Text(cause.message ?? cause.code)),
+              );
+            }
+          } else {
+            debugPrint(
+              '[Dopamine][delete-account] auth.deleteAccount failed: $cause',
+            );
+            messenger.showSnackBar(
+              SnackBar(content: Text(l10n.errorLoadFailed)),
+            );
+          }
+          return;
+        case AccountDeletionFailureStep.profileData:
+          final cause = e.cause;
+          if (cause is ApiException) {
+            debugPrint(
+              '[Dopamine][delete-account] deleteProfileData failed: ${cause.message}',
+            );
+            messenger.showSnackBar(SnackBar(content: Text(cause.message)));
+          } else {
+            debugPrint(
+              '[Dopamine][delete-account] deleteProfileData failed: $cause',
+            );
+            messenger.showSnackBar(
+              SnackBar(content: Text(l10n.errorLoadFailed)),
+            );
+          }
+          return;
+        case AccountDeletionFailureStep.localCleanup:
+          debugPrint(
+            '[Dopamine][delete-account] local cleanup failed: ${e.cause}',
           );
-        } else {
-          messenger.showSnackBar(SnackBar(content: Text(e.message ?? e.code)));
-        }
-        return;
-      } catch (e) {
-        debugPrint('[Dopamine][delete-account] auth.deleteAccount failed: $e');
-        if (!context.mounted) return;
-        messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
-        return;
+          messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
+          return;
       }
     } on StateError {
       if (!context.mounted) return;
