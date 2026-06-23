@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
@@ -24,6 +24,13 @@ import '../../data/models/community_post.dart';
 import '../../data/models/ranked_asset.dart';
 import '../../data/models/theme_item.dart';
 import '../../theme/dopamine_theme.dart';
+
+const String _noSymbolSentinel = "__none__";
+
+@visibleForTesting
+String communityComposeSymbolForPost(RankedAsset asset) {
+  return asset.symbol == _noSymbolSentinel ? '' : asset.symbol;
+}
 
 /// 갤러리 첨부([XFile]) 또는 GIPHY CDN URL(우리 Storage에 GIF 업로드 없음).
 final class _PendingPick {
@@ -118,7 +125,6 @@ class CommunityComposeScreen extends StatefulWidget {
 class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
   static const _maxImages = 6;
   static const double _mobileComposeMediaIconSize = 30;
-  static const String _noSymbolSentinel = "__none__";
 
   /// 제목 필드와 동일한 한 줄 입력 높이(패딩) — 드롭다운 기본 터치 타깃 여백 제거용
   static const EdgeInsets _composeFieldContentPadding = EdgeInsets.symmetric(
@@ -647,7 +653,7 @@ class _CommunityComposeScreenState extends State<CommunityComposeScreen> {
       }
 
       await DopamineApi.postAssetComment(
-        symbol: sel.symbol,
+        symbol: communityComposeSymbolForPost(sel),
         assetClass: ac,
         body: body,
         parentId: null,
