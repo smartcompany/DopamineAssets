@@ -26,10 +26,7 @@ import 'community_post_detail_screen.dart';
 import 'community_report_sheet.dart';
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({
-    super.key,
-    this.initialSharedPostId,
-  });
+  const CommunityScreen({super.key, this.initialSharedPostId});
 
   final String? initialSharedPostId;
 

@@ -77,8 +77,10 @@ Uri? yahooFinanceCommodityUri(String symbol) {
 /// 일본 주식: Yahoo Finance Japan 종목 페이지.
 /// 입력 예: `7203.T` -> `https://finance.yahoo.co.jp/quote/7203.T`
 Uri? yahooJapanStockUri(String symbol) {
-  final m = RegExp(r'^(\d{1,5})(?:\.(T|JP))?$', caseSensitive: false)
-      .firstMatch(symbol.trim());
+  final m = RegExp(
+    r'^(\d{1,5})(?:\.(T|JP))?$',
+    caseSensitive: false,
+  ).firstMatch(symbol.trim());
   if (m == null) return null;
   final code = m.group(1)!.padLeft(4, '0');
   return Uri.https('finance.yahoo.co.jp', '/quote/$code.T');
@@ -107,9 +109,7 @@ Uri? eastMoneyStockUri(String symbol) {
 
 /// CoinGecko 코인 URL.
 /// - 서버가 내려주는 CoinGecko id 기반만 허용 (`/en/coins/{id}`).
-Uri? coinGeckoCryptoUri({
-  String? id,
-}) {
+Uri? coinGeckoCryptoUri({String? id}) {
   final g = _toCoinGeckoId(id);
   if (g == null) return null;
   return Uri(

@@ -19,10 +19,7 @@ void main() {
 
     test('KR Yahoo suffix maps to A + six digits', () {
       expect(
-        tossInvestStockOrderUri(
-          assetClass: 'kr_stock',
-          symbol: '005930.KS',
-        ),
+        tossInvestStockOrderUri(assetClass: 'kr_stock', symbol: '005930.KS'),
         Uri.parse('https://tossinvest.com/stocks/A005930/order'),
       );
     });
