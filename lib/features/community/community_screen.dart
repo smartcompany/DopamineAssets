@@ -343,7 +343,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (!mounted) return;
       setState(() {
         final next = List<CommunityPost>.from(_posts);
-        next[index] = p.copyWith(likeCount: r.likeCount, likedByMe: r.liked);
+        final currentIndex = next.indexWhere((post) => post.id == p.id);
+        if (currentIndex < 0) return;
+        next[currentIndex] = next[currentIndex].copyWith(
+          likeCount: r.likeCount,
+          likedByMe: r.liked,
+        );
         _posts = next;
       });
       unawaited(

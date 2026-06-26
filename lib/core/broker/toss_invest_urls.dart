@@ -1,6 +1,6 @@
 // 거래소/브로커 외부 페이지 URL 빌더.
 // 현재 정책:
-// - crypto => CoinMarketCap
+// - crypto => CoinGecko
 // - us_stock/kr_stock => ko 로케일은 Toss, 그 외는 Yahoo Finance
 // - commodity => Yahoo Finance
 // - 그 외 => null
@@ -14,7 +14,7 @@ Uri? exchangeViewUri({
   final lang = localeLanguageCode.trim().toLowerCase();
   final ac = assetClass.trim().toLowerCase();
   if (ac == 'crypto') {
-    return coinMarketCapCryptoUri(slug: cryptoSlug);
+    return coinGeckoCryptoUri(id: cryptoSlug);
   }
   if (ac == 'us_stock' || ac == 'kr_stock') {
     if (lang == 'ko') {
@@ -29,7 +29,7 @@ Uri? exchangeViewUri({
     return eastMoneyStockUri(symbol);
   }
   if (ac == 'commodity') {
-    return yahooFinanceStockUri(symbol);
+    return yahooFinanceCommodityUri(symbol);
   }
   return null;
 }
@@ -43,7 +43,7 @@ String? exchangeDisplayName({
   final lang = localeLanguageCode.trim().toLowerCase();
   final ac = assetClass.trim().toLowerCase();
   if (ac == 'crypto') {
-    return 'CoinMarketCap';
+    return 'CoinGecko';
   }
   if (ac == 'us_stock' || ac == 'kr_stock') {
     if (lang == 'ko') {
@@ -67,6 +67,11 @@ Uri? yahooFinanceStockUri(String symbol) {
   final s = symbol.trim().toUpperCase();
   if (s.isEmpty) return null;
   return Uri.https('finance.yahoo.com', '/quote/$s');
+}
+
+Uri? yahooFinanceCommodityUri(String symbol) {
+  final yahooSymbol = _commoditySpotToYahooTicker(symbol) ?? symbol;
+  return yahooFinanceStockUri(yahooSymbol);
 }
 
 /// 일본 주식: Yahoo Finance Japan 종목 페이지.
@@ -100,28 +105,43 @@ Uri? eastMoneyStockUri(String symbol) {
   return Uri.https('quote.eastmoney.com', '/$market$code.html');
 }
 
-/// CoinMarketCap 코인 URL.
-/// - id(slug) 기반만 허용 (`/currencies/{slug}/`)
-Uri? coinMarketCapCryptoUri({
-  String? slug,
+/// CoinGecko 코인 URL.
+/// - 서버가 내려주는 CoinGecko id 기반만 허용 (`/en/coins/{id}`).
+Uri? coinGeckoCryptoUri({
+  String? id,
 }) {
-  final g = _toCoinMarketCapSlug(slug);
-  if (g == null || g.isEmpty) return null;
+  final g = _toCoinGeckoId(id);
+  if (g == null) return null;
   return Uri(
     scheme: 'https',
-    host: 'coinmarketcap.com',
-    pathSegments: <String>['currencies', g, ''],
+    host: 'www.coingecko.com',
+    pathSegments: <String>['en', 'coins', g],
   );
 }
 
-String? _toCoinMarketCapSlug(String? coingeckoId) {
+String? _toCoinGeckoId(String? coingeckoId) {
   final raw = coingeckoId?.trim().toLowerCase();
   if (raw == null || raw.isEmpty) return null;
-  // CoinGecko id -> CoinMarketCap slug 예외 매핑
-  const overrides = <String, String>{
-    'siren-2': 'siren',
+  if (!RegExp(r'^[a-z0-9][a-z0-9-]*$').hasMatch(raw)) return null;
+  return raw;
+}
+
+/// 서버 `commodity-fx-yahoo` 및 차트 URL 매핑과 동일하게 외부 Yahoo 링크도 보정.
+String? _commoditySpotToYahooTicker(String raw) {
+  final u = raw.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+  const m = <String, String>{
+    'XAUUSD': 'GC=F',
+    'XAU=X': 'GC=F',
+    'XAGUSD': 'SI=F',
+    'XAG=X': 'SI=F',
+    'XPTUSD': 'PL=F',
+    'XPDUSD': 'PA=F',
+    'USOIL': 'CL=F',
+    'UKOIL': 'BZ=F',
+    'WTICOUSD': 'CL=F',
+    'BRENTUSD': 'BZ=F',
   };
-  return overrides[raw] ?? raw;
+  return m[u];
 }
 
 /// 미국·한국 주식만 지원. 그 외 [assetClass]는 null.
