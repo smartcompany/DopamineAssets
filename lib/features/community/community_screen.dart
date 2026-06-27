@@ -118,6 +118,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _scheduleFetch() async {
     final gen = ++_fetchGen;
+    final requestedSort = _sort;
     setState(() {
       _loading = true;
       _fetchError = null;
@@ -134,7 +135,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
     try {
       final result = await DopamineApi.fetchCommunityPostsPage(
-        sort: 'latest',
+        sort: requestedSort,
         page: 0,
         limit: _pageSize,
         symbol: _symbolFilterActive ? _symbolFilterSymbol : null,
@@ -146,7 +147,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       );
       if (!mounted || gen != _fetchGen) return;
       setState(() {
-        _posts = _applySort(result.items, _sort);
+        _posts = _applySort(result.items, requestedSort);
         _page = result.page;
         _hasMore = result.hasMore;
         _loading = false;
@@ -163,6 +164,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _loadMore() async {
     if (_loading || _loadingMore || !_hasMore) return;
     final gen = _fetchGen;
+    final requestedSort = _sort;
     setState(() => _loadingMore = true);
     String? idToken;
     if (mounted) {
@@ -173,7 +175,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
     try {
       final result = await DopamineApi.fetchCommunityPostsPage(
-        sort: 'latest',
+        sort: requestedSort,
         page: _page + 1,
         limit: _pageSize,
         symbol: _symbolFilterActive ? _symbolFilterSymbol : null,
@@ -192,7 +194,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         merged[p.id] = p;
       }
       setState(() {
-        _posts = _applySort(merged.values.toList(), _sort);
+        _posts = _applySort(merged.values.toList(), requestedSort);
         _page = result.page;
         _hasMore = result.hasMore;
         _loadingMore = false;
@@ -380,8 +382,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (next == _sort) return;
     setState(() {
       _sort = next;
-      _posts = _applySort(_posts, next);
     });
+    unawaited(_scheduleFetch());
   }
 
   void _handleNav() {
