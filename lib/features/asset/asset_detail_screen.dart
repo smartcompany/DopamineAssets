@@ -376,6 +376,7 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                   )) {
                                     return;
                                   }
+                                  if (!context.mounted) return;
                                   Navigator.of(context).push<void>(
                                     MaterialPageRoute<void>(
                                       builder: (_) => CommunityComposeScreen(
