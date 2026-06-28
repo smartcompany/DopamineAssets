@@ -421,8 +421,9 @@ class _AssetDetailScreenState extends State<AssetDetailScreen> {
                                         assetClass: d.assetClass,
                                         displayName: d.name,
                                       );
-                                  // 상세 화면 아래에 남아있을 수 있는 팝업/바텀시트까지 함께 정리.
-                                  Navigator.of(context).popUntil((route) => route.isFirst);
+                                  // Close only this detail route; callers may have
+                                  // meaningful routes below it (for example a post detail).
+                                  Navigator.of(context).pop();
                                 },
                                 icon: const Icon(Icons.forum_rounded),
                               ),
