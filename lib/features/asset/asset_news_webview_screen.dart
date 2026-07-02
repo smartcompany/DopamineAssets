@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../core/news_url_safety.dart';
 import '../../theme/dopamine_theme.dart';
 
 /// 뉴스·외부 URL을 앱 안 WebView로 연다. 상·하단 세이프 영역은 침범하지 않으며, 상단에는 뒤로가기만 겹친다.
@@ -27,6 +28,7 @@ class AssetNewsWebViewScreen extends StatefulWidget {
     String? userAgent,
   }) async {
     if (!context.mounted) return;
+    if (!isSafeWebUrl(url)) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => AssetNewsWebViewScreen(
@@ -54,6 +56,12 @@ class _AssetNewsWebViewScreenState extends State<AssetNewsWebViewScreen> {
   }
 
   Future<void> _startWebView() async {
+    if (!isSafeWebUrl(widget.url)) {
+      if (mounted) {
+        setState(() => _progress = 100);
+      }
+      return;
+    }
     await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     final ua = widget.userAgent?.trim();
     if (ua != null && ua.isNotEmpty) {
@@ -70,6 +78,13 @@ class _AssetNewsWebViewScreenState extends State<AssetNewsWebViewScreen> {
           if (mounted) {
             setState(() => _progress = 100);
           }
+        },
+        onNavigationRequest: (request) {
+          final uri = Uri.tryParse(request.url);
+          if (uri == null || !isSafeWebUrl(uri)) {
+            return NavigationDecision.prevent;
+          }
+          return NavigationDecision.navigate;
         },
       ),
     );
