@@ -21,6 +21,9 @@ app_store_connect_api_key(
 
 default_platform(:ios)
 
+APP_IDENTIFIER = "com.smartcompany.dopamineAssets"
+TEAM_ID = "NTCK5U8AWD"
+
 platform :ios do
   desc "Push a new release build to the App Store"
   lane :release do
@@ -36,11 +39,11 @@ platform :ios do
     # Create/download App Store provisioning profile (must run before build)
     # Requires: App ID "com.smartcompany.dopamineAssets" in Apple Developer Portal
     get_provisioning_profile(
-      app_identifier: "com.smartcompany.dopamineAssets",
+      app_identifier: APP_IDENTIFIER,
       adhoc: false,
       force: true,
       skip_install: false,
-      team_id: "NTCK5U8AWD"
+      team_id: TEAM_ID
     )
     
     # Clean build folder before building
@@ -54,11 +57,21 @@ platform :ios do
       uploadSymbols: true,
       compileBitcode: false,
       signingStyle: "manual",
-      teamID: "NTCK5U8AWD",
+      teamID: TEAM_ID,
       provisioningProfiles: {
-        "com.smartcompany.dopamineAssets" => profile_name
+        APP_IDENTIFIER => profile_name
       }
     }
+
+    # archive 단계에서 Development 프로필/인증서가 잡히는 것 방지
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "Runner.xcodeproj",
+      team_id: TEAM_ID,
+      bundle_identifier: APP_IDENTIFIER,
+      profile_name: profile_name,
+      code_sign_identity: "Apple Distribution"
+    )
     
     build_app(
       workspace: "Runner.xcworkspace", 
