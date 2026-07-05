@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/config/app_settings_preload.dart';
 import '../theme/dopamine_theme.dart';
 
 /// 공유 링크의 `?from=share` 또는 (구) `from=community_share` 진입 시 표시.
@@ -19,9 +20,8 @@ class WebShareDownloadBanner extends StatelessWidget {
   /// "웹으로 계속 보기" 후 배너를 닫고 UI를 갱신하기 위해 호출.
   final VoidCallback onContinueOnWeb;
 
-  /// 설치됨 → 앱 열기, 아니면 스토어 등으로 안내 (서버 applink).
-  static final Uri _applinkUri =
-      Uri.parse('https://dopamine-assets-server.vercel.app/applink');
+  /// 설치됨 → 앱 열기, 아니면 스토어 등으로 안내 (서버 settings `down_load_url`).
+  Uri get _applinkUri => resolveAppDownloadLink();
 
   @override
   Widget build(BuildContext context) {
