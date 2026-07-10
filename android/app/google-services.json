@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "312575797891-jlhprlanidn2qdjcmo3ovq9j3ktaefmq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smartcompany.dopamineAssets",
+            "certificate_hash": "c465873338d8ca01411c50837cb5290984dcb58d"
+          }
+        },
+        {
           "client_id": "312575797891-va154mo6dgcrhmaift0bumvt4q915v99.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
