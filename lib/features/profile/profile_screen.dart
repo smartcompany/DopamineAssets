@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dopamine_assets/l10n/app_localizations.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
@@ -264,16 +266,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
     debugPrint('[profile-photo] pick start uid=${fb.uid}');
-    final files = await MediaPickerService.pickImages(
-      context,
-      maxCount: 1,
-      // 서버 업로드 제한(5MB) 전에 클라이언트에서 축소한다.
-      compress: true,
-      maxWidth: 1080,
-      maxHeight: 1080,
-      quality: 72,
-      compressFailureMessage: '이미지 변환에 실패했어요. 다른 사진으로 시도해 주세요.',
-    );
+    final List<XFile>? files;
+    if (kIsWeb) {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 72,
+        maxWidth: 1080,
+        maxHeight: 1080,
+      );
+      files = file == null ? null : [file];
+    } else {
+      files = await MediaPickerService.pickImages(
+        context,
+        maxCount: 1,
+        // 서버 업로드 제한(5MB) 전에 클라이언트에서 축소한다.
+        compress: true,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        quality: 72,
+        compressFailureMessage: '이미지 변환에 실패했어요. 다른 사진으로 시도해 주세요.',
+      );
+    }
     debugPrint(
       '[profile-photo] picker result files=${files?.length ?? -1}',
     );
