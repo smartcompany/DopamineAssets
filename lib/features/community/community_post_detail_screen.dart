@@ -72,7 +72,6 @@ class CommunityPostDetailScreen extends StatefulWidget {
 }
 
 class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
-  static const String _noSymbolSentinel = "__none__";
   late CommunityPost _post = widget.post;
   List<AssetComment>? _thread;
   Object? _loadError;
@@ -599,9 +598,19 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     setState(() => _sending = true);
     try {
       final parentId = _replyParentId ?? _post.id;
-      await DopamineApi.postAssetComment(
+      final target = concreteCommunityPostTarget(
         symbol: _post.assetSymbol,
         assetClass: _post.assetClass,
+      );
+      if (target == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.communityComposeNeedSymbol)),
+        );
+        return;
+      }
+      await DopamineApi.postAssetComment(
+        symbol: target.symbol,
+        assetClass: target.assetClass,
         body: text,
         parentId: parentId,
         assetDisplayName: _post.assetDisplayName,
@@ -698,7 +707,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         : summary;
     final hasAssetLink =
         _post.assetSymbol.trim().isNotEmpty &&
-        _post.assetSymbol != _noSymbolSentinel;
+        _post.assetSymbol != communityComposeNoSymbolSentinel;
     final assetLine = hasAssetLink
         ? (assetName.isNotEmpty
               ? '$assetName (${_post.assetSymbol})'
@@ -1299,7 +1308,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   ) {
     final hasAssetLink =
         _post.assetSymbol.trim().isNotEmpty &&
-        _post.assetSymbol != _noSymbolSentinel;
+        _post.assetSymbol != communityComposeNoSymbolSentinel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
