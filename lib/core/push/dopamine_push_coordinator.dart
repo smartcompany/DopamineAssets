@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../analytics/app_analytics.dart';
 import '../navigation/home_shell_navigation.dart';
 import '../network/dopamine_api.dart';
+import 'push_prefs_keys.dart';
 
 String dopaminePushPlatformLabel() {
   if (kIsWeb) return 'web';
@@ -153,11 +154,6 @@ abstract final class DopaminePushCoordinator {
       registerForUser(user);
     });
 
-    final initialUser = FirebaseAuth.instance.currentUser;
-    if (initialUser != null) {
-      await registerForUser(initialUser);
-    }
-
     void handleOpen(RemoteMessage m, {required String source}) {
       final ctx = navigatorKey.currentContext;
       if (ctx == null || !ctx.mounted) return;
@@ -175,7 +171,7 @@ abstract final class DopaminePushCoordinator {
         ),
       );
       final nav = Provider.of<HomeShellNavigation>(ctx, listen: false);
-      if (type == 'market_daily') {
+      if (type == PushPrefsKeys.marketDailyBrief || type == 'market_daily') {
         nav.setTabIndex(0);
         return;
       }
@@ -219,6 +215,11 @@ abstract final class DopaminePushCoordinator {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => handleOpen(initial, source: 'cold_start'),
       );
+    }
+
+    final initialUser = FirebaseAuth.instance.currentUser;
+    if (initialUser != null) {
+      unawaited(registerForUser(initialUser));
     }
   }
 }
