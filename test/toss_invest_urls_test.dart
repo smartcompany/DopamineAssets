@@ -19,10 +19,7 @@ void main() {
 
     test('KR Yahoo suffix maps to A + six digits', () {
       expect(
-        tossInvestStockOrderUri(
-          assetClass: 'kr_stock',
-          symbol: '005930.KS',
-        ),
+        tossInvestStockOrderUri(assetClass: 'kr_stock', symbol: '005930.KS'),
         Uri.parse('https://tossinvest.com/stocks/A005930/order'),
       );
     });
@@ -61,7 +58,7 @@ void main() {
   });
 
   group('exchangeViewUri', () {
-    test('ko + crypto opens CoinMarketCap', () {
+    test('crypto opens CoinGecko using CoinGecko ids', () {
       expect(
         exchangeViewUri(
           localeLanguageCode: 'ko',
@@ -69,7 +66,16 @@ void main() {
           symbol: 'BTC-USD',
           cryptoSlug: 'bitcoin',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/bitcoin/'),
+        Uri.parse('https://www.coingecko.com/en/coins/bitcoin'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'ko',
+          assetClass: 'crypto',
+          symbol: 'BNB',
+          cryptoSlug: 'binancecoin',
+        ),
+        Uri.parse('https://www.coingecko.com/en/coins/binancecoin'),
       );
       expect(
         exchangeViewUri(
@@ -86,7 +92,7 @@ void main() {
           symbol: 'SIREN',
           cryptoSlug: 'siren-2',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/siren/'),
+        Uri.parse('https://www.coingecko.com/en/coins/siren-2'),
       );
       expect(
         exchangeViewUri(
@@ -95,11 +101,11 @@ void main() {
           symbol: 'BTC',
           cryptoSlug: 'bitcoin',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/bitcoin/'),
+        Uri.parse('https://www.coingecko.com/en/coins/bitcoin'),
       );
     });
 
-    test('non-ko crypto also routes to CoinMarketCap', () {
+    test('non-ko crypto also routes to CoinGecko', () {
       expect(
         exchangeViewUri(
           localeLanguageCode: 'en',
@@ -107,7 +113,7 @@ void main() {
           symbol: 'BTC-USD',
           cryptoSlug: 'bitcoin',
         ),
-        Uri.parse('https://coinmarketcap.com/currencies/bitcoin/'),
+        Uri.parse('https://www.coingecko.com/en/coins/bitcoin'),
       );
     });
 
@@ -201,6 +207,22 @@ void main() {
           localeLanguageCode: 'en',
           assetClass: 'commodity',
           symbol: 'CL=F',
+        ),
+        Uri.parse('https://finance.yahoo.com/quote/CL=F'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'en',
+          assetClass: 'commodity',
+          symbol: 'XAUUSD',
+        ),
+        Uri.parse('https://finance.yahoo.com/quote/GC=F'),
+      );
+      expect(
+        exchangeViewUri(
+          localeLanguageCode: 'ko',
+          assetClass: 'commodity',
+          symbol: 'WTICOUSD',
         ),
         Uri.parse('https://finance.yahoo.com/quote/CL=F'),
       );

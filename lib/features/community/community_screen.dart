@@ -26,10 +26,7 @@ import 'community_post_detail_screen.dart';
 import 'community_report_sheet.dart';
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({
-    super.key,
-    this.initialSharedPostId,
-  });
+  const CommunityScreen({super.key, this.initialSharedPostId});
 
   final String? initialSharedPostId;
 
@@ -343,7 +340,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (!mounted) return;
       setState(() {
         final next = List<CommunityPost>.from(_posts);
-        next[index] = p.copyWith(likeCount: r.likeCount, likedByMe: r.liked);
+        final currentIndex = next.indexWhere((post) => post.id == p.id);
+        if (currentIndex < 0) return;
+        next[currentIndex] = next[currentIndex].copyWith(
+          likeCount: r.likeCount,
+          likedByMe: r.liked,
+        );
         _posts = next;
       });
       unawaited(
