@@ -26,10 +26,7 @@ import 'community_post_detail_screen.dart';
 import 'community_report_sheet.dart';
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({
-    super.key,
-    this.initialSharedPostId,
-  });
+  const CommunityScreen({super.key, this.initialSharedPostId});
 
   final String? initialSharedPostId;
 
@@ -230,7 +227,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return Future.value();
   }
 
-  Future<void> _openPushedThread(String rootCommentId) async {
+  Future<void> _openPushedThread(
+    String rootCommentId, {
+    CommunityNavFilter? assetFallback,
+  }) async {
     debugPrint('[UL] community _openPushedThread start id=$rootCommentId');
     final l10n = AppLocalizations.of(context)!;
     String? idToken;
@@ -266,8 +266,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
         authorDisplayName: c.authorDisplayName,
         authorPhotoUrl: c.authorPhotoUrl,
         createdAt: c.createdAt,
-        assetSymbol: sym.isEmpty ? '-' : sym,
-        assetClass: cls.isEmpty ? 'unknown' : cls,
+        assetSymbol: c.assetSymbol,
+        assetClass: c.assetClass,
+        fallbackAssetSymbol: assetFallback?.symbol,
+        fallbackAssetClass: assetFallback?.assetClass,
         assetDisplayName: c.assetDisplayName,
         replyCount: 0,
         likeCount: c.likeCount,
@@ -388,9 +390,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final nav = _nav;
     if (nav == null || !mounted) return;
 
-    final pendingRootId = nav.takePendingCommunityRootCommentId();
-    debugPrint('[UL] community _handleNav pendingRootId=$pendingRootId');
-
     final f = nav.takePendingFilter();
     if (f != null) {
       setState(() {
@@ -403,12 +402,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _scheduleFetch();
     }
 
+    final pendingRootId = nav.takePendingCommunityRootCommentId();
+    debugPrint('[UL] community _handleNav pendingRootId=$pendingRootId');
+
     if (pendingRootId != null && pendingRootId.isNotEmpty) {
       debugPrint(
         '[UL] community schedule open pushed thread id=$pendingRootId',
       );
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(_openPushedThread(pendingRootId));
+        if (mounted) {
+          unawaited(_openPushedThread(pendingRootId, assetFallback: f));
+        }
       });
     }
 
