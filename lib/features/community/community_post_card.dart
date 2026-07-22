@@ -38,7 +38,6 @@ class CommunityPostCard extends StatelessWidget {
   final void Function(CommunityPost p)? onOpenAuthorProfile;
   final void Function(CommunityPost p)? onOpenPostDetail;
   final bool showLikeButton;
-  static const String _noSymbolSentinel = "__none__";
 
   String _shareText(CommunityPost p) {
     final title = (p.title ?? '').trim();
@@ -50,8 +49,7 @@ class CommunityPostCard extends StatelessWidget {
     final clipped = summary.length > 120
         ? '${summary.substring(0, 120)}...'
         : summary;
-    final hasAsset =
-        p.assetSymbol.trim().isNotEmpty && p.assetSymbol != _noSymbolSentinel;
+    final hasAsset = !isCommunityPostWithoutAsset(p.assetSymbol);
     final assetLine = hasAsset
         ? (assetName.isNotEmpty ? '$assetName (${p.assetSymbol})' : p.assetSymbol)
         : 'General';
@@ -121,9 +119,7 @@ class CommunityPostCard extends StatelessWidget {
         myUid == null && onReportPost != null;
     final showOverflowMenu =
         showOwnMenu || showLoggedInOtherMenu || showGuestReportMenu;
-    final hasAssetLink =
-        post.assetSymbol.trim().isNotEmpty &&
-        post.assetSymbol != _noSymbolSentinel;
+    final hasAssetLink = !isCommunityPostWithoutAsset(post.assetSymbol);
 
     return Card(
       clipBehavior: Clip.antiAlias,

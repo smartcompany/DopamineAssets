@@ -72,7 +72,6 @@ class CommunityPostDetailScreen extends StatefulWidget {
 }
 
 class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
-  static const String _noSymbolSentinel = "__none__";
   late CommunityPost _post = widget.post;
   List<AssetComment>? _thread;
   Object? _loadError;
@@ -600,7 +599,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     try {
       final parentId = _replyParentId ?? _post.id;
       await DopamineApi.postAssetComment(
-        symbol: _post.assetSymbol,
+        symbol: communityAssetSymbolForApi(_post.assetSymbol),
         assetClass: _post.assetClass,
         body: text,
         parentId: parentId,
@@ -696,9 +695,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     final clipped = summary.length > 120
         ? '${summary.substring(0, 120)}...'
         : summary;
-    final hasAssetLink =
-        _post.assetSymbol.trim().isNotEmpty &&
-        _post.assetSymbol != _noSymbolSentinel;
+    final hasAssetLink = !isCommunityPostWithoutAsset(_post.assetSymbol);
     final assetLine = hasAssetLink
         ? (assetName.isNotEmpty
               ? '$assetName (${_post.assetSymbol})'
@@ -1297,9 +1294,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     String timeStr,
     bool showFollow,
   ) {
-    final hasAssetLink =
-        _post.assetSymbol.trim().isNotEmpty &&
-        _post.assetSymbol != _noSymbolSentinel;
+    final hasAssetLink = !isCommunityPostWithoutAsset(_post.assetSymbol);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
