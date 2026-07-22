@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../theme/dopamine_theme.dart';
@@ -27,6 +29,19 @@ class AssetNewsWebViewScreen extends StatefulWidget {
     String? userAgent,
   }) async {
     if (!context.mounted) return;
+    if (kIsWeb) {
+      final launched = await launchUrl(url, webOnlyWindowName: '_blank');
+      if (launched || !context.mounted) return;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (context) => _ExternalUrlFallbackScreen(
+            url: url,
+            pageTitle: pageTitle,
+          ),
+        ),
+      );
+      return;
+    }
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => AssetNewsWebViewScreen(
@@ -42,24 +57,69 @@ class AssetNewsWebViewScreen extends StatefulWidget {
   State<AssetNewsWebViewScreen> createState() => _AssetNewsWebViewScreenState();
 }
 
+class _ExternalUrlFallbackScreen extends StatelessWidget {
+  const _ExternalUrlFallbackScreen({required this.url, this.pageTitle});
+
+  final Uri url;
+  final String? pageTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = pageTitle?.trim().isNotEmpty == true
+        ? pageTitle!.trim()
+        : url.host;
+
+    return Scaffold(
+      backgroundColor: DopamineTheme.purpleBottom,
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                url.toString(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: DopamineTheme.textPrimary,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => launchUrl(url, webOnlyWindowName: '_blank'),
+                child: const Text('Open link'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AssetNewsWebViewScreenState extends State<AssetNewsWebViewScreen> {
-  late final WebViewController _controller;
+  WebViewController? _controller;
   var _progress = 0;
 
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) return;
     _controller = WebViewController();
     unawaited(_startWebView());
   }
 
   Future<void> _startWebView() async {
-    await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+    final controller = _controller;
+    if (controller == null) return;
+    await controller.setJavaScriptMode(JavaScriptMode.unrestricted);
     final ua = widget.userAgent?.trim();
     if (ua != null && ua.isNotEmpty) {
-      await _controller.setUserAgent(ua);
+      await controller.setUserAgent(ua);
     }
-    await _controller.setNavigationDelegate(
+    await controller.setNavigationDelegate(
       NavigationDelegate(
         onProgress: (value) {
           if (mounted) {
@@ -73,11 +133,18 @@ class _AssetNewsWebViewScreenState extends State<AssetNewsWebViewScreen> {
         },
       ),
     );
-    await _controller.loadRequest(widget.url);
+    await controller.loadRequest(widget.url);
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = _controller;
+    if (kIsWeb || controller == null) {
+      return _ExternalUrlFallbackScreen(
+        url: widget.url,
+        pageTitle: widget.pageTitle,
+      );
+    }
     final topInset = MediaQuery.paddingOf(context).top;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final title = widget.pageTitle?.trim().isNotEmpty == true
@@ -97,7 +164,7 @@ class _AssetNewsWebViewScreenState extends State<AssetNewsWebViewScreen> {
               ),
               child: Semantics(
                 label: title,
-                child: WebViewWidget(controller: _controller),
+                child: WebViewWidget(controller: controller),
               ),
             ),
           ),
