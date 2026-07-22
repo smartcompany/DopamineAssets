@@ -119,7 +119,17 @@ String? _toCoinMarketCapSlug(String? coingeckoId) {
   if (raw == null || raw.isEmpty) return null;
   // CoinGecko id -> CoinMarketCap slug 예외 매핑
   const overrides = <String, String>{
+    'avalanche-2': 'avalanche',
+    'binancecoin': 'bnb',
+    'crypto-com-chain': 'cronos',
+    'dai': 'multi-collateral-dai',
+    'leo-token': 'unus-sed-leo',
+    'near': 'near-protocol',
+    'render-token': 'render',
+    'ripple': 'xrp',
     'siren-2': 'siren',
+    'staked-ether': 'lido-staked-ether',
+    'the-open-network': 'toncoin',
   };
   return overrides[raw] ?? raw;
 }
