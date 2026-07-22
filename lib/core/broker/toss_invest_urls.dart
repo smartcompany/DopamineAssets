@@ -1,6 +1,6 @@
 // 거래소/브로커 외부 페이지 URL 빌더.
 // 현재 정책:
-// - crypto => CoinMarketCap
+// - crypto => CoinGecko
 // - us_stock/kr_stock => ko 로케일은 Toss, 그 외는 Yahoo Finance
 // - commodity => Yahoo Finance
 // - 그 외 => null
@@ -9,12 +9,12 @@ Uri? exchangeViewUri({
   required String localeLanguageCode,
   required String assetClass,
   required String symbol,
-  String? cryptoSlug,
+  String? cryptoId,
 }) {
   final lang = localeLanguageCode.trim().toLowerCase();
   final ac = assetClass.trim().toLowerCase();
   if (ac == 'crypto') {
-    return coinMarketCapCryptoUri(slug: cryptoSlug);
+    return coinGeckoCryptoUri(id: cryptoId);
   }
   if (ac == 'us_stock' || ac == 'kr_stock') {
     if (lang == 'ko') {
@@ -43,7 +43,7 @@ String? exchangeDisplayName({
   final lang = localeLanguageCode.trim().toLowerCase();
   final ac = assetClass.trim().toLowerCase();
   if (ac == 'crypto') {
-    return 'CoinMarketCap';
+    return 'CoinGecko';
   }
   if (ac == 'us_stock' || ac == 'kr_stock') {
     if (lang == 'ko') {
@@ -100,28 +100,14 @@ Uri? eastMoneyStockUri(String symbol) {
   return Uri.https('quote.eastmoney.com', '/$market$code.html');
 }
 
-/// CoinMarketCap 코인 URL.
-/// - id(slug) 기반만 허용 (`/currencies/{slug}/`)
-Uri? coinMarketCapCryptoUri({
-  String? slug,
+/// CoinGecko 코인 URL.
+/// - 서버 RankedAssetDto.id(CoinGecko coin id) 기반만 허용 (`/coins/{id}`)
+Uri? coinGeckoCryptoUri({
+  String? id,
 }) {
-  final g = _toCoinMarketCapSlug(slug);
-  if (g == null || g.isEmpty) return null;
-  return Uri(
-    scheme: 'https',
-    host: 'coinmarketcap.com',
-    pathSegments: <String>['currencies', g, ''],
-  );
-}
-
-String? _toCoinMarketCapSlug(String? coingeckoId) {
-  final raw = coingeckoId?.trim().toLowerCase();
-  if (raw == null || raw.isEmpty) return null;
-  // CoinGecko id -> CoinMarketCap slug 예외 매핑
-  const overrides = <String, String>{
-    'siren-2': 'siren',
-  };
-  return overrides[raw] ?? raw;
+  final coinId = id?.trim().toLowerCase();
+  if (coinId == null || coinId.isEmpty) return null;
+  return Uri.https('www.coingecko.com', '/en/coins/$coinId');
 }
 
 /// 미국·한국 주식만 지원. 그 외 [assetClass]는 null.
