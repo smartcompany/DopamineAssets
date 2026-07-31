@@ -1047,23 +1047,8 @@ abstract final class DopamineApi {
     required String idToken,
     required Map<String, dynamic> patch,
   }) async {
-    // snake_case → camelCase 변환
-    final body = <String, dynamic>{};
-    void mapKey(String snake, String camel) {
-      if (patch.containsKey(snake)) {
-        body[camel] = patch[snake];
-      }
-    }
-
-    mapKey(PushPrefsKeys.masterEnabled, 'masterEnabled');
-    mapKey(PushPrefsKeys.socialReply, 'socialReply');
-    mapKey(PushPrefsKeys.socialLike, 'socialLike');
-    mapKey(PushPrefsKeys.followedNewPost, 'followedNewPost');
-    mapKey(PushPrefsKeys.moderationNotice, 'moderationNotice');
-    mapKey(PushPrefsKeys.marketDailyBrief, 'marketDailyBrief');
-    mapKey(PushPrefsKeys.marketWatchlist, 'marketWatchlist');
-    mapKey(PushPrefsKeys.marketTheme, 'marketTheme');
-    mapKey(PushPrefsKeys.hotMoverDiscussion, 'hotMoverDiscussion');
+    // snake_case → camelCase 변환 (single-key patches stay single-key).
+    final body = PushPrefsKeys.toApiBody(patch);
 
     if (kDebugMode) {
       debugPrint(

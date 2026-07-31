@@ -63,6 +63,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _uploadingPhoto = false;
   bool _syncingProfileFromServer = false;
   bool _pushPrefsLoading = false;
+  /// Bumped on each push-pref mutation so in-flight [_loadData] GETs cannot
+  /// clobber a newer local/server preference state.
+  int _pushPrefsEpoch = 0;
   bool _pushMasterEnabled = true;
   bool _pushSocialReply = true;
   bool _pushSocialLike = true;
@@ -374,6 +377,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _loadError = null;
       });
     }
+    final pushEpoch = _pushPrefsEpoch;
     try {
       final me = await DopamineApi.fetchProfileMe(idToken: token);
       if (me != null && mounted) {
@@ -392,14 +396,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ProfileStatsStore.instance.apply(stats);
       setState(() {
         _activity = act;
-        _pushMasterEnabled = _pushPrefBool(push, 'master_enabled');
-        _pushSocialReply = _pushPrefBool(push, 'social_reply');
-        _pushSocialLike = _pushPrefBool(push, 'social_like');
-        _pushMarketDaily = _pushPrefBool(push, 'market_daily_brief');
-        _pushHotMoverDiscussion = _pushPrefBool(
-          push,
-          PushPrefsKeys.hotMoverDiscussion,
-        );
+        // Skip stale / in-flight-overlapping push prefs so a GET cannot
+        // re-enable channels the user just turned off.
+        if (PushPrefsKeys.shouldApplyFetchedPrefs(
+          loadEpoch: pushEpoch,
+          currentEpoch: _pushPrefsEpoch,
+          mutationInFlight: _pushPrefsLoading,
+        )) {
+          _pushMasterEnabled = _pushPrefBool(push, 'master_enabled');
+          _pushSocialReply = _pushPrefBool(push, 'social_reply');
+          _pushSocialLike = _pushPrefBool(push, 'social_like');
+          _pushMarketDaily = _pushPrefBool(push, 'market_daily_brief');
+          _pushHotMoverDiscussion = _pushPrefBool(
+            push,
+            PushPrefsKeys.hotMoverDiscussion,
+          );
+        }
         _loading = false;
       });
     } catch (e) {
@@ -416,73 +428,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return v is bool ? v : true;
   }
 
-  Map<String, bool> _pushSnapshot({
-    bool? master,
-    bool? reply,
-    bool? like,
-    bool? daily,
-    bool? hotMover,
-  }) {
+  Map<String, bool> _pushSnapshot() {
     return <String, bool>{
-      PushPrefsKeys.masterEnabled: master ?? _pushMasterEnabled,
-      PushPrefsKeys.socialReply: reply ?? _pushSocialReply,
-      PushPrefsKeys.socialLike: like ?? _pushSocialLike,
-      PushPrefsKeys.marketDailyBrief: daily ?? _pushMarketDaily,
-      PushPrefsKeys.hotMoverDiscussion: hotMover ?? _pushHotMoverDiscussion,
+      PushPrefsKeys.masterEnabled: _pushMasterEnabled,
+      PushPrefsKeys.socialReply: _pushSocialReply,
+      PushPrefsKeys.socialLike: _pushSocialLike,
+      PushPrefsKeys.marketDailyBrief: _pushMarketDaily,
+      PushPrefsKeys.hotMoverDiscussion: _pushHotMoverDiscussion,
     };
   }
 
   Future<void> _togglePushPref(String key, bool value) async {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
-    final token = await fb.getIdToken();
-    if (token == null || token.isEmpty) return;
+    // Gate before any await — parent setState alone does not rebuild the
+    // settings route, so callers must also keep a local busy flag.
+    if (_pushPrefsLoading) return;
     if (!mounted) return;
 
-    // 토글 적용 후의 전체 상태 스냅샷을 서버에 한 번에 보냅니다.
-    var master = _pushMasterEnabled;
-    var reply = _pushSocialReply;
-    var like = _pushSocialLike;
-    var daily = _pushMarketDaily;
-    var hotMover = _pushHotMoverDiscussion;
-    switch (key) {
-      case PushPrefsKeys.masterEnabled:
-        master = value;
-        break;
-      case PushPrefsKeys.socialReply:
-        reply = value;
-        break;
-      case PushPrefsKeys.socialLike:
-        like = value;
-        break;
-      case PushPrefsKeys.marketDailyBrief:
-        daily = value;
-        break;
-      case PushPrefsKeys.hotMoverDiscussion:
-        hotMover = value;
-        break;
-    }
-    debugPrint(
-      '[PushPrefs][UI] toggle key=$key value=$value'
-      ' current=${_pushSnapshot()} next=${_pushSnapshot(master: master, reply: reply, like: like, daily: daily, hotMover: hotMover)}',
-    );
-
+    _pushPrefsEpoch++;
     setState(() => _pushPrefsLoading = true);
     try {
-      final payload = <String, dynamic>{
-        PushPrefsKeys.masterEnabled: master,
-        PushPrefsKeys.socialReply: reply,
-        PushPrefsKeys.socialLike: like,
-        PushPrefsKeys.marketDailyBrief: daily,
-        PushPrefsKeys.hotMoverDiscussion: hotMover,
-      };
-      debugPrint('[PushPrefs][UI] PATCH payload=$payload');
+      final token = await fb.getIdToken();
+      if (token == null || token.isEmpty) return;
+      if (!mounted) return;
+
+      // Patch only the changed key. A full-snapshot PATCH built from parent
+      // fields races with concurrent toggles and stale [_loadData] GETs, and
+      // can re-enable preferences the user just turned off.
+      final payload = <String, dynamic>{key: value};
+      debugPrint(
+        '[PushPrefs][UI] toggle key=$key value=$value '
+        'current=${_pushSnapshot()} payload=$payload',
+      );
       final updated = await DopamineApi.patchPushPrefs(
         idToken: token,
         patch: payload,
       );
       debugPrint('[PushPrefs][UI] PATCH response=$updated');
       if (!mounted) return;
+      // Invalidate loads that started during this mutation; their GET may
+      // still reflect pre-PATCH server state.
+      _pushPrefsEpoch++;
       setState(() {
         _pushMasterEnabled = _pushPrefBool(
           updated,
@@ -1456,8 +1443,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required bool value,
     required Future<void> Function(bool value) onChanged,
     bool enabled = true,
+    bool interactive = true,
   }) {
-    final active = enabled && !_pushPrefsLoading;
+    // [enabled] dims dependent rows when master is off.
+    // [interactive] gates in-flight PATCHes without changing opacity.
+    final active = enabled && interactive;
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Row(
@@ -1490,6 +1480,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           var like = _pushSocialLike;
           var daily = _pushMarketDaily;
           var hotMover = _pushHotMoverDiscussion;
+          // Parent [_pushPrefsLoading] setState does not rebuild this route;
+          // keep a local busy flag so switches stay gated for the whole PATCH.
+          var sheetBusy = false;
           final theme = Theme.of(ctx);
           return Scaffold(
             appBar: AppBar(title: Text(l10n.profileSettingsTitle)),
@@ -1497,7 +1490,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: StatefulBuilder(
                 builder: (context, setSheetState) {
                   Future<void> toggle(String key, bool next) async {
+                    if (sheetBusy) return;
                     setSheetState(() {
+                      sheetBusy = true;
                       switch (key) {
                         case 'master_enabled':
                           master = next;
@@ -1516,14 +1511,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           break;
                       }
                     });
-                    await _togglePushPref(key, next);
-                    setSheetState(() {
-                      master = _pushMasterEnabled;
-                      reply = _pushSocialReply;
-                      like = _pushSocialLike;
-                      daily = _pushMarketDaily;
-                      hotMover = _pushHotMoverDiscussion;
-                    });
+                    try {
+                      await _togglePushPref(key, next);
+                    } finally {
+                      if (!context.mounted) return;
+                      setSheetState(() {
+                        sheetBusy = false;
+                        master = _pushMasterEnabled;
+                        reply = _pushSocialReply;
+                        like = _pushSocialLike;
+                        daily = _pushMarketDaily;
+                        hotMover = _pushHotMoverDiscussion;
+                      });
+                    }
                   }
 
                   return ListView(
@@ -1554,6 +1554,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               context: ctx,
                               label: l10n.profilePushMaster,
                               value: master,
+                              interactive: !sheetBusy,
                               onChanged: (v) =>
                                   toggle(PushPrefsKeys.masterEnabled, v),
                             ),
@@ -1562,6 +1563,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: l10n.profilePushSocialReply,
                               value: reply,
                               enabled: master,
+                              interactive: !sheetBusy,
                               onChanged: (v) =>
                                   toggle(PushPrefsKeys.socialReply, v),
                             ),
@@ -1570,6 +1572,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: l10n.profilePushSocialLike,
                               value: like,
                               enabled: master,
+                              interactive: !sheetBusy,
                               onChanged: (v) =>
                                   toggle(PushPrefsKeys.socialLike, v),
                             ),
@@ -1578,6 +1581,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: l10n.profilePushMarketDaily,
                               value: daily,
                               enabled: master,
+                              interactive: !sheetBusy,
                               onChanged: (v) =>
                                   toggle(PushPrefsKeys.marketDailyBrief, v),
                             ),
@@ -1586,10 +1590,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: l10n.profilePushHotMoverDiscussion,
                               value: hotMover,
                               enabled: master,
+                              interactive: !sheetBusy,
                               onChanged: (v) =>
                                   toggle(PushPrefsKeys.hotMoverDiscussion, v),
                             ),
-                            if (_pushPrefsLoading)
+                            if (sheetBusy)
                               const Padding(
                                 padding: EdgeInsets.only(top: 6),
                                 child: SizedBox(
