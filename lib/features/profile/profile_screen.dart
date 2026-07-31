@@ -396,8 +396,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ProfileStatsStore.instance.apply(stats);
       setState(() {
         _activity = act;
-        // Skip stale push prefs if the user toggled while this load was in flight.
-        if (pushEpoch == _pushPrefsEpoch) {
+        // Skip stale / in-flight-overlapping push prefs so a GET cannot
+        // re-enable channels the user just turned off.
+        if (PushPrefsKeys.shouldApplyFetchedPrefs(
+          loadEpoch: pushEpoch,
+          currentEpoch: _pushPrefsEpoch,
+          mutationInFlight: _pushPrefsLoading,
+        )) {
           _pushMasterEnabled = _pushPrefBool(push, 'master_enabled');
           _pushSocialReply = _pushPrefBool(push, 'social_reply');
           _pushSocialLike = _pushPrefBool(push, 'social_like');
@@ -462,6 +467,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       debugPrint('[PushPrefs][UI] PATCH response=$updated');
       if (!mounted) return;
+      // Invalidate loads that started during this mutation; their GET may
+      // still reflect pre-PATCH server state.
+      _pushPrefsEpoch++;
       setState(() {
         _pushMasterEnabled = _pushPrefBool(
           updated,
