@@ -12,6 +12,7 @@ import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
 import '../../core/config/api_config.dart';
+import '../../core/feed/thread_root_resolver.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/profile/profile_stats_store.dart';
@@ -841,17 +842,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String commentId,
     required String idToken,
   }) async {
-    var cur = commentId;
-    for (var i = 0; i < 50; i++) {
-      final c = await DopamineApi.fetchAssetCommentById(
-        id: cur,
-        idToken: idToken,
-      );
-      final p = c.parentId?.trim();
-      if (p == null || p.isEmpty) return c.id;
-      cur = p;
-    }
-    return cur;
+    return resolveThreadRootCommentId(
+      commentId: commentId,
+      fetchParentId: (id) async {
+        final c = await DopamineApi.fetchAssetCommentById(
+          id: id,
+          idToken: idToken,
+        );
+        return c.parentId;
+      },
+    );
   }
 
   Future<void> _editOwnActivity(
@@ -1729,7 +1729,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 myUid: fb.uid,
                 likeInProgress: _activityLikeBusyIds.contains(item.commentId),
                 onToggleLike: _toggleActivityLike,
-                onOpenPostDetail: _openActivityPostDetail,
+                onOpenPostDetail: (p) {
+                  final i = _activityItemForCommentId(p.id);
+                  // my_reply cards use the reply id as CommunityPost.id for display;
+                  // opening detail with that id treats the reply as a root post and
+                  // mis-parents new comments / root-edit UI. Resolve to the thread root.
+                  if (i != null && i.kind == 'my_reply') {
+                    unawaited(_openActivityThreadPost(context, i));
+                    return;
+                  }
+                  unawaited(_openActivityPostDetail(p));
+                },
                 onEditOwnPost: (p) {
                   final i = _activityItemForCommentId(p.id);
                   if (i != null) {
