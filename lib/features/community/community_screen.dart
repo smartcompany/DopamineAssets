@@ -244,20 +244,27 @@ class _CommunityScreenState extends State<CommunityScreen> {
     try {
       // Share links / some entry points may pass a reply id. Always open the
       // true thread root so detail load/reply/edit behave correctly.
+      var lastFetched = await DopamineApi.fetchAssetCommentById(
+        id: rootCommentId,
+        idToken: idToken,
+      );
       final resolvedRootId = await resolveThreadRootCommentId(
         commentId: rootCommentId,
         fetchParentId: (id) async {
-          final row = await DopamineApi.fetchAssetCommentById(
+          if (id == lastFetched.id) return lastFetched.parentId;
+          lastFetched = await DopamineApi.fetchAssetCommentById(
             id: id,
             idToken: idToken,
           );
-          return row.parentId;
+          return lastFetched.parentId;
         },
       );
-      final c = await DopamineApi.fetchAssetCommentById(
-        id: resolvedRootId,
-        idToken: idToken,
-      );
+      final c = lastFetched.id == resolvedRootId
+          ? lastFetched
+          : await DopamineApi.fetchAssetCommentById(
+              id: resolvedRootId,
+              idToken: idToken,
+            );
       debugPrint(
         '[UL] community fetched root comment id=${c.id} from=$rootCommentId',
       );
