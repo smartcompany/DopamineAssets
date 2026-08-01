@@ -10,6 +10,7 @@ import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../core/analytics/app_analytics.dart';
 import '../../core/feed/home_asset_suggestions.dart';
+import '../../core/feed/thread_root_resolver.dart';
 import '../../core/navigation/home_shell_bottom_inset.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/network/api_exception.dart';
@@ -241,11 +242,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
       }
     }
     try {
+      // Share links / some entry points may pass a reply id. Always open the
+      // true thread root so detail load/reply/edit behave correctly.
+      final resolvedRootId = await resolveThreadRootCommentId(
+        commentId: rootCommentId,
+        fetchParentId: (id) async {
+          final row = await DopamineApi.fetchAssetCommentById(
+            id: id,
+            idToken: idToken,
+          );
+          return row.parentId;
+        },
+      );
       final c = await DopamineApi.fetchAssetCommentById(
-        id: rootCommentId,
+        id: resolvedRootId,
         idToken: idToken,
       );
-      debugPrint('[UL] community fetched root comment id=${c.id}');
+      debugPrint(
+        '[UL] community fetched root comment id=${c.id} from=$rootCommentId',
+      );
       if (!mounted) {
         debugPrint('[UL] community abort: not mounted after fetch');
         return;
