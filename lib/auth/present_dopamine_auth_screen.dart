@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../core/push/dopamine_push_coordinator.dart';
 import '../features/legal/privacy_processing_consent.dart';
 import 'dopamine_auth_config.dart';
 import 'dopamine_user.dart';
@@ -26,6 +27,8 @@ Future<bool> presentDopamineAuthScreen(BuildContext context) async {
   final ok = await ensurePrivacyProcessingConsent(context);
   if (!context.mounted) return false;
   if (ok) return true;
+  await DopaminePushCoordinator.unregisterCurrentDevice();
+  if (!context.mounted) return false;
   await context.read<AuthProvider<DopamineUser>>().logout();
   return false;
 }

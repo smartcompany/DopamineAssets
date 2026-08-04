@@ -17,6 +17,7 @@ import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/profile/profile_stats_store.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/push/dopamine_push_coordinator.dart';
 import '../../core/push/push_prefs_keys.dart';
 import '../../core/text/ugc_banned_words.dart';
 import '../../core/storage/community_post_image_upload.dart';
@@ -746,6 +747,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     await clearPrivacyProcessingConsent();
+    if (!context.mounted) return;
+    // Drop server FCM mapping before Firebase sign-out invalidates the bearer.
+    await DopaminePushCoordinator.unregisterCurrentDevice();
     if (!context.mounted) return;
     await context.read<AuthProvider<DopamineUser>>().logout();
     if (context.mounted) {
