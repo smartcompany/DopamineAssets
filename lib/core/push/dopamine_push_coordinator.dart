@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../analytics/app_analytics.dart';
 import '../navigation/home_shell_navigation.dart';
 import '../network/dopamine_api.dart';
+import 'push_token_unregister.dart';
 
 String dopaminePushPlatformLabel() {
   if (kIsWeb) return 'web';
@@ -25,6 +26,36 @@ String dopaminePushPlatformLabel() {
 /// FCM 토큰 등록·갱신 및 알림 탭 시 커뮤니티/홈 이동.
 abstract final class DopaminePushCoordinator {
   DopaminePushCoordinator._();
+
+  /// Removes this device's FCM token from the server.
+  ///
+  /// Must run while Firebase Auth still has a signed-in user (before logout).
+  /// Otherwise `dopamine_device_push_tokens` keeps the uid→token mapping and
+  /// social notifications (including reply bodies) continue to this device.
+  static Future<void> unregisterCurrentDevice() async {
+    if (kIsWeb) return;
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final did = await unregisterPushTokenIfPossible(
+        resolveIdToken: () => user.getIdToken(),
+        resolveFcmToken: () async {
+          try {
+            return await FirebaseMessaging.instance.getToken();
+          } catch (e) {
+            debugPrint('[DopaminePush] getToken (unregister): $e');
+            return null;
+          }
+        },
+        deleteToken: DopamineApi.deletePushToken,
+      );
+      if (did) {
+        debugPrint('[DopaminePush] server push-token deleted');
+      }
+    } catch (e) {
+      debugPrint('[DopaminePush] unregisterCurrentDevice: $e');
+    }
+  }
 
   static Future<void> start(GlobalKey<NavigatorState> navigatorKey) async {
     if (kIsWeb) return;
