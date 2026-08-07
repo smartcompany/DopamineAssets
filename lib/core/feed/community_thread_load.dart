@@ -1,7 +1,6 @@
-/// Pure helpers for community post-detail thread reloads.
-///
-/// `_loadThread` can overlap (initial load + post/edit/delete reload). Callers
-/// bump a generation and only apply results when [isCurrentThreadLoad] is true.
+// Pure helpers for community post-detail thread reloads.
+// `_loadThread` can overlap (initial load + post/edit/delete reload). Callers
+// bump a generation and only apply results when [isCurrentThreadLoad] is true.
 
 bool isCurrentThreadLoad({required int gen, required int currentGen}) {
   return gen == currentGen;
