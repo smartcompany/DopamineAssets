@@ -17,6 +17,7 @@ import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/profile/profile_stats_store.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
+import '../../core/push/dopamine_push_coordinator.dart';
 import '../../core/push/push_prefs_keys.dart';
 import '../../core/text/ugc_banned_words.dart';
 import '../../core/storage/community_post_image_upload.dart';
@@ -710,6 +711,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         messenger.showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
         return;
       }
+
+      // Server DELETE /api/profile/me does not remove push tokens/prefs.
+      // Drop the FCM mapping while the bearer is still valid so market-daily /
+      // hot-mover crons cannot keep notifying this device after account deletion.
+      await DopaminePushCoordinator.unregisterCurrentDevice();
+      if (!context.mounted) return;
 
       try {
         await auth.deleteAccount();
