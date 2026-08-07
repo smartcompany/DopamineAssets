@@ -9,6 +9,7 @@ import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
 import '../../auth/present_dopamine_auth_screen.dart';
+import '../../core/feed/community_thread_load.dart';
 import '../../core/navigation/home_shell_navigation.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/network/dopamine_api.dart';
@@ -78,6 +79,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   Object? _loadError;
   bool _loading = true;
   bool _threadDirty = false;
+  /// Bumps on every [_loadThread] start; stale completions must not apply.
+  int _threadLoadGen = 0;
 
   final _composer = TextEditingController();
   final _composerFocusNode = FocusNode();
@@ -88,6 +91,9 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   String? _replyParentId;
   String? _replyParentName;
+
+  bool get _composerBlocked =>
+      _sending || (_loading && _thread == null);
 
   late bool _following;
 
@@ -134,6 +140,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   }
 
   Future<void> _loadThread() async {
+    final gen = ++_threadLoadGen;
     setState(() {
       _loading = true;
       _loadError = null;
@@ -145,7 +152,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         rootCommentId: _post.id,
         idToken: token,
       );
-      if (!mounted) return;
+      if (!mounted ||
+          !isCurrentThreadLoad(gen: gen, currentGen: _threadLoadGen)) {
+        return;
+      }
       AssetComment? rootRow;
       for (final c in list) {
         if (c.id == _post.id) {
@@ -153,9 +163,19 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           break;
         }
       }
+      final ids = <String>{for (final c in list) c.id};
+      final nextReplyParent = reconcileReplyParentId(
+        replyParentId: _replyParentId,
+        rootId: _post.id,
+        threadIds: ids,
+      );
       setState(() {
         _thread = list;
         _loading = false;
+        if (nextReplyParent == null && _replyParentId != null) {
+          _replyParentId = null;
+          _replyParentName = null;
+        }
         if (rootRow != null) {
           _post = CommunityPost(
             id: _post.id,
@@ -178,7 +198,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         }
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted ||
+          !isCurrentThreadLoad(gen: gen, currentGen: _threadLoadGen)) {
+        return;
+      }
       setState(() {
         _loadError = e;
         _loading = false;
@@ -477,6 +500,12 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       if (token == null) return;
       await DopamineApi.deleteAssetComment(id: c.id, idToken: token);
       if (!mounted) return;
+      if (_replyParentId == c.id) {
+        setState(() {
+          _replyParentId = null;
+          _replyParentName = null;
+        });
+      }
       _threadDirty = true;
       await _loadThread();
       widget.onPostUpdated?.call(_post);
@@ -578,6 +607,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
 
   Future<void> _sendComment() async {
     final l10n = AppLocalizations.of(context)!;
+    if (_sending || (_loading && _thread == null)) return;
     final text = _composer.text.trim();
     if (text.isEmpty || text.length > 2000) return;
     final bad = UgcBannedWords.firstMatch(text);
@@ -588,14 +618,15 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       return;
     }
     if (!await ensureCommunityIdentity(context)) return;
-    if (!mounted) return;
+    if (!mounted || _sending) return;
     if (!await ensureNotSuspendedWithRefresh(context)) {
       return;
     }
+    if (!mounted || _sending) return;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null || !mounted) return;
     final token = await fb.getIdToken();
-    if (token == null || !mounted) return;
+    if (token == null || !mounted || _sending) return;
     setState(() => _sending = true);
     try {
       final parentId = _replyParentId ?? _post.id;
@@ -1226,6 +1257,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                               child: TextField(
                                 controller: _composer,
                                 focusNode: _composerFocusNode,
+                                enabled: !_composerBlocked,
                                 minLines: 1,
                                 maxLines: 4,
                                 onTapOutside: (_) {
@@ -1244,7 +1276,8 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                             ),
                             const SizedBox(width: 8),
                             FilledButton(
-                              onPressed: _sending ? null : _sendComment,
+                              onPressed:
+                                  _composerBlocked ? null : _sendComment,
                               style: FilledButton.styleFrom(
                                 backgroundColor: DopamineTheme.neonGreen,
                                 foregroundColor: const Color(0xFF0A0A0A),
