@@ -24,8 +24,11 @@ final class ProfileStatsStore extends ChangeNotifier {
   }
 
   Future<void> refreshFromApi({required String idToken}) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || uid.isEmpty) return;
     try {
       final s = await DopamineApi.fetchProfileStats(idToken: idToken);
+      if (FirebaseAuth.instance.currentUser?.uid != uid) return;
       apply(s);
     } catch (_) {}
   }
