@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_lib/share_lib.dart';
 
+import '../../auth/account_load_guard.dart';
 import '../../auth/account_suspension_ui.dart';
 import '../../auth/dopamine_community_profile_gate.dart';
 import '../../auth/dopamine_user.dart';
@@ -61,8 +62,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _verifiedTrimmedName;
   bool _checkingDisplayName = false;
   bool _uploadingPhoto = false;
-  bool _syncingProfileFromServer = false;
   bool _pushPrefsLoading = false;
+
+  /// False until this signed-in session has loaded server push prefs.
+  /// Toggles send a full snapshot, so they stay disabled while prefs still
+  /// belong to a previous account or have not loaded yet.
+  bool _pushPrefsReady = false;
+
+  /// Bumped on every auth transition so in-flight loads cannot publish the
+  /// previous account's profile, activity, or notification prefs.
+  int _sessionEpoch = 0;
+  String? _boundUid;
   bool _pushMasterEnabled = true;
   bool _pushSocialReply = true;
   bool _pushSocialLike = true;
@@ -73,21 +83,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return auth.isLoggedIn();
   }
 
+  bool _loadStillCurrent(int epoch, String? uid) {
+    return accountLoadStillCurrent(
+      mounted: mounted,
+      loadEpoch: epoch,
+      currentEpoch: _sessionEpoch,
+      loadUid: uid,
+      currentUid: FirebaseAuth.instance.currentUser?.uid,
+    );
+  }
+
+  void _clearAccountScopedState() {
+    _boundUid = null;
+    _activity = const [];
+    _loadError = null;
+    _loading = false;
+    _pushPrefsReady = false;
+    _pushPrefsLoading = false;
+    _pushMasterEnabled = true;
+    _pushSocialReply = true;
+    _pushSocialLike = true;
+    _pushMarketDaily = true;
+    _pushHotMoverDiscussion = true;
+    _verifiedTrimmedName = null;
+    _uploadingPhoto = false;
+    _savingName = false;
+    _checkingDisplayName = false;
+  }
+
   /// 서버 프로필을 먼저 조회한다. 있으면 그대로 반영만 하고, 없으면 Firebase 표시 이름으로 생성·저장한다.
   Future<void> _syncProfileFromServer({
     required AuthProvider<DopamineUser> auth,
     required User firebaseUser,
+    required int epoch,
   }) async {
-    if (_syncingProfileFromServer) return;
-    _syncingProfileFromServer = true;
+    final uid = firebaseUser.uid;
     try {
       final token = await firebaseUser.getIdToken();
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       if (token == null || token.isEmpty) return;
 
       final existing = await DopamineApi.fetchProfileMe(idToken: token);
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       if (existing != null) {
         auth.setUserProfile(existing);
-        if (!mounted) return;
         _syncNameField(existing.displayName);
         return;
       }
@@ -105,24 +144,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           taken = false;
         }
         if (taken) {
-          if (!mounted) return;
+          if (!mounted || !_loadStillCurrent(epoch, uid)) return;
           auth.setUserProfile(null);
           _nameController.clear();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
+            if (!mounted || !_loadStillCurrent(epoch, uid)) return;
             unawaited(_showDuplicateSocialNameDialog(firebaseName));
           });
           return;
         }
       }
 
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       auth.setUserProfile(null);
       _nameController.clear();
     } catch (e) {
       debugPrint('[Profile] sync profile from server failed: $e');
-    } finally {
-      _syncingProfileFromServer = false;
     }
   }
 
@@ -144,18 +181,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _authProvider!.addListener(_handleAuthProviderUpdate);
     _authSub = FirebaseAuth.instance.authStateChanges().listen((u) async {
       if (!mounted) return;
+      final epoch = ++_sessionEpoch;
       final auth = context.read<AuthProvider<DopamineUser>>();
       if (_isAppSignedIn(auth) && u != null) {
-        await _syncProfileFromServer(auth: auth, firebaseUser: u);
-        await _loadData();
+        if (_boundUid != u.uid) {
+          _nameController.clear();
+          setState(() {
+            _clearAccountScopedState();
+            _boundUid = u.uid;
+            _loading = true;
+          });
+        }
+        await _syncProfileFromServer(auth: auth, firebaseUser: u, epoch: epoch);
+        if (!mounted || !_loadStillCurrent(epoch, u.uid)) return;
+        await _loadData(epoch: epoch);
       } else {
         ProfileStatsStore.instance.clear();
-        setState(() {
-          _activity = const [];
-          _loadError = null;
-          _loading = false;
-          _nameController.clear();
-        });
+        if (FirebaseAuth.instance.currentUser == null) {
+          auth.setUserProfile(null);
+        }
+        _nameController.clear();
+        setState(_clearAccountScopedState);
       }
     });
   }
@@ -175,13 +221,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _reloadActivityOnly() async {
+    final epoch = _sessionEpoch;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
+    final uid = fb.uid;
     final token = await fb.getIdToken();
+    if (!mounted || !_loadStillCurrent(epoch, uid)) return;
     if (token == null || token.isEmpty) return;
     try {
       final act = await DopamineApi.fetchProfileActivity(idToken: token);
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       setState(() {
         _activity = act;
       });
@@ -274,12 +323,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       quality: 72,
       compressFailureMessage: '이미지 변환에 실패했어요. 다른 사진으로 시도해 주세요.',
     );
-    debugPrint(
-      '[profile-photo] picker result files=${files?.length ?? -1}',
-    );
+    debugPrint('[profile-photo] picker result files=${files?.length ?? -1}');
     if (files == null || files.isEmpty) return;
     final x = files.first;
     if (!mounted) return;
+    final epoch = _sessionEpoch;
+    final uid = fb.uid;
     setState(() => _uploadingPhoto = true);
     try {
       final ext = _extFromPath(x.path);
@@ -287,6 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final bytes = await x.readAsBytes();
       debugPrint('[profile-photo] read bytes length=${bytes.length}');
       final token = await fb.getIdToken();
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       if (token == null || token.isEmpty) return;
       debugPrint('[profile-photo] idToken acquired');
       final url = await uploadProfileImage(
@@ -298,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       debugPrint('[profile-photo] uploadProfileImage url=$url');
       await DopamineApi.patchProfilePhotoUrl(idToken: token, photoUrl: url);
       debugPrint('[profile-photo] patchProfilePhotoUrl success');
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final auth = context.read<AuthProvider<DopamineUser>>();
       final current = auth.userProfile;
       auth.setUserProfile(
@@ -316,23 +366,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ).showSnackBar(SnackBar(content: Text(l10n.profilePhotoSaved)));
     } catch (e) {
       debugPrint('[profile-photo] upload failed error=$e');
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
-      if (mounted) setState(() => _uploadingPhoto = false);
+      if (_loadStillCurrent(epoch, uid)) {
+        setState(() => _uploadingPhoto = false);
+      }
     }
   }
 
   Future<void> _removeProfilePhoto(AppLocalizations l10n) async {
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
+    final epoch = _sessionEpoch;
+    final uid = fb.uid;
     setState(() => _uploadingPhoto = true);
     try {
       final token = await fb.getIdToken();
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       if (token == null || token.isEmpty) return;
       await DopamineApi.patchProfilePhotoUrl(idToken: token, photoUrl: null);
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final auth = context.read<AuthProvider<DopamineUser>>();
       final current = auth.userProfile;
       auth.setUserProfile(
@@ -349,23 +404,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.profilePhotoRemoved)));
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
-      if (mounted) setState(() => _uploadingPhoto = false);
+      if (_loadStillCurrent(epoch, uid)) {
+        setState(() => _uploadingPhoto = false);
+      }
     }
   }
 
-  Future<void> _loadData({bool showLoading = true}) async {
+  Future<void> _loadData({bool showLoading = true, int? epoch}) async {
+    final loadEpoch = epoch ?? _sessionEpoch;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
+    final uid = fb.uid;
+    if (!mounted || !_loadStillCurrent(loadEpoch, uid)) return;
 
     _syncNameField(
       context.read<AuthProvider<DopamineUser>>().userProfile?.displayName,
     );
 
     final token = await fb.getIdToken();
+    if (!mounted || !_loadStillCurrent(loadEpoch, uid)) return;
     if (token == null || token.isEmpty) return;
 
     if (showLoading) {
@@ -376,7 +437,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     try {
       final me = await DopamineApi.fetchProfileMe(idToken: token);
-      if (me != null && mounted) {
+      if (!mounted || !_loadStillCurrent(loadEpoch, uid)) return;
+      if (me != null) {
         context.read<AuthProvider<DopamineUser>>().setUserProfile(me);
         _syncNameField(me.displayName);
       }
@@ -388,7 +450,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final stats = results[0] as ProfileStats;
       final act = results[1] as List<ProfileActivityItem>;
       final push = results[2] as Map<String, dynamic>;
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(loadEpoch, uid)) return;
       ProfileStatsStore.instance.apply(stats);
       setState(() {
         _activity = act;
@@ -400,10 +462,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           push,
           PushPrefsKeys.hotMoverDiscussion,
         );
+        _pushPrefsReady = true;
         _loading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(loadEpoch, uid)) return;
       setState(() {
         _loadError = e;
         _loading = false;
@@ -433,11 +496,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _togglePushPref(String key, bool value) async {
+    if (!_pushPrefsReady) return;
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
+    final epoch = _sessionEpoch;
+    final uid = fb.uid;
     final token = await fb.getIdToken();
+    if (!mounted || !_loadStillCurrent(epoch, uid)) return;
     if (token == null || token.isEmpty) return;
-    if (!mounted) return;
 
     // 토글 적용 후의 전체 상태 스냅샷을 서버에 한 번에 보냅니다.
     var master = _pushMasterEnabled;
@@ -482,7 +548,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         patch: payload,
       );
       debugPrint('[PushPrefs][UI] PATCH response=$updated');
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       setState(() {
         _pushMasterEnabled = _pushPrefBool(
           updated,
@@ -502,12 +568,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       debugPrint('[PushPrefs][UI] state updated=${_pushSnapshot()}');
     } catch (e) {
       debugPrint('[PushPrefs][UI] PATCH failed: $e');
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final l10n = AppLocalizations.of(context)!;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
-      if (mounted) setState(() => _pushPrefsLoading = false);
+      if (_loadStillCurrent(epoch, uid)) {
+        setState(() => _pushPrefsLoading = false);
+      }
     }
   }
 
@@ -542,6 +610,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
+    final epoch = _sessionEpoch;
+    final uid = fb.uid;
 
     final auth = context.read<AuthProvider<DopamineUser>>();
     final committed = (auth.userProfile?.displayName ?? '').trim();
@@ -552,6 +622,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _checkingDisplayName = true);
     try {
       final token = await fb.getIdToken();
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       if (token == null || token.isEmpty) return;
 
       try {
@@ -559,7 +630,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           idToken: token,
           displayName: text,
         );
-        if (!mounted) return;
+        if (!mounted || !_loadStillCurrent(epoch, uid)) return;
         if (!ok) {
           ScaffoldMessenger.of(
             context,
@@ -568,13 +639,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         setState(() => _verifiedTrimmedName = text);
       } catch (_) {
-        if (!mounted) return;
+        if (!mounted || !_loadStillCurrent(epoch, uid)) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.errorLoadFailed)));
       }
     } finally {
-      if (mounted) setState(() => _checkingDisplayName = false);
+      if (_loadStillCurrent(epoch, uid)) {
+        setState(() => _checkingDisplayName = false);
+      }
     }
   }
 
@@ -603,6 +676,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final fb = FirebaseAuth.instance.currentUser;
     if (fb == null) return;
+    final epoch = _sessionEpoch;
+    final uid = fb.uid;
 
     final auth = context.read<AuthProvider<DopamineUser>>();
     final committed = (auth.userProfile?.displayName ?? '').trim();
@@ -626,7 +701,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         idToken: token,
         displayName: text,
       );
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final current = auth.userProfile;
       auth.setUserProfile(
         DopamineUser(
@@ -643,17 +718,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ).showSnackBar(SnackBar(content: Text(l10n.profileDisplayNameSaved)));
       await _loadData();
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final msg = e.message == 'display_name_taken'
           ? l10n.profileDisplayNameTaken
           : e.message;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || !_loadStillCurrent(epoch, uid)) return;
       final msg = e is ApiException ? e.message : l10n.errorLoadFailed;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
-      if (mounted) setState(() => _savingName = false);
+      if (_loadStillCurrent(epoch, uid)) {
+        setState(() => _savingName = false);
+      }
     }
   }
 
@@ -1457,7 +1534,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Future<void> Function(bool value) onChanged,
     bool enabled = true,
   }) {
-    final active = enabled && !_pushPrefsLoading;
+    final active = enabled && !_pushPrefsLoading && _pushPrefsReady;
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Row(
@@ -1482,6 +1559,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _openSettingsScreen() async {
     final l10n = AppLocalizations.of(context)!;
+    final openedEpoch = _sessionEpoch;
+    final openedUid = FirebaseAuth.instance.currentUser?.uid;
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (ctx) {
@@ -1497,6 +1576,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: StatefulBuilder(
                 builder: (context, setSheetState) {
                   Future<void> toggle(String key, bool next) async {
+                    if (!mounted || !_loadStillCurrent(openedEpoch, openedUid)) return;
                     setSheetState(() {
                       switch (key) {
                         case 'master_enabled':
